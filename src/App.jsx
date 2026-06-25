@@ -203,6 +203,7 @@ function MovieCard({
     <article
       className={[
         'movie-card',
+        'target-card',
         `movie-card--${mode}`,
         selected ? 'movie-card--selected' : '',
         isRatingOpen ? 'movie-card--rating-open' : '',
@@ -780,7 +781,7 @@ function App() {
     }
 
     if (!hasSearchResults) {
-      return <StateCard title="No results" tone="neutral" />;
+      return <StateCard title="Scent trail lost" message="Recalibrate input vectors." tone="neutral" />;
     }
 
     return (
@@ -816,7 +817,7 @@ function App() {
         <div className="results-footer">
           {searchHasMore ? (
             <button type="button" className="subtle-button" onClick={handleLoadMoreSearch} disabled={searchLoading}>
-              {searchLoading ? 'Loading…' : 'Load more'}
+              {searchLoading ? 'Processing…' : 'Load more'}
             </button>
           ) : null}
         </div>
@@ -870,8 +871,8 @@ function App() {
 
     return (
       <>
-        {renderMovieSection(popular, 'Popular Now')}
-        {renderMovieSection(topRated, 'Most Rated All Time')}
+        {renderMovieSection(popular, 'High-Signal Assets')}
+        {renderMovieSection(topRated, 'Maximum Data Vectors')}
       </>
     );
   };
@@ -883,14 +884,14 @@ function App() {
 
     if (!hasRecommendations) {
       if (recommendationState.status === 'empty') {
-        return <StateCard title="No recommendations yet" message="Rate some movies to get personalized recommendations." tone="neutral" />;
+        return <StateCard title="No recommendations yet" message="Insufficient data vectors. Rate films to establish your taste profile." tone="neutral" />;
       }
       return null;
     }
 
     return (
       <>
-        <SectionHeader title="Recommended for You" />
+        <SectionHeader title="Target Lock" />
         <div className="results-grid results-grid--discover" aria-label="Recommendation results">
           {recommendations.map((movie) => {
             const movieKey = getMovieKey(movie);
@@ -922,7 +923,7 @@ function App() {
         <div className="results-footer">
           {recsHasMore ? (
             <button type="button" className="subtle-button" onClick={handleLoadMoreRecs} disabled={recommendationsLoading}>
-              {recommendationsLoading ? 'Loading…' : 'Load more recommendations'}
+              {recommendationsLoading ? 'Processing…' : 'Load more recommendations'}
             </button>
           ) : null}
         </div>
@@ -937,7 +938,7 @@ function App() {
     }
 
     if (userRatingsHistory.length === 0) {
-      return <StateCard title="No ratings yet" message="Rate some movies to see your history here." tone="neutral" />;
+      return <StateCard title="No ratings yet" message="No ratings logged. Rate films to populate your scent trail." tone="neutral" />;
     }
 
     return (
@@ -1022,7 +1023,8 @@ function App() {
     <div className="app-shell">
       <header className="app-header">
         <div className="brand-block">
-          <h1>Movie Recommender</h1>
+          <h1>CineHound</h1>
+          <p className="brand-tagline" style={{ fontFamily: 'var(--font-data)', fontSize: '0.75rem', color: 'var(--ch-signal)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Tactical Recommendation Engine</p>
         </div>
 
         <nav className="app-nav" aria-label="Main navigation">
@@ -1057,21 +1059,21 @@ function App() {
                   ref={searchInputRef}
                   value={query}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Search movies…"
+                  placeholder="Input target taste coordinates…"
                   autoComplete="off"
                 />
                 <button
                   type="button"
                   className="header-search__close"
                   onClick={closeHeaderSearch}
-                  aria-label="Close search"
+                  aria-label="Terminate tracking"
                 >
                   ✕
                 </button>
               </div>
             ) : (
               <button type="button" className="header-search__toggle" onClick={toggleHeaderSearch}>
-                🔍 Search
+                Track Scent
               </button>
             )}
           </div>

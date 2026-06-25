@@ -1,5 +1,7 @@
 {
-  "name": "movie-recommender",
+  "name": "cinehound",
+  "description": "CineHound — Sniff out your next favorite film. A personalized movie recommendation engine.",
+  "homepage": "https://cinehound.com",
   "private": true,
   "version": "0.0.0",
   "type": "module",
