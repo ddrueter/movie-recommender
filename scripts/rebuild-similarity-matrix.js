@@ -3,7 +3,7 @@ import path from 'path';
 
 const ratingsPath = path.resolve('scripts/data/ratings.csv');
 const linksPath = path.resolve('scripts/data/links.csv');
-const outputPath = path.resolve('scripts/output/movie_similarity.json');
+const outputPath = path.resolve('public/similarity_matrix.json');
 
 function parseCsv(filePath) {
   const raw = fs.readFileSync(filePath, 'utf8').trim();

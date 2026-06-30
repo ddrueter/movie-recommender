@@ -1,6 +1,8 @@
-# Movie Recommender
+# CineHound
 
-A personalized movie recommendation engine powered by collaborative filtering (Pearson correlation) on the MovieLens dataset, combined with TMDB metadata and an acclaim-weighted scoring system. Built with React + Vite, deployed as serverless functions on Vercel, backed by Supabase and Firebase Auth.
+> Sniff out your next favorite film. A tactical recommendation engine.
+
+CineHound computes personalized film recommendations using collaborative filtering with Pearson correlation on the MovieLens 25M dataset. It intercepts choice paralysis — matching your rating vectors against a similarity matrix to surface high-affinity films. Metadata and poster art are sourced from TMDB and cached in Supabase. The stack: React + Vite on the frontend, Vercel serverless functions for the API, Firebase for authentication, and Supabase Postgres for data persistence.
 
 ## Tech Stack
 
@@ -20,7 +22,7 @@ A personalized movie recommendation engine powered by collaborative filtering (P
 - A **Supabase** project (free tier works)
 - A **Firebase** project with Authentication enabled
 - A **TMDB** API key (free at [themoviedb.org](https://www.themoviedb.org/settings/api))
-- A **Vercel** account (for deployment; free Hobby plan works)
+- A **Vercel** account for deployment (free Hobby plan works)
 - **Git**
 
 ## Local Setup
@@ -28,8 +30,8 @@ A personalized movie recommendation engine powered by collaborative filtering (P
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/<your-username>/movie-recommender.git
-cd movie-recommender
+git clone https://github.com/<your-username>/cinehound.git
+cd cinehound
 npm install
 ```
 
@@ -53,7 +55,7 @@ Edit [`.env`](.env.example) with your actual values:
 | `SUPABASE_PUBLISHABLE_KEY` | Supabase Dashboard → Settings → API → anon/public key |
 | `SUPABASE_SECRET_KEY` | Supabase Dashboard → Settings → API → service_role key |
 | `TMDB_READ_ACCESS_TOKEN` | TMDB Account → API → API Read Access Token |
-| `BLOB_READ_WRITE_TOKEN` | Only needed if using Vercel Blob (optional for local dev) |
+| `BLOB_READ_WRITE_TOKEN` | Required only if using Vercel Blob (optional for local dev) |
 
 ### 3. Set up the Supabase database
 
@@ -66,13 +68,13 @@ This creates the `ratings`, `movie_metadata`, and `profiles` tables with proper 
 
 ### 4. Build the similarity matrix
 
-The repository includes a pre-built similarity matrix ([`public/similarity_matrix.json`](public/similarity_matrix.json), ~67 MB). If you want to rebuild it from scratch:
+The repository includes a pre-built similarity matrix ([`public/similarity_matrix.json`](public/similarity_matrix.json), ~67 MB). To rebuild it from scratch:
 
 ```bash
 npm run build-matrix
 ```
 
-This requires `scripts/data/links.csv` and `scripts/data/ratings.csv` from the MovieLens 25M dataset. If you don't have them, download from [MovieLens](https://grouplens.org/datasets/movielens/25m/) and place the CSVs in `scripts/data/`.
+This requires `scripts/data/links.csv` and `scripts/data/ratings.csv` from the MovieLens 25M dataset. Download them from [MovieLens](https://grouplens.org/datasets/movielens/25m/) and place the CSVs in `scripts/data/`.
 
 ### 5. Cache TMDB metadata (optional but recommended)
 
@@ -82,7 +84,7 @@ Populate your Supabase database with movie metadata from TMDB:
 npm run refresh-metadata
 ```
 
-This crawls TMDB's discover API using year-range partitioning to find as many movies as possible. The first run may take 15–30 minutes. Subsequent runs with `INCREMENTAL=true` in `.env` will only fetch new movies.
+This crawls TMDB's discover API using year-range partitioning to find as many movies as possible. The first run may take 15–30 minutes. Subsequent runs with `INCREMENTAL=true` in `.env` fetch only new movies.
 
 ### 6. Run locally
 
@@ -90,7 +92,7 @@ This crawls TMDB's discover API using year-range partitioning to find as many mo
 npm run dev
 ```
 
-Opens at `http://localhost:5173`. The Vite dev server handles API routes locally via middleware — no separate backend needed.
+Opens at `http://localhost:5173`. The Vite dev server handles API routes locally via middleware — no separate backend required.
 
 ## Deploy to Vercel
 
@@ -117,7 +119,7 @@ git push origin main
 
 ### 4. Redeploy on changes
 
-Push to `main` — Vercel automatically redeploys. No manual steps needed.
+Push to `main` — Vercel redeploys automatically. No manual steps required.
 
 ## Available Scripts
 

@@ -10,12 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -23,16 +23,15 @@ jobs:
 
       - name: Rebuild similarity matrix
         run: |
-          node scripts/cache-movie-metadata.js
           node scripts/rebuild-similarity-matrix.js
 
       - name: Validate matrix output
         run: |
-          test -f scripts/output/movie_similarity.json
-          node -e "const matrix=require('./scripts/output/movie_similarity.json'); console.log('Matrix entries:', Object.keys(matrix).length)"
+          test -f public/similarity_matrix.json
+          node -e "const matrix=require('./public/similarity_matrix.json'); console.log('Matrix entries:', Object.keys(matrix).length)"
 
       - name: Upload matrix artifact
         uses: actions/upload-artifact@v4
         with:
           name: movie_similarity
-          path: scripts/output/movie_similarity.json
+          path: public/similarity_matrix.json
