@@ -6,6 +6,8 @@ function ratingToWeight(rating) {
       return 0.75;
     case 0:
       return 0.2;
+    case -1:
+      return 0; // hidden: excluded from recs, no CF impact
     case -2:
       return -0.75;
     default:

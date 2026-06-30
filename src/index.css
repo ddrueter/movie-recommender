@@ -4,7 +4,7 @@
 
 /* --- Design Tokens --- */
 :root {
-  /* Color Matrix */
+  /* Color Matrix (dark) */
   --ch-abyss: #07080B;
   --ch-slate: #12141C;
   --ch-radar: #00FF66;
@@ -33,6 +33,51 @@
   font-weight: 400;
   color: #e2e8f0;
   background-color: var(--color-canvas);
+}
+
+/* --- Light Theme --- */
+[data-theme="light"] {
+  --ch-abyss: #f1f5f9;
+  --ch-slate: #e2e8f0;
+  --ch-radar: #0d9488;
+  --ch-crimson: #dc2626;
+  --ch-signal: #64748b;
+
+  --color-canvas: #f8fafc;
+  --color-surface: #e2e8f0;
+
+  color: #1e293b;
+}
+
+[data-theme="light"] body {
+  background: var(--color-canvas);
+}
+
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4 {
+  color: #0f172a;
+}
+
+[data-theme="light"] button {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+[data-theme="light"] button:hover {
+  border-color: var(--ch-radar);
+  background: rgba(13, 148, 136, 0.06);
+}
+
+[data-theme="light"] .section-header {
+  color: #64748b;
+}
+
+[data-theme="light"] .movie-card,
+[data-theme="light"] .state-card {
+  border-color: #e2e8f0;
 }
 
 /* --- Reset & Base --- */

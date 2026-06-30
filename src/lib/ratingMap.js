@@ -6,6 +6,7 @@ export const ratingOptions = [
 ];
 
 export function formatRatingValue(value) {
+  if (value === -1) return 'Hidden';
   const option = ratingOptions.find((item) => item.value === value);
   return option ? option.label : 'Unrated';
 }
@@ -22,6 +23,8 @@ export function getRatingTone(value) {
       return { tone: 'like', label: 'Like' };
     case 0:
       return { tone: 'meh', label: 'Meh' };
+    case -1:
+      return { tone: 'hidden', label: 'Hidden' };
     case -2:
       return { tone: 'dislike', label: 'Dislike' };
     default:

@@ -103,8 +103,12 @@ export async function fetchRecommendations(userId, token, offset, limit) {
   return requestJson(`/api/recommendations${suffix}`, { token });
 }
 
-export async function fetchHomeData(userId, token) {
-  const suffix = userId ? `?userId=${encodeURIComponent(userId)}` : '';
+export async function fetchHomeData(userId, token, section, limit) {
+  const params = new URLSearchParams();
+  if (userId) params.set('userId', userId);
+  if (section) params.set('section', section);
+  if (limit) params.set('limit', String(limit));
+  const suffix = params.toString() ? `?${params.toString()}` : '';
   return requestJson(`/api/home${suffix}`, { token });
 }
 

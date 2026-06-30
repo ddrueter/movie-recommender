@@ -7,6 +7,8 @@ const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 export default async function handler(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
   const userId = url.searchParams.get('userId') || 'demo-user';
+  const section = url.searchParams.get('section'); // 'trending' | 'popular' | 'topRated' — single-section mode
+  const limit = Math.min(Number(url.searchParams.get('limit') || 0) || 0, 100); // 0 = default
 
   // Home page does not require auth — shows trending/popular/top-rated movies to everyone
   const supabase = createSupabaseClient();
@@ -30,26 +32,27 @@ export default async function handler(request, response) {
     }
   }
 
-  // --- 2. Fetch popular & top-rated from our Supabase cache (in parallel) ---
+  // --- 2. Fetch popular & top-rated from our Supabase cache ---
+  const dbLimit = section && limit > 0 ? limit : (section ? 100 : 18);
+  const topRatedDbLimit = section && limit > 0 ? limit : (section ? 200 : 50);
+
+  const needPopular = !section || section === 'popular';
+  const needTopRated = !section || section === 'topRated';
+
   const [popularResult, topRatedResult] = await Promise.all([
-    supabase
-      .from('movie_metadata')
-      .select('*')
-      .order('popularity', { ascending: false })
-      .limit(18),
-    supabase
-      .from('movie_metadata')
-      .select('*')
-      .order('vote_count', { ascending: false })
-      .limit(50), // fetch extra for weighted scoring
+    needPopular
+      ? supabase.from('movie_metadata').select('*').order('popularity', { ascending: false }).limit(dbLimit)
+      : { data: [] },
+    needTopRated
+      ? supabase.from('movie_metadata').select('*').order('vote_count', { ascending: false }).limit(topRatedDbLimit)
+      : { data: [] },
   ]);
 
   // --- 3. Enrich trending movies with our cached metadata ---
-  const trendingIds = trendingRaw.map((m) => String(m.id));
+  const trendingIds = (section === 'trending' || !section) ? trendingRaw.map((m) => String(m.id)) : [];
   const trendingMetaById = new Map();
 
   if (trendingIds.length > 0) {
-    // Batch-load cached metadata for trending movies
     const BATCH_SIZE = 20;
     for (let i = 0; i < trendingIds.length; i += BATCH_SIZE) {
       const batch = trendingIds.slice(i, i + BATCH_SIZE);
@@ -91,7 +94,6 @@ export default async function handler(request, response) {
       const meta = trendingMetaById.get(String(tmdbMovie.id));
       if (meta) return annotateWithPersonalRating(meta);
 
-      // Minimal fallback for uncached movies (refresh-hot-metadata will backfill)
       return {
         tmdb_id: String(tmdbMovie.id),
         title: tmdbMovie.title || tmdbMovie.original_title || 'Untitled',
@@ -110,12 +112,11 @@ export default async function handler(request, response) {
         personal_rating: ratingsByTmdbId.get(String(tmdbMovie.id)) ?? null,
       };
     })
-    .slice(0, 20);
+    .slice(0, limit > 0 ? limit : 20);
 
-  const popular = (popularResult.data || []).map(annotateWithPersonalRating).slice(0, 16);
+  const popular = (popularResult.data || []).map(annotateWithPersonalRating).slice(0, limit > 0 ? limit : 16);
 
   // Bayesian-inspired weighted rating: sqrt(vote_count) * vote_average
-  // Rewards high ratings that have many votes
   const topRated = (topRatedResult.data || [])
     .map((m) => ({
       ...m,
@@ -123,7 +124,12 @@ export default async function handler(request, response) {
     }))
     .sort((a, b) => b.weighted_rating - a.weighted_rating)
     .map(annotateWithPersonalRating)
-    .slice(0, 16);
+    .slice(0, limit > 0 ? limit : 16);
+
+  if (section) {
+    const sectionData = { trending, popular, topRated };
+    return response.status(200).json({ results: sectionData[section] || [], userId });
+  }
 
   response.status(200).json({ trending, popular, topRated, userId });
 }

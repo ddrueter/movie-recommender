@@ -3,7 +3,6 @@ import './App.css';
 import {
   formatRatingValue,
   getCommunityTone,
-  getRatingTone,
   formatMatchScore,
   ratingOptions,
 } from './lib/ratingMap';
@@ -63,6 +62,13 @@ function RatingIcon({ kind }) {
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
           <path d="M12 21a9 9 0 1 1 9-9 9 9 0 0 1-9 9zm0-16.2A7.2 7.2 0 1 0 19.2 12 7.2 7.2 0 0 0 12 4.8z" />
           <path d="M6.5 6.5l11 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    case 'hide':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
+          <path d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5C21.3 7.6 17 4.5 12 4.5zm0 12.5c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z" />
+          <line x1="2" y1="2" x2="22" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     default:
@@ -189,11 +195,9 @@ function MovieCard({
   const movieKey = getMovieKey(movie);
   const posterUrl = movie.poster_url || makePosterUrl(movie.poster_path);
   const ratingPanelId = movieKey ? `rating-panel-${movieKey}` : `rating-panel-${movie.title}`;
-  const currentRatingOption = ratingOptions.find((option) => option.value === ratingValue) ?? null;
   const isRatingOpen = expandedRatingMovieId === movieKey;
-  const ratingTone = currentRatingOption ? getRatingTone(ratingValue) : null;
 
-  // 5 buttons evenly spaced across the poster bottom: Remove + 4 rating options
+  // 5 buttons evenly spaced across the poster bottom: Don't Recommend + 4 rating options
   // Each button is 15% of poster width. Left positions: 4%, 23%, 42%, 61%, 80%
   const ratingButtonPositions = [4, 23, 42, 61, 80];
 
@@ -262,6 +266,7 @@ function MovieCard({
           >
             <div className="poster-rating__menu" id={ratingPanelId} role="radiogroup" aria-label={`Rate ${movie.title}`}>
               {/* Rating options: Love → Like → Meh → Dislike left to right */}
+              {/* Click active rating to clear it (toggle behavior) */}
               {ratingOptions.slice().reverse().map((option, index) => (
                 <button
                   key={option.value}
@@ -282,7 +287,13 @@ function MovieCard({
                   tabIndex={isRatingOpen ? 0 : -1}
                   onClick={(event) => {
                     event.stopPropagation();
-                    onRate(movie, option.value);
+                    // Toggle: if already selected, clear the rating
+                    if (ratingValue === option.value) {
+                      onRate(movie, null);
+                      onCloseRating(movieKey);
+                    } else {
+                      onRate(movie, option.value);
+                    }
                   }}
                 >
                   <RatingIcon kind={option.icon} />
@@ -290,30 +301,35 @@ function MovieCard({
                 </button>
               ))}
 
-              {/* Remove rating button — far right */}
+              {/* Don't recommend this button — far right */}
               <button
                 type="button"
                 role="radio"
                 className={[
                   'poster-rating__option',
-                  'poster-rating__option--remove',
-                  ratingTone ? `poster-rating__toggle--${ratingTone.tone}` : '',
+                  'poster-rating__option--hide',
+                  ratingValue === -1 ? 'active' : '',
                 ].filter(Boolean).join(' ')}
                 style={{
                   left: `${ratingButtonPositions[4]}%`,
                   width: '15%',
                 }}
-                aria-label={`Remove rating for ${movie.title}`}
+                aria-label={`Don't recommend ${movie.title}`}
                 disabled={savingRating}
                 tabIndex={isRatingOpen ? 0 : -1}
                 onClick={(event) => {
                   event.stopPropagation();
-                  onRate(movie, null);
+                  // Toggle: if already hidden, clear it; otherwise hide
+                  if (ratingValue === -1) {
+                    onRate(movie, null);
+                  } else {
+                    onRate(movie, -1);
+                  }
                   onCloseRating(movieKey);
                 }}
               >
-                <RatingIcon kind="minus" />
-                <span className="sr-only">Remove rating</span>
+                <RatingIcon kind="hide" />
+                <span className="sr-only">Don't recommend</span>
               </button>
             </div>
           </div>
@@ -382,6 +398,9 @@ function useGridColumns(containerRef, cardMinWidth = 160, cardGap = 16) {
 }
 
 function App() {
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem('cinehound-theme') || 'dark'; } catch { return 'dark'; }
+  });
   const [activeTab, setActiveTab] = useState('home');
   const [searchIsOpen, setSearchIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -407,6 +426,8 @@ function App() {
   const [savingRatingMovieId, setSavingRatingMovieId] = useState(null);
   const [expandedRatingMovieId, setExpandedRatingMovieId] = useState(null);
   const [expandedHomeSection, setExpandedHomeSection] = useState(null);
+  const [expandedSectionData, setExpandedSectionData] = useState(null);
+  const [expandedSectionLoading, setExpandedSectionLoading] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const searchTimer = useRef(null);
   const searchSequence = useRef(0);
@@ -450,6 +471,14 @@ function App() {
       }
     };
   }, []);
+
+  // Sync theme to <html> data attribute
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem('cinehound-theme', theme); } catch { /* ignore */ }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
 
   const loadHomeData = useCallback(async () => {
     const requestId = ++homeSequence.current;
@@ -865,6 +894,48 @@ function App() {
   const homeColumns = useGridColumns(homeGridRef, 160, 16);
   const homeRows = 2; // compact: 2 rows per section on home page
 
+  // Load expanded section data when a section is expanded
+  useEffect(() => {
+    if (!expandedHomeSection) {
+      setExpandedSectionData(null);
+      return;
+    }
+
+    let cancelled = false;
+    const expandedRows = 4;
+    const loadLimit = homeColumns * expandedRows;
+
+    setExpandedSectionLoading(true);
+    fetchHomeData(resolvedUserId, authToken, expandedHomeSection, loadLimit)
+      .then((data) => {
+        if (!cancelled) {
+          setExpandedSectionData(data.results || []);
+          setExpandedSectionLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setExpandedSectionLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [expandedHomeSection, homeColumns, resolvedUserId, authToken]);
+
+  const handleLoadMoreExpanded = useCallback(async () => {
+    if (!expandedHomeSection || expandedSectionLoading) return;
+    const currentCount = expandedSectionData?.length || 0;
+    const loadLimit = currentCount + homeColumns * 4;
+
+    setExpandedSectionLoading(true);
+    try {
+      const data = await fetchHomeData(resolvedUserId, authToken, expandedHomeSection, loadLimit);
+      setExpandedSectionData(data.results || []);
+    } catch (err) {
+      console.error('Failed to load more:', err.message);
+    } finally {
+      setExpandedSectionLoading(false);
+    }
+  }, [expandedHomeSection, expandedSectionLoading, expandedSectionData, homeColumns, resolvedUserId, authToken]);
+
   const renderHomeBody = () => {
     if (homeDataLoading && !homeData) {
       return <StateCard title="Loading" tone="loading" />;
@@ -877,45 +948,57 @@ function App() {
     const sectionKeys = {
       trending: { key: 'trending', data: trending, title: 'Trending Now' },
       popular: { key: 'popular', data: popular, title: 'Popular' },
-      topRated: { key: 'topRated', data: topRated, title: 'Top Rated' },
+      topRated: { key: 'topRated', data: topRated, title: 'Most Acclaimed' },
     };
 
     const activeSection = expandedHomeSection ? sectionKeys[expandedHomeSection] : null;
 
-    // When a section is expanded, show only that section with all available results
+    // When a section is expanded, show only that section with paginated results
     if (activeSection) {
+      const movies = expandedSectionData || [];
       return (
         <div ref={homeGridRef}>
           <SectionHeader
             title={activeSection.title}
             onViewMore={() => setExpandedHomeSection(null)}
-            viewMoreLabel="Back"
+            viewMoreLabel="← Back"
           />
-          <div className="results-grid results-grid--home" aria-label={activeSection.title}>
-            {activeSection.data.map((movie) => {
-              const movieKey = getMovieKey(movie);
-              const currentRating = draftRatings[movieKey] ?? movie.personal_rating ?? null;
-              const isSelected = selectedMovieId === movieKey;
-              const communityTone = getCommunityTone(movie.vote_average, movie.vote_count);
+          {expandedSectionLoading && movies.length === 0 ? (
+            <StateCard title="Loading" tone="loading" />
+          ) : (
+            <>
+              <div className="results-grid results-grid--home" aria-label={activeSection.title}>
+                {movies.map((movie) => {
+                  const movieKey = getMovieKey(movie);
+                  const currentRating = draftRatings[movieKey] ?? movie.personal_rating ?? null;
+                  const isSelected = selectedMovieId === movieKey;
+                  const communityTone = getCommunityTone(movie.vote_average, movie.vote_count);
 
-              return (
-                <MovieCard
-                  key={movieKey ?? movie.title}
-                  movie={movie}
-                  mode="home"
-                  selected={isSelected}
-                  badgeText={communityTone.label}
-                  badgeTone={communityTone.tone}
-                  ratingValue={currentRating}
-                  authEnabled={authEnabled}
-                  savingRating={savingRatingMovieId === movieKey}
-                  expandedRatingMovieId={expandedRatingMovieId}
-                  onRate={handleQuickRate}
-                  onCloseRating={(key) => setExpandedRatingMovieId((current) => (current === key ? null : current))}
-                />
-              );
-            })}
-          </div>
+                  return (
+                    <MovieCard
+                      key={movieKey ?? movie.title}
+                      movie={movie}
+                      mode="home"
+                      selected={isSelected}
+                      badgeText={communityTone.label}
+                      badgeTone={communityTone.tone}
+                      ratingValue={currentRating}
+                      authEnabled={authEnabled}
+                      savingRating={savingRatingMovieId === movieKey}
+                      expandedRatingMovieId={expandedRatingMovieId}
+                      onRate={handleQuickRate}
+                      onCloseRating={(key) => setExpandedRatingMovieId((current) => (current === key ? null : current))}
+                    />
+                  );
+                })}
+              </div>
+              <div className="results-footer">
+                <button type="button" className="subtle-button" onClick={handleLoadMoreExpanded} disabled={expandedSectionLoading}>
+                  {expandedSectionLoading ? 'Loading…' : 'Load more'}
+                </button>
+              </div>
+            </>
+          )}
           </div>
         );
       }
@@ -968,7 +1051,7 @@ function App() {
       <>
         {renderMovieSection(trending, 'Trending Now', 'trending')}
         {renderMovieSection(popular, 'Popular', 'popular')}
-        {renderMovieSection(topRated, 'Top Rated', 'topRated')}
+        {renderMovieSection(topRated, 'Most Acclaimed', 'topRated')}
       </>
     );
   };
@@ -1043,9 +1126,10 @@ function App() {
             const movieKey = getMovieKey(movie);
             const currentRating = movie.personal_rating ?? null;
             const isSelected = selectedMovieId === movieKey;
-            const ratingTone = currentRating !== null ? getRatingTone(currentRating) : null;
-            const badgeText = ratingTone ? ratingTone.label : null;
-            const badgeTone = ratingTone ? ratingTone.tone : 'nr';
+            const communityTone = getCommunityTone(movie.vote_average, movie.vote_count);
+            // Show community rating badge
+            const badgeText = communityTone.label;
+            const badgeTone = communityTone.tone;
 
             return (
               <MovieCard
@@ -1169,6 +1253,16 @@ function App() {
               </button>
             )}
           </div>
+
+          <button
+            type="button"
+            className="theme-toggle"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
 
           {authSession ? (
             <div className="session-chip">
