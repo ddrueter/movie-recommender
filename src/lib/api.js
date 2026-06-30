@@ -108,6 +108,14 @@ export async function fetchHomeData(userId, token) {
   return requestJson(`/api/home${suffix}`, { token });
 }
 
+export async function fetchTrending(userId, token, limit = 20) {
+  const params = new URLSearchParams();
+  if (userId) params.set('userId', userId);
+  if (limit) params.set('limit', String(limit));
+  const suffix = params.toString() ? `?${params.toString()}` : '';
+  return requestJson(`/api/trending${suffix}`, { token });
+}
+
 export async function fetchUserRatings(userId, token) {
   const suffix = userId ? `?userId=${encodeURIComponent(userId)}` : '';
   return requestJson(`/api/user-ratings${suffix}`, { token });

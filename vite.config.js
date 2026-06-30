@@ -7,6 +7,7 @@ const apiRouteLoaders = {
   '/api/recommendations': () => import('./api/recommendations.js'),
   '/api/profile-sync': () => import('./api/profile-sync.js'),
   '/api/home': () => import('./api/home.js'),
+  '/api/trending': () => import('./api/trending.js'),
   '/api/user-ratings': () => import('./api/user-ratings.js'),
 };
 

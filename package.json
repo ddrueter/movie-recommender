@@ -11,7 +11,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "build-matrix": "node scripts/rebuild-similarity-matrix.js",
-    "refresh-metadata": "node scripts/cache-movie-metadata.js"
+    "refresh-metadata": "node scripts/cache-movie-metadata.js",
+    "refresh-hot": "node scripts/refresh-hot-metadata.js",
+    "refresh-hot:trending": "node scripts/refresh-hot-metadata.js trending",
+    "refresh-hot:popular": "node scripts/refresh-hot-metadata.js popular",
+    "refresh-hot:now": "node scripts/refresh-hot-metadata.js now"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

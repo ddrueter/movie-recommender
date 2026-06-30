@@ -183,9 +183,7 @@ function MovieCard({
   authEnabled,
   savingRating,
   expandedRatingMovieId,
-  onSelect,
   onRate,
-  onOpenRating,
   onCloseRating,
 }) {
   const movieKey = getMovieKey(movie);
@@ -199,6 +197,16 @@ function MovieCard({
   // Each button is 15% of poster width. Left positions: 4%, 23%, 42%, 61%, 80%
   const ratingButtonPositions = [4, 23, 42, 61, 80];
 
+  const tmdbUrl = movie.tmdb_id ? `https://www.themoviedb.org/movie/${movie.tmdb_id}` : null;
+
+  const handleCardClick = (event) => {
+    // Don't navigate if the click was on a rating button or its children
+    if (event.target.closest('.poster-rating__option')) return;
+    if (tmdbUrl) {
+      window.open(tmdbUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <article
       className={[
@@ -210,14 +218,14 @@ function MovieCard({
       ]
         .filter(Boolean)
         .join(' ')}
-      role="button"
+      role="link"
       tabIndex={0}
-      aria-label={`Select ${movie.title}`}
-      onClick={() => onSelect(movie)}
+      aria-label={`View ${movie.title} on TMDB`}
+      onClick={handleCardClick}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          onSelect(movie);
+          handleCardClick(event);
         }
       }}
     >
@@ -334,8 +342,43 @@ function StateCard({ title, message, tone = 'neutral' }) {
   );
 }
 
-function SectionHeader({ title }) {
-  return <h2 className="section-header">{title}</h2>;
+function SectionHeader({ title, onViewMore, viewMoreLabel }) {
+  return (
+    <div className="section-header-row">
+      <h2 className="section-header">{title}</h2>
+      {onViewMore ? (
+        <button type="button" className="view-more-link" onClick={onViewMore}>
+          {viewMoreLabel || 'View all'} →
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Hook: measure a grid container's width and return how many card columns fit.
+ * Card min-width for home grids is ~160px (from CSS --card-size clamp).
+ */
+function useGridColumns(containerRef, cardMinWidth = 160, cardGap = 16) {
+  const [columns, setColumns] = useState(4); // sensible default
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const width = el.getBoundingClientRect().width;
+      const cols = Math.max(1, Math.floor((width + cardGap) / (cardMinWidth + cardGap)));
+      setColumns(cols);
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [containerRef, cardMinWidth, cardGap]);
+
+  return columns;
 }
 
 function App() {
@@ -363,6 +406,7 @@ function App() {
   const [userRatingsLoading, setUserRatingsLoading] = useState(false);
   const [savingRatingMovieId, setSavingRatingMovieId] = useState(null);
   const [expandedRatingMovieId, setExpandedRatingMovieId] = useState(null);
+  const [expandedHomeSection, setExpandedHomeSection] = useState(null);
   const [announcement, setAnnouncement] = useState('');
   const searchTimer = useRef(null);
   const searchSequence = useRef(0);
@@ -506,14 +550,6 @@ function App() {
     }
   }, [activeTab, loadUserRatings]);
 
-  const selectMovie = (movie) => {
-    const movieKey = getMovieKey(movie);
-    if (!movieKey) return;
-
-    setSelectedMovieId(movieKey);
-    setAnnouncement(`Selected ${movie.title}.`);
-  };
-
   const handleSearchChange = (value) => {
     setQuery(value);
     setSearchError('');
@@ -639,6 +675,7 @@ function App() {
           if (!current) return current;
           return {
             ...current,
+            trending: clearPersonalRating(current.trending || []),
             popular: clearPersonalRating(current.popular || []),
             topRated: clearPersonalRating(current.topRated || []),
           };
@@ -675,6 +712,7 @@ function App() {
         if (!current) return current;
         return {
           ...current,
+          trending: updatePersonalRating(current.trending || []),
           popular: updatePersonalRating(current.popular || []),
           topRated: updatePersonalRating(current.topRated || []),
         };
@@ -781,7 +819,7 @@ function App() {
     }
 
     if (!hasSearchResults) {
-      return <StateCard title="Scent trail lost" message="Recalibrate input vectors." tone="neutral" />;
+      return <StateCard title="No results found" message="Try a different search." tone="neutral" />;
     }
 
     return (
@@ -805,9 +843,7 @@ function App() {
                 authEnabled={authEnabled}
                 savingRating={savingRatingMovieId === movieKey}
                 expandedRatingMovieId={expandedRatingMovieId}
-                onSelect={selectMovie}
                 onRate={handleQuickRate}
-                onOpenRating={(key) => setExpandedRatingMovieId(key)}
                 onCloseRating={(key) => setExpandedRatingMovieId((current) => (current === key ? null : current))}
               />
             );
@@ -825,21 +861,38 @@ function App() {
     );
   };
 
+  const homeGridRef = useRef(null);
+  const homeColumns = useGridColumns(homeGridRef, 160, 16);
+  const homeRows = 2; // compact: 2 rows per section on home page
+
   const renderHomeBody = () => {
     if (homeDataLoading && !homeData) {
       return <StateCard title="Loading" tone="loading" />;
     }
 
+    const trending = homeData?.trending ?? [];
     const popular = homeData?.popular ?? [];
     const topRated = homeData?.topRated ?? [];
 
-    const renderMovieSection = (movies, title) => {
-      if (movies.length === 0) return null;
+    const sectionKeys = {
+      trending: { key: 'trending', data: trending, title: 'Trending Now' },
+      popular: { key: 'popular', data: popular, title: 'Popular' },
+      topRated: { key: 'topRated', data: topRated, title: 'Top Rated' },
+    };
+
+    const activeSection = expandedHomeSection ? sectionKeys[expandedHomeSection] : null;
+
+    // When a section is expanded, show only that section with all available results
+    if (activeSection) {
       return (
-        <>
-          <SectionHeader title={title} />
-          <div className="results-grid results-grid--home" aria-label={title}>
-            {movies.map((movie) => {
+        <div ref={homeGridRef}>
+          <SectionHeader
+            title={activeSection.title}
+            onViewMore={() => setExpandedHomeSection(null)}
+            viewMoreLabel="Back"
+          />
+          <div className="results-grid results-grid--home" aria-label={activeSection.title}>
+            {activeSection.data.map((movie) => {
               const movieKey = getMovieKey(movie);
               const currentRating = draftRatings[movieKey] ?? movie.personal_rating ?? null;
               const isSelected = selectedMovieId === movieKey;
@@ -857,22 +910,65 @@ function App() {
                   authEnabled={authEnabled}
                   savingRating={savingRatingMovieId === movieKey}
                   expandedRatingMovieId={expandedRatingMovieId}
-                  onSelect={selectMovie}
                   onRate={handleQuickRate}
-                  onOpenRating={(key) => setExpandedRatingMovieId(key)}
                   onCloseRating={(key) => setExpandedRatingMovieId((current) => (current === key ? null : current))}
                 />
               );
             })}
           </div>
-        </>
-      );
-    };
+          </div>
+        );
+      }
+
+      // Compact home view: dynamic columns × fixed rows per section
+      const limit = homeColumns * homeRows;
+
+      const renderMovieSection = (movies, title, sectionKey) => {
+        if (movies.length === 0) return null;
+        const visible = movies.slice(0, limit);
+        const hasMore = movies.length > limit;
+
+        return (
+          <div ref={sectionKey === 'trending' ? homeGridRef : null}>
+            <SectionHeader
+              title={title}
+              onViewMore={hasMore ? () => setExpandedHomeSection(sectionKey) : null}
+              viewMoreLabel="View all"
+            />
+            <div className="results-grid results-grid--home" aria-label={title}>
+            {visible.map((movie) => {
+              const movieKey = getMovieKey(movie);
+              const currentRating = draftRatings[movieKey] ?? movie.personal_rating ?? null;
+              const isSelected = selectedMovieId === movieKey;
+              const communityTone = getCommunityTone(movie.vote_average, movie.vote_count);
+
+              return (
+                <MovieCard
+                  key={movieKey ?? movie.title}
+                  movie={movie}
+                  mode="home"
+                  selected={isSelected}
+                  badgeText={communityTone.label}
+                  badgeTone={communityTone.tone}
+                  ratingValue={currentRating}
+                  authEnabled={authEnabled}
+                  savingRating={savingRatingMovieId === movieKey}
+                  expandedRatingMovieId={expandedRatingMovieId}
+                  onRate={handleQuickRate}
+                  onCloseRating={(key) => setExpandedRatingMovieId((current) => (current === key ? null : current))}
+                />
+              );
+            })}
+          </div>
+          </div>
+        );
+      };
 
     return (
       <>
-        {renderMovieSection(popular, 'High-Signal Assets')}
-        {renderMovieSection(topRated, 'Maximum Data Vectors')}
+        {renderMovieSection(trending, 'Trending Now', 'trending')}
+        {renderMovieSection(popular, 'Popular', 'popular')}
+        {renderMovieSection(topRated, 'Top Rated', 'topRated')}
       </>
     );
   };
@@ -911,9 +1007,7 @@ function App() {
                 authEnabled={authEnabled}
                 savingRating={savingRatingMovieId === movieKey}
                 expandedRatingMovieId={expandedRatingMovieId}
-                onSelect={selectMovie}
                 onRate={handleQuickRate}
-                onOpenRating={(key) => setExpandedRatingMovieId(key)}
                 onCloseRating={(key) => setExpandedRatingMovieId((current) => (current === key ? null : current))}
               />
             );
@@ -965,9 +1059,7 @@ function App() {
                 authEnabled={authEnabled}
                 savingRating={savingRatingMovieId === movieKey}
                 expandedRatingMovieId={expandedRatingMovieId}
-                onSelect={selectMovie}
                 onRate={handleQuickRate}
-                onOpenRating={(key) => setExpandedRatingMovieId(key)}
                 onCloseRating={(key) => setExpandedRatingMovieId((current) => (current === key ? null : current))}
               />
             );
@@ -1059,21 +1151,21 @@ function App() {
                   ref={searchInputRef}
                   value={query}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Input target taste coordinates…"
+                  placeholder="Search movies…"
                   autoComplete="off"
                 />
                 <button
                   type="button"
                   className="header-search__close"
                   onClick={closeHeaderSearch}
-                  aria-label="Terminate tracking"
+                  aria-label="Close search"
                 >
                   ✕
                 </button>
               </div>
             ) : (
               <button type="button" className="header-search__toggle" onClick={toggleHeaderSearch}>
-                Track Scent
+                Search
               </button>
             )}
           </div>

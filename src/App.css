@@ -199,13 +199,42 @@
 }
 
 /* ── Section headers ── */
-.section-header {
+.section-header-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
   margin: 0.5rem 0 0;
+}
+
+.section-header {
+  margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
   font-family: var(--font-heading);
   color: #94a3b8;
   letter-spacing: -0.01em;
+}
+
+.view-more-link {
+  background: none;
+  border: none;
+  color: var(--ch-radar);
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: color 150ms ease, background 150ms ease;
+  white-space: nowrap;
+}
+
+.view-more-link:hover {
+  color: var(--ch-signal);
+  background: rgba(0, 255, 102, 0.08);
 }
 
 /* ── Results grid ── */
