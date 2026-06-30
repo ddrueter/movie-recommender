@@ -30,7 +30,7 @@ CineHound computes personalized film recommendations using collaborative filteri
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/<your-username>/cinehound.git
+git clone https://github.com/ddrueter/cinehound.git
 cd cinehound
 npm install
 ```
