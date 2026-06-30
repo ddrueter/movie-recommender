@@ -376,24 +376,30 @@ function SectionHeader({ title, onViewMore, viewMoreLabel }) {
  * Hook: measure a grid container's width and return how many card columns fit.
  * Card min-width for home grids is ~160px (from CSS --card-size clamp).
  */
-function useGridColumns(containerRef, cardMinWidth = 160, cardGap = 16) {
-  const [columns, setColumns] = useState(4); // sensible default
+function useGridColumns(containerRef) {
+  const [columns, setColumns] = useState(6);
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
     const measure = () => {
-      const width = el.getBoundingClientRect().width;
-      const cols = Math.max(1, Math.floor((width + cardGap) / (cardMinWidth + cardGap)));
-      setColumns(cols);
+      // Measure the first results-grid--home to match CSS auto-fit exactly
+      const grid = document.querySelector('.results-grid--home');
+      if (!grid) return;
+      const style = getComputedStyle(grid);
+      const cols = style.gridTemplateColumns.split(' ').length;
+      if (cols > 0) setColumns(cols);
     };
 
-    measure();
+    // Delay measurement slightly so DOM is painted
+    const timer = setTimeout(measure, 50);
     const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [containerRef, cardMinWidth, cardGap]);
+    const el = containerRef.current;
+    if (el) observer.observe(el);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [containerRef]);
 
   return columns;
 }
@@ -405,11 +411,17 @@ function App() {
   // Derive active tab from URL path
   const activeTab = location.pathname === '/recommendations' ? 'discover'
     : location.pathname === '/history' ? 'history'
+    : location.pathname === '/trending' ? 'trending-full'
+    : location.pathname === '/popular' ? 'popular-full'
+    : location.pathname === '/most-acclaimed' ? 'topRated-full'
     : 'home';
 
   const setActiveTab = useCallback((tab) => {
     const path = tab === 'discover' ? '/recommendations'
       : tab === 'history' ? '/history'
+      : tab === 'trending-full' ? '/trending'
+      : tab === 'popular-full' ? '/popular'
+      : tab === 'topRated-full' ? '/most-acclaimed'
       : '/';
     navigate(path);
   }, [navigate]);
@@ -587,7 +599,7 @@ function App() {
   }, [authToken, resolvedUserId]);
 
   useEffect(() => {
-    if (activeTab === 'home') {
+    if (activeTab === 'home' || activeTab === 'trending-full' || activeTab === 'popular-full' || activeTab === 'topRated-full') {
       void loadHomeData();
       void loadRecommendations();
     }
@@ -910,13 +922,19 @@ function App() {
     );
   };
 
-  const homeMainRef = useRef(null);
-  const homeColumns = useGridColumns(homeMainRef, 160, 16);
+  const mainElRef = useRef(null);
+  const homeColumns = useGridColumns(mainElRef, 160, 16);
   const homeRows = 2; // compact: 2 rows per section on home page
+
+  // Derive expanded section key from state or route
+  const fullPageSection = activeTab === 'trending-full' ? 'trending'
+    : activeTab === 'popular-full' ? 'popular'
+    : activeTab === 'topRated-full' ? 'topRated'
+    : expandedHomeSection;
 
   // Load expanded section data when a section is expanded
   useEffect(() => {
-    if (!expandedHomeSection) {
+    if (!fullPageSection) {
       setExpandedSectionData(null);
       return;
     }
@@ -926,7 +944,7 @@ function App() {
     const loadLimit = homeColumns * expandedRows;
 
     setExpandedSectionLoading(true);
-    fetchHomeData(resolvedUserId, authToken, expandedHomeSection, loadLimit)
+    fetchHomeData(resolvedUserId, authToken, fullPageSection, loadLimit)
       .then((data) => {
         if (!cancelled) {
           setExpandedSectionData(data.results || []);
@@ -938,23 +956,27 @@ function App() {
       });
 
     return () => { cancelled = true; };
-  }, [expandedHomeSection, homeColumns, resolvedUserId, authToken]);
+  }, [fullPageSection, homeColumns, resolvedUserId, authToken]);
 
   const handleLoadMoreExpanded = useCallback(async () => {
-    if (!expandedHomeSection || expandedSectionLoading) return;
-    const currentCount = expandedSectionData?.length || 0;
-    const loadLimit = currentCount + homeColumns * 4;
+    if (!fullPageSection || expandedSectionLoading) return;
+    const existing = expandedSectionData || [];
+    const loadLimit = existing.length + homeColumns * 4;
 
     setExpandedSectionLoading(true);
     try {
-      const data = await fetchHomeData(resolvedUserId, authToken, expandedHomeSection, loadLimit);
-      setExpandedSectionData(data.results || []);
+      const data = await fetchHomeData(resolvedUserId, authToken, fullPageSection, loadLimit);
+      const fresh = data.results || [];
+      // Merge: keep existing items in place, append only new unique ones
+      const existingIds = new Set(existing.map((m) => String(m.tmdb_id)));
+      const newItems = fresh.filter((m) => !existingIds.has(String(m.tmdb_id)));
+      setExpandedSectionData([...existing, ...newItems]);
     } catch (err) {
       console.error('Failed to load more:', err.message);
     } finally {
       setExpandedSectionLoading(false);
     }
-  }, [expandedHomeSection, expandedSectionLoading, expandedSectionData, homeColumns, resolvedUserId, authToken]);
+  }, [fullPageSection, expandedSectionLoading, expandedSectionData, homeColumns, resolvedUserId, authToken]);
 
   const renderHomeBody = () => {
     if (homeDataLoading && !homeData) {
@@ -971,7 +993,8 @@ function App() {
       topRated: { key: 'topRated', data: topRated, title: 'Most Acclaimed' },
     };
 
-    const activeSection = expandedHomeSection ? sectionKeys[expandedHomeSection] : null;
+    const activeSectionKey = fullPageSection;
+    const activeSection = activeSectionKey ? sectionKeys[activeSectionKey] : null;
 
     // When a section is expanded, show only that section with paginated results
     if (activeSection) {
@@ -980,7 +1003,7 @@ function App() {
         <div>
           <SectionHeader
             title={activeSection.title}
-            onViewMore={() => setExpandedHomeSection(null)}
+            onViewMore={() => { setExpandedHomeSection(null); navigate('/'); }}
             viewMoreLabel="← Back"
           />
           {expandedSectionLoading && movies.length === 0 ? (
@@ -1026,16 +1049,18 @@ function App() {
       // Compact home view: dynamic columns × fixed rows per section
       const limit = homeColumns * homeRows;
 
+      const sectionRoutes = { trending: '/trending', popular: '/popular', topRated: '/most-acclaimed' };
+
       const renderMovieSection = (movies, title, sectionKey) => {
         if (movies.length === 0) return null;
-        const visible = movies.slice(0, limit);
-        const hasMore = movies.length > limit;
+        const visible = movies.slice(0, Math.max(1, limit));
+        const viewAllPath = sectionRoutes[sectionKey] || '/';
 
         return (
           <div>
             <SectionHeader
               title={title}
-              onViewMore={hasMore ? () => setExpandedHomeSection(sectionKey) : null}
+              onViewMore={() => navigate(viewAllPath)}
               viewMoreLabel="View all"
             />
             <div className="results-grid results-grid--home" aria-label={title}>
@@ -1068,7 +1093,7 @@ function App() {
       };
 
     return (
-      <div ref={homeMainRef}>
+      <div>
         {renderMovieSection(trending, 'Trending Now', 'trending')}
         {renderMovieSection(popular, 'Popular', 'popular')}
         {renderMovieSection(topRated, 'Most Acclaimed', 'topRated')}
@@ -1318,8 +1343,8 @@ function App() {
         </div>
       </header>
 
-      <main className="app-main">
-        {activeTab === 'home' ? (
+      <main className="app-main" ref={mainElRef}>
+        {(activeTab === 'home' || activeTab === 'trending-full' || activeTab === 'popular-full' || activeTab === 'topRated-full') ? (
           <section className="content-section" aria-label="Home">
             {renderHomeBody()}
           </section>

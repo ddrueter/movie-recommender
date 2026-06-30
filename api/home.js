@@ -17,18 +17,26 @@ export default async function handler(request, response) {
   let trendingRaw = [];
   const tmdbToken = process.env.TMDB_READ_ACCESS_TOKEN;
   if (tmdbToken) {
-    try {
-      const tmdbUrl = new URL(TMDB_TRENDING_URL);
-      tmdbUrl.searchParams.set('language', 'en-US');
-      const tmdbResponse = await fetch(tmdbUrl, {
-        headers: { Authorization: `Bearer ${tmdbToken}`, Accept: 'application/json' },
-      });
-      if (tmdbResponse.ok) {
-        const payload = await tmdbResponse.json();
-        trendingRaw = payload.results || [];
+    // Fetch up to 3 pages of trending when limit > 20
+    const trendingPages = (limit > 0 && limit > 20) ? Math.min(3, Math.ceil(limit / 20)) : 1;
+    for (let page = 1; page <= trendingPages; page += 1) {
+      try {
+        const tmdbUrl = new URL(TMDB_TRENDING_URL);
+        tmdbUrl.searchParams.set('language', 'en-US');
+        tmdbUrl.searchParams.set('page', String(page));
+        const tmdbResponse = await fetch(tmdbUrl, {
+          headers: { Authorization: `Bearer ${tmdbToken}`, Accept: 'application/json' },
+        });
+        if (tmdbResponse.ok) {
+          const payload = await tmdbResponse.json();
+          if (Array.isArray(payload.results)) {
+            trendingRaw.push(...payload.results);
+          }
+          if (!payload.results || payload.results.length < 20) break;
+        }
+      } catch (err) {
+        console.error(`[home] TMDB trending page ${page} failed:`, err.message);
       }
-    } catch (err) {
-      console.error('[home] TMDB trending fetch failed:', err.message);
     }
   }
 
