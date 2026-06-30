@@ -123,3 +123,27 @@ export async function signOutFirebase() {
   const { signOut } = await import('firebase/auth');
   await signOut(auth);
 }
+
+/**
+ * Subscribe to Firebase auth state changes. Returns an unsubscribe function.
+ * The callback receives the session object (or null if signed out).
+ * This survives page refreshes because Firebase persists the auth token.
+ */
+export async function onAuthStateChanged(callback) {
+  const auth = await getFirebaseAuth();
+  const { onAuthStateChanged: firebaseOnAuthStateChanged } = await import('firebase/auth');
+
+  return firebaseOnAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const session = await buildSession(user);
+      if (session) {
+        void syncProfile(session).catch((error) => {
+          console.warn('[auth] state-change profile sync failed', { error: error.message });
+        });
+      }
+      callback(session);
+    } else {
+      callback(null);
+    }
+  });
+}

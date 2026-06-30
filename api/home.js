@@ -117,12 +117,15 @@ export default async function handler(request, response) {
   const popular = (popularResult.data || []).map(annotateWithPersonalRating).slice(0, limit > 0 ? limit : 16);
 
   // Bayesian-inspired weighted rating: sqrt(vote_count) * vote_average
+  // Stable sort: secondary on vote_count, tertiary on tmdb_id for deterministic order
   const topRated = (topRatedResult.data || [])
     .map((m) => ({
       ...m,
       weighted_rating: Math.sqrt(Math.max(0, Number(m.vote_count ?? 0))) * Number(m.vote_average ?? 0),
     }))
-    .sort((a, b) => b.weighted_rating - a.weighted_rating)
+    .sort((a, b) => b.weighted_rating - a.weighted_rating
+      || (Number(b.vote_count) || 0) - (Number(a.vote_count) || 0)
+      || String(a.tmdb_id).localeCompare(String(b.tmdb_id)))
     .map(annotateWithPersonalRating)
     .slice(0, limit > 0 ? limit : 16);
 

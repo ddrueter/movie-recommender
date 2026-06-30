@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import {
   formatRatingValue,
@@ -15,7 +16,7 @@ import {
 } from './lib/api';
 import {
   getDemoSession,
-  getFirebaseSession,
+  onAuthStateChanged,
   signInWithFirebasePopup,
   signOutFirebase,
 } from './lib/auth';
@@ -364,7 +365,7 @@ function SectionHeader({ title, onViewMore, viewMoreLabel }) {
       <h2 className="section-header">{title}</h2>
       {onViewMore ? (
         <button type="button" className="view-more-link" onClick={onViewMore}>
-          {viewMoreLabel || 'View all'} →
+          {viewMoreLabel || 'View all →'}
         </button>
       ) : null}
     </div>
@@ -398,10 +399,24 @@ function useGridColumns(containerRef, cardMinWidth = 160, cardGap = 16) {
 }
 
 function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Derive active tab from URL path
+  const activeTab = location.pathname === '/recommendations' ? 'discover'
+    : location.pathname === '/history' ? 'history'
+    : 'home';
+
+  const setActiveTab = useCallback((tab) => {
+    const path = tab === 'discover' ? '/recommendations'
+      : tab === 'history' ? '/history'
+      : '/';
+    navigate(path);
+  }, [navigate]);
+
   const [theme, setTheme] = useState(() => {
     try { return localStorage.getItem('cinehound-theme') || 'dark'; } catch { return 'dark'; }
   });
-  const [activeTab, setActiveTab] = useState('home');
   const [searchIsOpen, setSearchIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -449,23 +464,28 @@ function App() {
     return searchResults;
   }, [searchResults]);
 
+  // Persistent auth: Firebase onAuthStateChanged survives page refreshes
   useEffect(() => {
+    let unsubscribe;
     let mounted = true;
 
-    getFirebaseSession()
-      .then((session) => {
-        if (!mounted || !session) {
-          return;
-        }
-
+    onAuthStateChanged((session) => {
+      if (!mounted) return;
+      if (session) {
         setAuthSession(session);
         setUserId(session.uid || 'demo-user');
-        setAnnouncement(`Signed in as ${session.label}.`);
-      })
-      .catch(() => {});
+      } else {
+        setAuthSession(null);
+        setUserId('demo-user');
+      }
+    }).then((unsub) => {
+      if (mounted) unsubscribe = unsub;
+      else unsub?.();
+    }).catch(() => {});
 
     return () => {
       mounted = false;
+      unsubscribe?.();
       if (searchTimer.current) {
         clearTimeout(searchTimer.current);
       }
@@ -890,8 +910,8 @@ function App() {
     );
   };
 
-  const homeGridRef = useRef(null);
-  const homeColumns = useGridColumns(homeGridRef, 160, 16);
+  const homeMainRef = useRef(null);
+  const homeColumns = useGridColumns(homeMainRef, 160, 16);
   const homeRows = 2; // compact: 2 rows per section on home page
 
   // Load expanded section data when a section is expanded
@@ -957,7 +977,7 @@ function App() {
     if (activeSection) {
       const movies = expandedSectionData || [];
       return (
-        <div ref={homeGridRef}>
+        <div>
           <SectionHeader
             title={activeSection.title}
             onViewMore={() => setExpandedHomeSection(null)}
@@ -1012,7 +1032,7 @@ function App() {
         const hasMore = movies.length > limit;
 
         return (
-          <div ref={sectionKey === 'trending' ? homeGridRef : null}>
+          <div>
             <SectionHeader
               title={title}
               onViewMore={hasMore ? () => setExpandedHomeSection(sectionKey) : null}
@@ -1048,11 +1068,11 @@ function App() {
       };
 
     return (
-      <>
+      <div ref={homeMainRef}>
         {renderMovieSection(trending, 'Trending Now', 'trending')}
         {renderMovieSection(popular, 'Popular', 'popular')}
         {renderMovieSection(topRated, 'Most Acclaimed', 'topRated')}
-      </>
+      </div>
     );
   };
 
