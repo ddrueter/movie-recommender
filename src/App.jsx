@@ -50,16 +50,10 @@ function RatingIcon({ kind }) {
     case 'meh':
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          {/* hound ears */}
-          <path d="M9 5.8 8.1 2.4" />
-          <path d="M15 5.8 15.9 2.4" />
-          {/* head */}
-          <circle cx="12" cy="12.8" r="8.2" />
-          {/* eyes */}
-          <circle cx="9.4" cy="11.8" r="1" fill="currentColor" stroke="none" />
-          <circle cx="14.6" cy="11.8" r="1" fill="currentColor" stroke="none" />
-          {/* neutral muzzle */}
-          <path d="M9.8 16.2h4.4" />
+          <circle cx="12" cy="12" r="8.5" />
+          <circle cx="8.8" cy="11" r="1" fill="currentColor" stroke="none" />
+          <circle cx="15.2" cy="11" r="1" fill="currentColor" stroke="none" />
+          <path d="M8 16h8" />
         </svg>
       );
     case 'plus':
@@ -101,24 +95,33 @@ function formatYear(value) {
 function MatchGauge({ score, label }) {
   const clamped = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
   const r = 20;
-  const c = 2 * Math.PI * r;
-  const dash = (clamped / 100) * c;
   const tone = clamped >= 75 ? 'high' : clamped >= 50 ? 'medium' : 'low';
+  const total = 100;
 
   return (
     <div className={`match-gauge match-gauge--${tone}`} role="img" aria-label={`${label || 'Match'}: ${clamped}%`} title={`${clamped}% match`}>
       <svg viewBox="0 0 48 48" width="46" height="46" aria-hidden="true" focusable="false">
-        <circle className="match-gauge__track" cx="24" cy="24" r={r} />
+        <circle
+          className="match-gauge__track"
+          cx="24"
+          cy="24"
+          r={r}
+          pathLength={total}
+          strokeDasharray={`${total} ${total}`}
+        />
         <circle
           className="match-gauge__arc"
           cx="24"
           cy="24"
           r={r}
-          strokeDasharray={`${dash} ${c}`}
+          pathLength={total}
+          strokeDasharray={`${clamped} ${total}`}
         />
-        <line className="match-gauge__needle" x1="24" y1="24" x2="24" y2="4" />
       </svg>
-      <span className="match-gauge__value">{clamped}<small>%</small></span>
+      <span className="match-gauge__value">
+        {clamped}%
+        <small>match</small>
+      </span>
     </div>
   );
 }
@@ -590,15 +593,14 @@ function RecommendationVignette() {
  * Hook: measure a grid container's width and return how many card columns fit.
  * Card min-width for home grids is ~160px (from CSS --card-size clamp).
  */
-function useGridColumns(containerRef) {
+function useGridColumns(containerRef, selector = '.results-grid--home') {
   const [columns, setColumns] = useState(6);
 
   useEffect(() => {
     let frame = 0;
 
     const measure = () => {
-      // Measure the first results-grid--home to match CSS auto-fit exactly
-      const grid = document.querySelector('.results-grid--home');
+      const grid = document.querySelector(selector);
       if (!grid) return;
       const style = getComputedStyle(grid);
       const cols = style.gridTemplateColumns.split(' ').filter(Boolean).length;
@@ -625,7 +627,7 @@ function useGridColumns(containerRef) {
       resizeObserver?.disconnect();
       mutationObserver?.disconnect();
     };
-  }, [containerRef]);
+  }, [containerRef, selector]);
 
   return columns;
 }
@@ -702,6 +704,11 @@ function App() {
   const [expandedHasMore, setExpandedHasMore] = useState(true);
   const [announcement, setAnnouncement] = useState('');
   const [showBackTop, setShowBackTop] = useState(false);
+  const [heroVisible, setHeroVisible] = useState(() => {
+    try { return localStorage.getItem('cinehound-hero-hidden') !== '1'; } catch { return true; }
+  });
+  const [browseOpen, setBrowseOpen] = useState(false);
+  const browseRef = useRef(null);
   const searchTimer = useRef(null);
   const searchSequence = useRef(0);
   const recommendationsSequence = useRef(0);
@@ -769,6 +776,26 @@ function App() {
     window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
   };
 
+  const dismissHero = () => {
+    setHeroVisible(false);
+    try { localStorage.setItem('cinehound-hero-hidden', '1'); } catch { /* ignore */ }
+  };
+
+  // Close the Browse menu on outside click or Escape
+  useEffect(() => {
+    if (!browseOpen) return undefined;
+    const onDoc = (event) => {
+      if (browseRef.current && !browseRef.current.contains(event.target)) setBrowseOpen(false);
+    };
+    const onKey = (event) => { if (event.key === 'Escape') setBrowseOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [browseOpen]);
+
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
 
   const loadHomeData = useCallback(async () => {
@@ -800,6 +827,10 @@ function App() {
       return;
     }
 
+    // Align "load more" to full rows of the visible grid (columns × rows) so
+    // the last row is never left partially filled.
+    const pageSize = Math.max(4, discoverColumns) * 4;
+
     const requestId = ++recommendationsSequence.current;
     const offset = append ? recsOffsetRef.current : 0;
 
@@ -809,7 +840,7 @@ function App() {
     }
 
     try {
-      const data = await fetchRecommendations(authToken, append ? offset : undefined, RECS_PER_PAGE);
+      const data = await fetchRecommendations(authToken, append ? offset : undefined, pageSize);
 
       if (recommendationsSequence.current !== requestId) {
         return;
@@ -820,12 +851,12 @@ function App() {
 
       if (append) {
         // Append mode — add new items beyond current list
-        recsOffsetRef.current += RECS_PER_PAGE;
+        recsOffsetRef.current += pageSize;
         setRecsOffset(recsOffsetRef.current);
         setRecommendations((prev) => [...prev, ...nextRecommendations]);
       } else {
-        recsOffsetRef.current = RECS_PER_PAGE;
-        setRecsOffset(RECS_PER_PAGE);
+        recsOffsetRef.current = pageSize;
+        setRecsOffset(pageSize);
         setRecsTotalAvailable(total);
         setRecommendations(nextRecommendations);
 
@@ -851,7 +882,7 @@ function App() {
         setRecommendationsLoading(false);
       }
     }
-  }, [authToken]);
+  }, [authToken, discoverColumns]);
 
   const loadSpotlightPick = useCallback(async () => {
     if (!authToken) {
@@ -1233,6 +1264,7 @@ function App() {
 
   const mainElRef = useRef(null);
   const homeColumns = useGridColumns(mainElRef);
+  const discoverColumns = useGridColumns(mainElRef, '.results-grid--discover');
   const homeRows = 2; // compact: 2 rows per section on home page
 
   // Derive expanded section key from state or route
@@ -1419,8 +1451,12 @@ function App() {
 
     return (
       <div>
+        {heroVisible ? (
         <section className="home-hero" aria-label="About CineHound">
           {/* Decorative radar FX — presentational, ignored by screen readers */}
+          <button type="button" className="home-hero__dismiss" onClick={dismissHero} aria-label="Hide intro">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
           <div className="home-hero__fx" aria-hidden="true">
             <span className="home-hero__ring home-hero__ring--1" />
             <span className="home-hero__ring home-hero__ring--2" />
@@ -1446,6 +1482,7 @@ function App() {
             </p>
           </div>
         </section>
+        ) : null}
         {renderMovieSection(trending, 'Trending Now', 'trending')}
         {renderMovieSection(popular, 'Popular', 'popular')}
         {renderMovieSection(topRated, 'Most Acclaimed', 'topRated')}
@@ -1506,7 +1543,7 @@ function App() {
               {spotlightLoading ? 'Picking…' : 'Show me another'}
             </button>
             {recsTotalAvailable > 1 ? (
-              <button type="button" className="subtle-button" onClick={() => setRecsViewMode('browse')}>
+              <button type="button" className="btn-soft" onClick={() => setRecsViewMode('browse')}>
                 Browse all {recsTotalAvailable} matches
               </button>
             ) : null}
@@ -1564,7 +1601,7 @@ function App() {
 
         <div className="results-footer">
           {recsHasMore ? (
-            <button type="button" className="subtle-button" onClick={handleLoadMoreRecs} disabled={recommendationsLoading}>
+            <button type="button" className="btn-soft" onClick={handleLoadMoreRecs} disabled={recommendationsLoading}>
               {recommendationsLoading ? 'Processing…' : 'Load more recommendations'}
             </button>
           ) : null}
@@ -1716,6 +1753,31 @@ function App() {
         </div>
 
         <nav className="app-nav" aria-label="Main navigation">
+          <div className="nav-browse" ref={browseRef}>
+            <button
+              type="button"
+              className={['nav-tab', activeTab === 'trending-full' || activeTab === 'popular-full' || activeTab === 'topRated-full' ? 'nav-tab--active' : ''].filter(Boolean).join(' ')}
+              onClick={() => setBrowseOpen((o) => !o)}
+              aria-haspopup="true"
+              aria-expanded={browseOpen}
+            >
+              Browse
+              <svg className="nav-caret" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            {browseOpen ? (
+              <div className="nav-browse__menu" role="menu">
+                <button type="button" role="menuitem" className="nav-browse__item" onClick={() => { setBrowseOpen(false); setActiveTab('trending-full'); }}>
+                  Trending Now
+                </button>
+                <button type="button" role="menuitem" className="nav-browse__item" onClick={() => { setBrowseOpen(false); setActiveTab('popular-full'); }}>
+                  Popular
+                </button>
+                <button type="button" role="menuitem" className="nav-browse__item" onClick={() => { setBrowseOpen(false); setActiveTab('topRated-full'); }}>
+                  Most Acclaimed
+                </button>
+              </div>
+            ) : null}
+          </div>
           <button
             type="button"
             className={activeTab === 'home' ? 'nav-tab nav-tab--active' : 'nav-tab'}
