@@ -123,6 +123,22 @@ function buildSimilarityMatrix(userRatings) {
   return matrix;
 }
 
+// Keep only the top-N most-similar neighbors per movie. The full matrix holds
+// every positive-correlation pair (~37M entries, 66 MB); recommendations only
+// ever need a movie's closest neighbors, so this shrinks it ~10x.
+function pruneMatrix(matrix, topN = 60) {
+  const pruned = {};
+
+  for (const [movieId, neighbors] of Object.entries(matrix)) {
+    const sorted = Object.entries(neighbors)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, topN);
+    pruned[movieId] = Object.fromEntries(sorted);
+  }
+
+  return pruned;
+}
+
 function main() {
   const ratings = parseCsv(ratingsPath);
   const links = parseCsv(linksPath);
@@ -132,9 +148,10 @@ function main() {
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
   const matrix = buildSimilarityMatrix(userRatings);
-  fs.writeFileSync(outputPath, JSON.stringify(matrix, null, 2), 'utf8');
+  const pruned = pruneMatrix(matrix, 60);
+  fs.writeFileSync(outputPath, JSON.stringify(pruned), 'utf8');
 
-  console.log(`Wrote similarity matrix for ${Object.keys(matrix).length} movies to ${outputPath}`);
+  console.log(`Wrote pruned similarity matrix for ${Object.keys(pruned).length} movies to ${outputPath}`);
 }
 
 main();
