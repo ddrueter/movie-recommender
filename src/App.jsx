@@ -23,7 +23,6 @@ import {
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
 const SEARCH_INITIAL_RESULT_COUNT = 24;
-const RECS_PER_PAGE = 24;
 
 function RatingIcon({ kind }) {
   switch (kind) {
@@ -721,6 +720,8 @@ function App() {
   const homeColumns = useGridColumns(mainElRef);
   const discoverColumns = useGridColumns(mainElRef, '.results-grid--discover');
   const homeRows = 2; // compact: 2 rows per section on home page
+  // Browse page step = full rows of the visible grid (never leaves a short row).
+  const recsPageSize = Math.max(4, discoverColumns) * 4;
 
   const authToken = authSession?.token ?? '';
   const authLabel = authSession?.label ?? authSession?.email ?? authSession?.uid ?? '';
@@ -728,7 +729,7 @@ function App() {
   const searchHasMore = searchPage > 0 && searchPage < searchTotalPages;
   const hasSearchResults = searchResults.length > 0;
   const hasRecommendations = recommendations.length > 0;
-  const recsHasMore = recsOffset + RECS_PER_PAGE < recsTotalAvailable;
+  const recsHasMore = recsOffset + recsPageSize < recsTotalAvailable;
 
   // Persistent auth: Firebase onAuthStateChanged survives page refreshes
   useEffect(() => {
@@ -835,7 +836,7 @@ function App() {
 
     // Align "load more" to full rows of the visible grid (columns × rows) so
     // the last row is never left partially filled.
-    const pageSize = Math.max(4, discoverColumns) * 4;
+    const pageSize = recsPageSize;
 
     const requestId = ++recommendationsSequence.current;
     const offset = append ? recsOffsetRef.current : 0;
@@ -888,7 +889,7 @@ function App() {
         setRecommendationsLoading(false);
       }
     }
-  }, [authToken, discoverColumns]);
+  }, [authToken, recsPageSize]);
 
   const loadSpotlightPick = useCallback(async () => {
     if (!authToken) {
