@@ -65,6 +65,7 @@ Run [`supabase/schema.sql`](supabase/schema.sql) in your Supabase SQL Editor to 
 The app shows richer movie data (posters, cast, genres) when metadata is cached:
 
 ```bash
+npm run seed                  # Quick: insert a small starter set of popular movies
 npm run refresh-metadata      # Full crawl (~15-30 min first run)
 npm run refresh-hot            # Daily: update trending + popular + now-playing
 ```
@@ -92,6 +93,7 @@ Push to GitHub and import into Vercel. Add all environment variables from your `
 | `npm run dev` | Start dev server with local API routes |
 | `npm run build` | Production build |
 | `npm run build-matrix` | Rebuild similarity matrix from MovieLens CSVs |
+| `npm run seed` | Insert a small starter set of popular movies |
 | `npm run refresh-metadata` | Full TMDB metadata crawl |
 | `npm run refresh-hot` | Quick refresh: trending + popular + now-playing |
 | `npm test` | Verify scoring, formatting & metadata helpers |
@@ -114,6 +116,7 @@ Push to GitHub and import into Vercel. Add all environment variables from your `
 │   ├── cache-movie-metadata.js # Full metadata crawler
 │   ├── refresh-hot-metadata.js # Daily hot refresh
 │   ├── rebuild-similarity-matrix.js
+│   ├── seed-movie-metadata.js  # Starter catalog (npm run seed)
 │   ├── verify-scoring.js       # Rating/formatting checks
 │   ├── verify-metadata.js      # Metadata helper checks
 │   └── data/                   # MovieLens CSV source files
