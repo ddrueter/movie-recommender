@@ -274,7 +274,7 @@ function MovieCard({
               }
             }}
           >
-            <div className="poster-rating__menu" id={ratingPanelId} role="radiogroup" aria-label={`Rate ${movie.title}`}>
+            <div className="poster-rating__menu" id={ratingPanelId} role="radiogroup" aria-orientation="horizontal" aria-label={`Rate ${movie.title}`}>
               {/* Rating options: Love → Like → Meh → Dislike left to right */}
               {/* Click active rating to clear it (toggle behavior) */}
               {ratingOptions.slice().reverse().map((option, index) => (
@@ -1369,6 +1369,7 @@ function App() {
                   value={query}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Search movies…"
+                  aria-label="Search movies"
                   autoComplete="off"
                 />
                 <button
