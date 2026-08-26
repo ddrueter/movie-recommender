@@ -3,32 +3,36 @@ import { createSupabaseClient } from './_lib/supabase.js';
 import { scoreContentBasedRecommendations, weightedRandomPick } from './_lib/content-recs.js';
 import { getStaticMatrixPath, loadStaticSimilarityMatrix } from './_lib/blob.js';
 
-const METADATA_BATCH_SIZE = 100;
+const METADATA_BATCH_SIZE = 500;
+const METADATA_CONCURRENCY = 4;
 
 /**
  * Load movie_metadata rows for a specific set of tmdb_ids.
+ * Uses larger batches plus bounded concurrency to cut round-trips without
+ * dropping any candidate.
  */
 async function loadMetadataForIds(supabase, ids) {
   if (ids.length === 0) return [];
 
-  const allRows = [];
+  const batches = [];
   for (let i = 0; i < ids.length; i += METADATA_BATCH_SIZE) {
-    const batch = ids.slice(i, i + METADATA_BATCH_SIZE);
-    const { data, error } = await supabase
-      .from('movie_metadata')
-      .select('*')
-      .in('tmdb_id', batch);
+    batches.push(ids.slice(i, i + METADATA_BATCH_SIZE));
+  }
 
-    if (error) {
-      console.error('[recommendations] metadata batch query failed', {
-        batchStart: i,
-        batchSize: batch.length,
-        error: error.message,
-      });
-      continue;
+  const allRows = [];
+  for (let i = 0; i < batches.length; i += METADATA_CONCURRENCY) {
+    const chunk = batches.slice(i, i + METADATA_CONCURRENCY);
+    const results = await Promise.all(
+      chunk.map((batch) => supabase.from('movie_metadata').select('*').in('tmdb_id', batch)),
+    );
+
+    for (const { data, error } of results) {
+      if (error) {
+        console.error('[recommendations] metadata batch query failed', { error: error.message });
+        continue;
+      }
+      if (data) allRows.push(...data);
     }
-
-    if (data) allRows.push(...data);
   }
 
   return allRows;
@@ -84,7 +88,7 @@ export default async function handler(request, response) {
   const mode = url.searchParams.get('mode') === 'weighted' ? 'weighted' : 'ranked';
   // Apply the default BEFORE coercion so an explicit "0" (pure collaborative
   // filtering) is honored instead of being swallowed by the || fallback.
-  const acclaimBlend = Math.min(1, Math.max(0, Number(process.env.RECS_POPULARITY_WEIGHT || 0.2)));
+  const acclaimBlend = Math.min(1, Math.max(0, Number(process.env.RECS_POPULARITY_WEIGHT || 0.35)));
   // Steepness of the weighted-random pick: higher = more concentrated on top fits.
   const randomPower = Math.max(1, Number(process.env.RECS_RANDOM_POWER) || 3);
 

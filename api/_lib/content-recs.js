@@ -30,25 +30,23 @@ function ratingToWeight(rating) {
  *      rating patterns.
  *
  * The `acclaimBlend` parameter (0–1) controls how much acclaim contributes
- * versus pure CF.  At 0, you get pure collaborative filtering.  At 0.2
+ * versus pure CF.  At 0, you get pure collaborative filtering.  At 0.35
  * (the default), a movie with strong CF connections AND high acclaim gets
  * the best score, but a movie with only acclaim still earns a baseline.
  *
  * Results are sorted by blended score descending.
  *
  * @param {Array<{rawScore: number, vote_count: number, vote_average: number}>} scored
+ * @param {number} userRatingCount
  * @param {number} acclaimBlend — 0–1 weight for the acclaim signal (0 = pure CF)
  * @returns {Array<{score: number}>}
  */
-function normalizeScoresTo100(scored, acclaimBlend = 0) {
+function normalizeScoresTo100(scored, userRatingCount = 1, acclaimBlend = 0) {
   if (scored.length === 0) return scored;
 
   // --- CF base score --------------------------------------------------------
-  // Normalize against a FIXED "strong match" scale (not userRatingCount) so
-  // scores don't collapse as the user rates more films. A rawScore of ~2.0
-  // (roughly two or three strong neighbors) maps to ~100%.
-  const CF_STRONG_MATCH = 2.0;
-  const logMax = Math.log(1 + CF_STRONG_MATCH);
+  const maxPossible = Math.max(userRatingCount, 1);
+  const logMax = Math.log(1 + maxPossible);
 
   // --- Acclaim score (Bayesian weighted rating) -----------------------------
   const maxWeighted = Math.max(
@@ -156,7 +154,7 @@ export function scoreContentBasedRecommendations({
       };
     });
 
-  const normalized = normalizeScoresTo100(raw, acclaimBlend);
+  const normalized = normalizeScoresTo100(raw, ratings.length, acclaimBlend);
   // Remove internal scoring fields from the public output
   const INTERNAL_FIELDS = new Set(['rawScore', 'vote_count', 'vote_average']);
   return normalized.map((movie) =>
