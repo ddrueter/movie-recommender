@@ -29,30 +29,37 @@ function RatingIcon({ kind }) {
   switch (kind) {
     case 'thumb-up':
       return (
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
-          <path d="M10 22H7.5c-.8 0-1.5-.7-1.5-1.5v-7.8c0-.7.4-1.3 1-1.6l4.5-2.1V7.7c0-2.1 1.7-3.8 3.8-3.8h.3c.9 0 1.7.7 1.8 1.6l.6 4.4h2.6c1.6 0 2.8 1.3 2.7 2.9l-.5 5.2c-.1 1.4-1.3 2.5-2.7 2.5h-6.1l-1.1 1.7c-.3.5-.9.8-1.5.8zm1.2-2.2h.6l1.1-1.7c.3-.4.7-.7 1.2-.7h6.4c.2 0 .4-.2.4-.4l.5-5.2c0-.4-.3-.7-.7-.7h-3.6c-.6 0-1.1-.5-1.2-1.1l-.7-4.9c0-.3-.3-.5-.6-.5h-.3c-.9 0-1.6.7-1.6 1.6v2.4c0 .5-.3.9-.7 1.1l-5 2.3v6.9h2.5l.8-1.2c.2-.4.6-.6 1-.6zM3.5 11.4h2.3v8.4H3.5c-.8 0-1.5-.7-1.5-1.5v-5.4c0-.8.7-1.5 1.5-1.5z" />
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M7 10v11" />
+          <path d="M15 5.9 14 10h6a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.6 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 3a3.13 3.13 0 0 1 3 2.9Z" />
         </svg>
       );
     case 'heart':
       return (
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
-          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.51 4.04 3 5.5l7 7Z" />
         </svg>
       );
     case 'thumb-down':
       return (
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
-          <path d="M14 2h2.5c.8 0 1.5.7 1.5 1.5v7.8c0 .7-.4 1.3-1 1.6l-4.5 2.1v.8c0 2.1-1.7 3.8-3.8 3.8h-.3c-.9 0-1.7-.7-1.8-1.6L6 13.6H3.4C1.8 13.6.6 12.3.7 10.7l.5-5.2C1.3 4.1 2.5 3 3.9 3h6.1l1.1-1.7c.3-.5.9-.8 1.5-.8zM12.8 4.2h-.6l-1.1 1.7c-.3.4-.7.7-1.2.7H3.5c-.2 0-.4.2-.4.4l-.5 5.2c0 .4.3.7.7.7h3.6c.6 0 1.1.5 1.2 1.1l.7 4.9c0 .3.3.5.6.5h.3c.9 0 1.6-.7 1.6-1.6v-2.4c0-.5.3-.9.7-1.1l5-2.3V5.2h-2.5l-.8 1.2c-.2.4-.6.6-1 .6zM20.5 14.6h-2.3V6.2h2.3c.8 0 1.5.7 1.5 1.5v5.4c0 .8-.7 1.5-1.5 1.5z" />
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 14V3" />
+          <path d="M9 18.1 10 14H5a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 7.4 2h12.6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 21a3.13 3.13 0 0 1-3-2.9Z" />
         </svg>
       );
     case 'meh':
       return (
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
-          <circle cx="12" cy="12" r="9" fill="currentColor" opacity="0.12" />
-          <circle cx="12" cy="12" r="8.3" fill="none" stroke="currentColor" strokeWidth="1.7" />
-          <circle cx="8.7" cy="10" r="1.15" fill="currentColor" />
-          <circle cx="15.3" cy="10" r="1.15" fill="currentColor" />
-          <path d="M8.6 15.3h6.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          {/* hound ears */}
+          <path d="M9 5.8 8.1 2.4" />
+          <path d="M15 5.8 15.9 2.4" />
+          {/* head */}
+          <circle cx="12" cy="12.8" r="8.2" />
+          {/* eyes */}
+          <circle cx="9.4" cy="11.8" r="1" fill="currentColor" stroke="none" />
+          <circle cx="14.6" cy="11.8" r="1" fill="currentColor" stroke="none" />
+          {/* neutral muzzle */}
+          <path d="M9.8 16.2h4.4" />
         </svg>
       );
     case 'plus':
@@ -70,9 +77,10 @@ function RatingIcon({ kind }) {
       );
     case 'hide':
       return (
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
-          <path d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5C21.3 7.6 17 4.5 12 4.5zm0 12.5c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z" />
-          <line x1="2" y1="2" x2="22" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+          <circle cx="12" cy="12" r="2.2" />
+          <line x1="3.5" y1="3.5" x2="20.5" y2="20.5" />
         </svg>
       );
     default:
@@ -84,6 +92,54 @@ function formatYear(value) {
   if (!value) return 'Unknown year';
   const text = String(value);
   return text.length >= 4 ? text.slice(0, 4) : text;
+}
+
+/**
+ * Radar-style match gauge. Presentational only.
+ * The accent arc sweeps to the match percentage on a circular radar track.
+ */
+function MatchGauge({ score, label }) {
+  const clamped = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
+  const r = 20;
+  const c = 2 * Math.PI * r;
+  const dash = (clamped / 100) * c;
+  const tone = clamped >= 75 ? 'high' : clamped >= 50 ? 'medium' : 'low';
+
+  return (
+    <div className={`match-gauge match-gauge--${tone}`} role="img" aria-label={`${label || 'Match'}: ${clamped}%`} title={`${clamped}% match`}>
+      <svg viewBox="0 0 48 48" width="46" height="46" aria-hidden="true" focusable="false">
+        <circle className="match-gauge__track" cx="24" cy="24" r={r} />
+        <circle
+          className="match-gauge__arc"
+          cx="24"
+          cy="24"
+          r={r}
+          strokeDasharray={`${dash} ${c}`}
+        />
+        <line className="match-gauge__needle" x1="24" y1="24" x2="24" y2="4" />
+      </svg>
+      <span className="match-gauge__value">{clamped}<small>%</small></span>
+    </div>
+  );
+}
+
+/**
+ * Themed fallback shown when a poster image is unavailable.
+ */
+function PosterFallback({ title }) {
+  return (
+    <div className="poster-fallback" role="img" aria-label={`${title} poster unavailable`}>
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="16" rx="2.5" />
+        <path d="M3 9h18" />
+        <path d="M8 4l1.5 5" />
+        <path d="M16 4l-1.5 5" />
+        <path d="M8 9l3 4" />
+        <path d="M16 9l-3 4" />
+      </svg>
+      <span>No poster</span>
+    </div>
+  );
 }
 
 function normalizeText(value) {
@@ -252,9 +308,7 @@ function MovieCard({
           {posterUrl ? (
             <img src={posterUrl} alt={`${movie.title} poster`} />
           ) : (
-            <div className="poster-fallback" aria-label={`${movie.title} poster unavailable`}>
-              No poster
-            </div>
+            <PosterFallback title={movie.title} />
           )}
         </div>
 
@@ -376,7 +430,17 @@ function StateCard({ title, message, tone = 'neutral', children }) {
 function SectionHeader({ title, onViewMore, viewMoreLabel }) {
   return (
     <div className="section-header-row">
-      <h2 className="section-header">{title}</h2>
+      <h2 className="section-header">
+        <span className="section-header__radar" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="17" height="17" focusable="false">
+            <circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" strokeWidth="1.6" opacity="0.6" />
+            <circle cx="12" cy="12" r="5.4" fill="none" stroke="currentColor" strokeWidth="1.4" opacity="0.4" />
+            <line x1="12" y1="12" x2="12" y2="2.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            <circle cx="12" cy="2.8" r="1.7" fill="currentColor" />
+          </svg>
+        </span>
+        {title}
+      </h2>
       {onViewMore ? (
         <button type="button" className="view-more-link" onClick={onViewMore}>
           {viewMoreLabel || 'View all →'}
@@ -388,7 +452,6 @@ function SectionHeader({ title, onViewMore, viewMoreLabel }) {
 
 function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }) {
   const posterUrl = movie.poster_url || makePosterUrl(movie.poster_path);
-  const matchScore = formatMatchScore(movie.score);
   const tmdbUrl = movie.tmdb_id ? 'https://www.themoviedb.org/movie/' + movie.tmdb_id : null;
 
   const metaParts = [
@@ -400,6 +463,11 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
 
   return (
     <article className="spotlight-card target-card">
+      {posterUrl ? (
+        <div className="spotlight-card__backdrop" aria-hidden="true">
+          <img src={posterUrl} alt="" />
+        </div>
+      ) : null}
       <a
         className="spotlight-card__poster"
         href={tmdbUrl || undefined}
@@ -410,7 +478,7 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
         {posterUrl ? (
           <img src={posterUrl} alt={movie.title + ' poster'} />
         ) : (
-          <div className="poster-fallback">No poster</div>
+          <PosterFallback title={movie.title} />
         )}
       </a>
 
@@ -420,7 +488,7 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
             <h3 className="spotlight-card__title">{movie.title}</h3>
             <p className="spotlight-card__year">{formatYear(movie.year || movie.release_date)}</p>
           </div>
-          <span className={'score-pill score-pill--' + matchScore.tone}>{matchScore.label}</span>
+          <MatchGauge score={movie.score} label="Match" />
         </div>
 
         {movie.overview ? <p className="spotlight-card__overview">{movie.overview}</p> : null}
@@ -1296,6 +1364,14 @@ function App() {
     return (
       <div>
         <section className="home-hero" aria-label="About CineHound">
+          {/* Decorative radar FX — presentational, ignored by screen readers */}
+          <div className="home-hero__fx" aria-hidden="true">
+            <span className="home-hero__ring home-hero__ring--1" />
+            <span className="home-hero__ring home-hero__ring--2" />
+            <span className="home-hero__ring home-hero__ring--3" />
+            <span className="home-hero__cross home-hero__cross--h" />
+            <span className="home-hero__cross home-hero__cross--v" />
+          </div>
           <div className="home-hero__inner">
             <div className="home-hero__mark" aria-hidden="true">
               <svg viewBox="0 0 64 64" focusable="false" width="20" height="20">
@@ -1611,6 +1687,10 @@ function App() {
           <div className="header-search">
             {searchIsOpen ? (
               <div className="header-search__field">
+                <svg className="header-search__icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="7.5" />
+                  <line x1="21" y1="21" x2="16.5" y2="16.5" />
+                </svg>
                 <input
                   ref={searchInputRef}
                   value={query}
