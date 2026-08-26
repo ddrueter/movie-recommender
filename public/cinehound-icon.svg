@@ -1,9 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#0b0d12"/>
-  <circle cx="32" cy="32" r="20" fill="none" stroke="#00ff66" stroke-width="2.5" opacity="0.9"/>
-  <circle cx="32" cy="32" r="12" fill="none" stroke="#00ff66" stroke-width="2" opacity="0.55"/>
-  <circle cx="32" cy="32" r="4" fill="none" stroke="#00ff66" stroke-width="1.5" opacity="0.3"/>
-  <line x1="32" y1="32" x2="32" y2="12" stroke="#00ff66" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
-  <circle cx="32" cy="12" r="2.5" fill="#00ff66" opacity="0.9"/>
-  <circle cx="42" cy="22" r="2.2" fill="#00ff66" opacity="0.75"/>
+  <defs>
+    <linearGradient id="chBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#11141d"/>
+      <stop offset="100%" stop-color="#07080b"/>
+    </linearGradient>
+    <linearGradient id="chRadar" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00ff77"/>
+      <stop offset="100%" stop-color="#00cc5c"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#chBg)"/>
+  <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="14.25" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1.5"/>
+  <!-- Radar rings -->
+  <circle cx="32" cy="32" r="19.5" fill="none" stroke="url(#chRadar)" stroke-width="2.2" opacity="0.9"/>
+  <circle cx="32" cy="32" r="13" fill="none" stroke="url(#chRadar)" stroke-width="1.8" opacity="0.55"/>
+  <circle cx="32" cy="32" r="6.5" fill="none" stroke="url(#chRadar)" stroke-width="1.5" opacity="0.35"/>
+  <!-- Radar sweep -->
+  <line x1="32" y1="32" x2="32" y2="12.5" stroke="url(#chRadar)" stroke-width="2.4" stroke-linecap="round" opacity="0.9"/>
+  <!-- Hound nose / sweep head -->
+  <circle cx="32" cy="12.5" r="2.6" fill="url(#chRadar)"/>
+  <!-- Signal blips -->
+  <circle cx="42.5" cy="22.5" r="2" fill="url(#chRadar)" opacity="0.7"/>
+  <circle cx="24.5" cy="41.5" r="1.6" fill="url(#chRadar)" opacity="0.5"/>
+  <circle cx="43" cy="39" r="1.4" fill="url(#chRadar)" opacity="0.4"/>
 </svg>

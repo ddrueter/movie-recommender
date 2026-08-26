@@ -383,6 +383,92 @@ function SectionHeader({ title, onViewMore, viewMoreLabel }) {
   );
 }
 
+function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }) {
+  const posterUrl = movie.poster_url || makePosterUrl(movie.poster_path);
+  const matchScore = formatMatchScore(movie.score);
+  const tmdbUrl = movie.tmdb_id ? 'https://www.themoviedb.org/movie/' + movie.tmdb_id : null;
+
+  const metaParts = [
+    movie.genres && movie.genres.length ? movie.genres.join(', ') : null,
+    movie.directors && movie.directors.length ? 'Directed by ' + movie.directors.join(', ') : null,
+  ].filter(Boolean);
+
+  const cast = movie.actors && movie.actors.length ? movie.actors.slice(0, 4).join(', ') : null;
+
+  return (
+    <article className="spotlight-card target-card">
+      <a
+        className="spotlight-card__poster"
+        href={tmdbUrl || undefined}
+        target={tmdbUrl ? '_blank' : undefined}
+        rel={tmdbUrl ? 'noopener noreferrer' : undefined}
+        aria-label={'View ' + movie.title + ' on TMDB'}
+      >
+        {posterUrl ? (
+          <img src={posterUrl} alt={movie.title + ' poster'} />
+        ) : (
+          <div className="poster-fallback">No poster</div>
+        )}
+      </a>
+
+      <div className="spotlight-card__body">
+        <div className="spotlight-card__header">
+          <div>
+            <h3 className="spotlight-card__title">{movie.title}</h3>
+            <p className="spotlight-card__year">{formatYear(movie.year || movie.release_date)}</p>
+          </div>
+          <span className={'score-pill score-pill--' + matchScore.tone}>{matchScore.label}</span>
+        </div>
+
+        {movie.overview ? <p className="spotlight-card__overview">{movie.overview}</p> : null}
+
+        {metaParts.length > 0 ? <p className="spotlight-card__meta">{metaParts.join(' · ')}</p> : null}
+        {cast ? <p className="spotlight-card__cast">Starring {cast}</p> : null}
+
+        {authEnabled ? (
+          <div className="spotlight-card__rating" role="radiogroup" aria-orientation="horizontal" aria-label={'Rate ' + movie.title}>
+            {ratingOptions.slice().reverse().map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                className={[
+                  'spotlight-rating__option',
+                  'spotlight-rating__option--' + option.label.toLowerCase(),
+                  ratingValue === option.value ? 'active' : '',
+                ].filter(Boolean).join(' ')}
+                aria-checked={ratingValue === option.value}
+                aria-label={option.label}
+                disabled={savingRating}
+                onClick={() => onRate(movie, ratingValue === option.value ? null : option.value)}
+              >
+                <RatingIcon kind={option.icon} />
+                <span className="sr-only">{option.label}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              role="radio"
+              className={[
+                'spotlight-rating__option',
+                'spotlight-rating__option--hide',
+                ratingValue === -1 ? 'active' : '',
+              ].filter(Boolean).join(' ')}
+              aria-label={"Don't recommend " + movie.title}
+              aria-checked={ratingValue === -1}
+              disabled={savingRating}
+              onClick={() => onRate(movie, ratingValue === -1 ? null : -1)}
+            >
+              <RatingIcon kind="hide" />
+              <span className="sr-only">Don't recommend</span>
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
 /**
  * Hook: measure a grid container's width and return how many card columns fit.
  * Card min-width for home grids is ~160px (from CSS --card-size clamp).
@@ -469,6 +555,9 @@ function App() {
   const [recsTotalAvailable, setRecsTotalAvailable] = useState(0);
   const [recommendationState, setRecommendationState] = useState({ status: 'idle', message: '', error: '', debug: null });
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [recsViewMode, setRecsViewMode] = useState('spotlight');
+  const [spotlightPick, setSpotlightPick] = useState(null);
+  const [spotlightLoading, setSpotlightLoading] = useState(false);
   const [homeData, setHomeData] = useState(null);
   const [homeDataLoading, setHomeDataLoading] = useState(false);
   const [homeError, setHomeError] = useState('');
@@ -608,6 +697,28 @@ function App() {
     }
   }, [authToken]);
 
+  const loadSpotlightPick = useCallback(async () => {
+    if (!authToken) {
+      setSpotlightPick(null);
+      setRecommendationState({ status: 'idle', message: '', error: '', debug: null });
+      return;
+    }
+
+    setSpotlightLoading(true);
+    try {
+      const data = await fetchRecommendations(authToken, undefined, undefined, 'weighted');
+      const picked = data.results && data.results.length > 0 ? data.results[0] : null;
+      setSpotlightPick(picked);
+      setRecsTotalAvailable(data.totalAvailable ?? (picked ? 1 : 0));
+      setRecommendationState({ status: picked ? 'ready' : 'empty', message: '', error: '', debug: data.debug ?? null });
+    } catch (error) {
+      setSpotlightPick(null);
+      setRecommendationState({ status: 'error', message: '', error: error.message, debug: null });
+    } finally {
+      setSpotlightLoading(false);
+    }
+  }, [authToken]);
+
   const loadUserRatings = useCallback(async () => {
     if (!authToken) {
       setUserRatingsHistory([]);
@@ -633,9 +744,13 @@ function App() {
       void loadHomeData();
       void loadRecommendations();
     } else if (activeTab === 'discover') {
-      void loadRecommendations();
+      if (recsViewMode === 'spotlight') {
+        void loadSpotlightPick();
+      } else {
+        void loadRecommendations();
+      }
     }
-  }, [activeTab, loadHomeData, loadRecommendations]);
+  }, [activeTab, loadHomeData, loadRecommendations, loadSpotlightPick, recsViewMode]);
 
   useEffect(() => {
     if (activeTab === 'history') {
@@ -824,7 +939,11 @@ function App() {
       setAnnouncement(`Saved ${formatRatingValue(rating)} for ${movie.title}.`);
 
       if (activeTab === 'home' || activeTab === 'discover') {
-        void loadRecommendations();
+        if (recsViewMode === 'spotlight') {
+          void loadSpotlightPick();
+        } else {
+          void loadRecommendations();
+        }
       }
     } catch (error) {
       setAnnouncement(`Could not save rating. ${error.message}`);
@@ -1144,6 +1263,25 @@ function App() {
 
     return (
       <div>
+        <section className="home-hero" aria-label="About CineHound">
+          <div className="home-hero__inner">
+            <div className="home-hero__mark" aria-hidden="true">
+              <svg viewBox="0 0 64 64" focusable="false" width="20" height="20">
+                <circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" strokeWidth="3" opacity="0.35" />
+                <circle cx="32" cy="32" r="16" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+                <line x1="32" y1="32" x2="32" y2="6" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                <circle cx="32" cy="6" r="3.2" fill="currentColor" />
+                <circle cx="48" cy="16" r="2.4" fill="currentColor" opacity="0.7" />
+              </svg>
+              <span>Recommendation Engine</span>
+            </div>
+            <h2 className="home-hero__title">Your next favorite film, <em>already sniffed out.</em></h2>
+            <p className="home-hero__lede">
+              Rate what you love and CineHound builds a taste profile from your history,
+              then surfaces the movies you're most likely to adore — powered by collaborative filtering.
+            </p>
+          </div>
+        </section>
         {renderMovieSection(trending, 'Trending Now', 'trending')}
         {renderMovieSection(popular, 'Popular', 'popular')}
         {renderMovieSection(topRated, 'Most Acclaimed', 'topRated')}
@@ -1152,10 +1290,6 @@ function App() {
   };
 
   const renderRecommendationsBody = () => {
-    if (recommendationsLoading && recommendations.length === 0) {
-      return <StateCard title="Loading" tone="loading" />;
-    }
-
     if (!authEnabled) {
       return (
         <StateCard
@@ -1169,6 +1303,56 @@ function App() {
           </div>
         </StateCard>
       );
+    }
+
+    if (recsViewMode === 'spotlight') {
+      if (spotlightLoading && !spotlightPick) {
+        return <StateCard title="Loading" tone="loading" />;
+      }
+
+      if (recommendationState.status === 'error' && !spotlightPick) {
+        return (
+          <StateCard title="Recommendations unavailable" message={recommendationState.error || 'Something went wrong while generating your recommendations.'} tone="error">
+            <div className="state-card__actions">
+              <button type="button" onClick={loadSpotlightPick} disabled={spotlightLoading}>Retry</button>
+            </div>
+          </StateCard>
+        );
+      }
+
+      if (!spotlightPick) {
+        return <StateCard title="No recommendations yet" message="Rate a few films to establish your taste profile, then CineHound will surface your next favorites." tone="neutral" />;
+      }
+
+      const pickKey = getMovieKey(spotlightPick);
+      const pickRating = spotlightPick.personal_rating ?? null;
+
+      return (
+        <>
+          <SectionHeader title="Your Next Pick" />
+          <SpotlightCard
+            movie={spotlightPick}
+            ratingValue={pickRating}
+            authEnabled={authEnabled}
+            savingRating={savingRatingMovieId === pickKey}
+            onRate={handleQuickRate}
+          />
+          <div className="spotlight__actions">
+            <button type="button" onClick={loadSpotlightPick} disabled={spotlightLoading}>
+              {spotlightLoading ? 'Picking…' : 'Show me another'}
+            </button>
+            {recsTotalAvailable > 1 ? (
+              <button type="button" className="subtle-button" onClick={() => setRecsViewMode('browse')}>
+                Browse all {recsTotalAvailable} matches
+              </button>
+            ) : null}
+          </div>
+        </>
+      );
+    }
+
+    if (recommendationsLoading && recommendations.length === 0) {
+      return <StateCard title="Loading" tone="loading" />;
     }
 
     if (recommendationState.status === 'error') {
@@ -1187,7 +1371,7 @@ function App() {
 
     return (
       <>
-        <SectionHeader title="Target Lock" />
+        <SectionHeader title="Target Lock" onViewMore={() => setRecsViewMode('spotlight')} viewMoreLabel="One at a time" />
         <div className="results-grid results-grid--discover" aria-label="Recommendation results">
           {recommendations.map((movie) => {
             const movieKey = getMovieKey(movie);
@@ -1340,8 +1524,31 @@ function App() {
     <div className="app-shell">
       <header className="app-header">
         <div className="brand-block">
-          <h1>CineHound</h1>
-          <p className="brand-tagline" style={{ fontFamily: 'var(--font-data)', fontSize: '0.75rem', color: 'var(--ch-signal)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Tactical Recommendation Engine</p>
+          <svg className="brand-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id="chRadarMark" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#00ff77" />
+                <stop offset="100%" stopColor="#00cc5c" />
+              </linearGradient>
+            </defs>
+            <rect width="64" height="64" rx="15" fill="#0c0f16" />
+            <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="14.25" fill="none" stroke="#ffffff" strokeOpacity="0.06" strokeWidth="1.5" />
+            <circle cx="32" cy="32" r="19.5" fill="none" stroke="url(#chRadarMark)" strokeWidth="2.2" opacity="0.9" />
+            <circle cx="32" cy="32" r="13" fill="none" stroke="url(#chRadarMark)" strokeWidth="1.8" opacity="0.55" />
+            <circle cx="32" cy="32" r="6.5" fill="none" stroke="url(#chRadarMark)" strokeWidth="1.5" opacity="0.35" />
+            <line x1="32" y1="32" x2="32" y2="12.5" stroke="url(#chRadarMark)" strokeWidth="2.4" strokeLinecap="round" opacity="0.9" />
+            <circle cx="32" cy="12.5" r="2.6" fill="url(#chRadarMark)" />
+            <circle cx="42.5" cy="22.5" r="2" fill="url(#chRadarMark)" opacity="0.7" />
+            <circle cx="24.5" cy="41.5" r="1.6" fill="url(#chRadarMark)" opacity="0.5" />
+            <circle cx="43" cy="39" r="1.4" fill="url(#chRadarMark)" opacity="0.4" />
+          </svg>
+          <div className="brand-text">
+            <h1>
+              CineHound
+              <span aria-hidden="true">™</span>
+            </h1>
+            <p className="brand-tagline">Tactical Recommendation Engine</p>
+          </div>
         </div>
 
         <nav className="app-nav" aria-label="Main navigation">
@@ -1464,7 +1671,16 @@ function App() {
       </main>
 
       <footer className="app-footer">
-        <p>
+        <div className="app-footer__brand">
+          <svg viewBox="0 0 64 64" width="22" height="22" aria-hidden="true" focusable="false">
+            <rect width="64" height="64" rx="15" fill="var(--surface-raised)" />
+            <circle cx="32" cy="32" r="19" fill="none" stroke="currentColor" strokeWidth="2.4" opacity="0.85" />
+            <line x1="32" y1="32" x2="32" y2="13" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+            <circle cx="32" cy="13" r="2.4" fill="currentColor" />
+          </svg>
+          <span>CineHound</span>
+        </div>
+        <p className="app-footer__note">
           Imagery and movie data courtesy of{' '}
           <a href="https://www.themoviedb.org/" target="_blank" rel="noreferrer">
             TMDB
