@@ -715,6 +715,12 @@ function App() {
   const homeSequence = useRef(0);
   const searchInputRef = useRef(null);
   const recsOffsetRef = useRef(0);
+  const mainElRef = useRef(null);
+
+  // Measured grid column counts. Declared before the callbacks that use them.
+  const homeColumns = useGridColumns(mainElRef);
+  const discoverColumns = useGridColumns(mainElRef, '.results-grid--discover');
+  const homeRows = 2; // compact: 2 rows per section on home page
 
   const authToken = authSession?.token ?? '';
   const authLabel = authSession?.label ?? authSession?.email ?? authSession?.uid ?? '';
@@ -1262,12 +1268,6 @@ function App() {
     );
   };
 
-  const mainElRef = useRef(null);
-  const homeColumns = useGridColumns(mainElRef);
-  const discoverColumns = useGridColumns(mainElRef, '.results-grid--discover');
-  const homeRows = 2; // compact: 2 rows per section on home page
-
-  // Derive expanded section key from state or route
   const fullPageSection = activeTab === 'trending-full' ? 'trending'
     : activeTab === 'popular-full' ? 'popular'
     : activeTab === 'topRated-full' ? 'topRated'
