@@ -36,7 +36,7 @@ function RatingIcon({ kind }) {
     case 'heart':
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
-          <path d="M12 21s-7.2-4.5-9.8-9C.2 8.1 1.5 4.5 5 3.3c2.1-.7 4.5.1 5.9 1.9 1.4-1.8 3.8-2.6 5.9-1.9 3.5 1.2 4.8 4.8 2.8 8.7-2.6 4.5-9.8 9-9.8 9z" />
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
         </svg>
       );
     case 'thumb-down':
@@ -48,8 +48,11 @@ function RatingIcon({ kind }) {
     case 'meh':
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
-          <path d="M12 21a9 9 0 1 1 9-9 9 9 0 0 1-9 9zm0-16.2A7.2 7.2 0 1 0 19.2 12 7.2 7.2 0 0 0 12 4.8z" />
-          <path d="M7.5 13.5c1.2-1 2.8-1 4 0s2.8 1 4 0" stroke="currentColor" fill="none" strokeWidth="1.6" strokeLinecap="round" />
+          <circle cx="12" cy="12" r="9" fill="currentColor" opacity="0.12" />
+          <circle cx="12" cy="12" r="8.3" fill="none" stroke="currentColor" strokeWidth="1.7" />
+          <circle cx="8.7" cy="10" r="1.15" fill="currentColor" />
+          <circle cx="15.3" cy="10" r="1.15" fill="currentColor" />
+          <path d="M8.6 15.3h6.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
         </svg>
       );
     case 'plus':
@@ -466,6 +469,35 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
         ) : null}
       </div>
     </article>
+  );
+}
+
+/**
+ * Animated loading vignette shown while the engine picks your next film.
+ * Purely presentational — a film-reel of stylized poster slides scrolls past
+ * a sweeping radar ping so wait time feels intentional.
+ */
+function RecommendationVignette() {
+  return (
+    <div className="rec-vignette" role="status" aria-live="polite" aria-label="Generating your recommendation">
+      <div className="rec-vignette__stage" aria-hidden="true">
+        <div className="rec-vignette__reel">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <span key={i} className="rec-vignette__slide" style={{ ['--i']: i }} />
+          ))}
+        </div>
+        <div className="rec-vignette__sweep" />
+        <div className="rec-vignette__core">
+          <svg viewBox="0 0 64 64" width="36" height="36">
+            <circle cx="32" cy="32" r="21" fill="none" stroke="currentColor" strokeWidth="3" opacity="0.7" />
+            <circle cx="32" cy="32" r="12" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.45" />
+            <line x1="32" y1="32" x2="32" y2="11" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            <circle cx="32" cy="11" r="3" fill="currentColor" />
+          </svg>
+        </div>
+      </div>
+      <p className="rec-vignette__label">Sniffing out your next film…</p>
+    </div>
   );
 }
 
@@ -1298,7 +1330,7 @@ function App() {
           tone="neutral"
         >
           <div className="state-card__actions">
-            <button type="button" onClick={handleFirebaseLogin} disabled={authLoading}>Sign in with Google</button>
+            <button type="button" className="btn-primary" onClick={handleFirebaseLogin} disabled={authLoading}>Sign in with Google</button>
             <button type="button" className="subtle-button" onClick={handleDemoLogin} disabled={authLoading}>Try Demo</button>
           </div>
         </StateCard>
@@ -1307,7 +1339,7 @@ function App() {
 
     if (recsViewMode === 'spotlight') {
       if (spotlightLoading && !spotlightPick) {
-        return <StateCard title="Loading" tone="loading" />;
+        return <RecommendationVignette />;
       }
 
       if (recommendationState.status === 'error' && !spotlightPick) {
@@ -1338,7 +1370,7 @@ function App() {
             onRate={handleQuickRate}
           />
           <div className="spotlight__actions">
-            <button type="button" onClick={loadSpotlightPick} disabled={spotlightLoading}>
+            <button type="button" className="btn-primary" onClick={loadSpotlightPick} disabled={spotlightLoading}>
               {spotlightLoading ? 'Picking…' : 'Show me another'}
             </button>
             {recsTotalAvailable > 1 ? (

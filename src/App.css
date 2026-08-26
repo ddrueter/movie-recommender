@@ -465,9 +465,28 @@
   background: linear-gradient(180deg, var(--accent-soft-strong), var(--surface-solid));
 }
 
+/* Load sheen behind the poster art so slow images feel intentional */
+.poster::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 32%, var(--accent-soft) 50%, transparent 68%);
+  background-size: 240% 100%;
+  animation: poster-sheen 2.1s linear infinite;
+}
+
+@keyframes poster-sheen {
+  0% { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
+}
+
 .poster-media,
 .poster img,
 .poster-fallback {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
 }
@@ -503,6 +522,7 @@
   right: 0;
   bottom: 0;
   height: 3px;
+  z-index: 3;
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
   opacity: 0;
   transition: opacity var(--dur-fast) var(--ease-snap);
@@ -519,7 +539,7 @@
   bottom: 0;
   left: 0;
   height: 0;
-  z-index: 2;
+  z-index: 4;
 }
 
 .poster-rating__menu {
@@ -805,6 +825,48 @@
   height: 0.95rem;
   display: inline-block;
   fill: currentColor;
+  transition: transform var(--dur-fast) var(--ease-snap);
+}
+
+/* Rating button micro-interactions (poster + spotlight share these) */
+.poster-rating__option:not(.active):hover .rating-icon,
+.spotlight-rating__option:not(.active):hover .rating-icon {
+  transform: scale(1.18);
+}
+
+.poster-rating__option.active .rating-icon,
+.spotlight-rating__option.active .rating-icon {
+  animation: rating-pop 340ms var(--ease-snap);
+}
+
+@keyframes rating-pop {
+  0% { transform: scale(0.7); }
+  55% { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+/* ── Primary accent button ── */
+.btn-primary {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, #19ff8a, var(--accent));
+  color: #04140b;
+  font-weight: 700;
+  box-shadow: 0 4px 16px var(--accent-glow);
+  transition: transform var(--dur-micro) var(--ease-snap),
+              box-shadow var(--dur-micro) var(--ease-snap),
+              filter var(--dur-micro) var(--ease-snap),
+              border-color var(--dur-micro) var(--ease-snap);
+}
+
+.btn-primary:hover {
+  color: #04140b;
+  background: linear-gradient(180deg, #4dffa0, #00e06a);
+  box-shadow: 0 6px 24px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(1px) scale(0.99);
 }
 
 /* ── Spotlight recommendation card ── */
@@ -952,6 +1014,111 @@
   gap: 0.75rem;
   flex-wrap: wrap;
   margin-top: 0.25rem;
+}
+
+/* ── Recommendation loading vignette ── */
+.rec-vignette {
+  display: grid;
+  place-items: center;
+  gap: 1.1rem;
+  padding: 1.2rem;
+  animation: fade-in var(--dur-structural) var(--ease-snap);
+}
+
+.rec-vignette__stage {
+  position: relative;
+  width: min(520px, 90vw);
+  height: 200px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface-glass);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+/* Film-reel: a row of stylized poster slides that scroll past */
+.rec-vignette__reel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 0 24px;
+  animation: reel-scroll 3.4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes reel-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.rec-vignette__slide {
+  flex: 0 0 auto;
+  width: 74px;
+  height: 112px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(160deg,
+      hsl(calc(150 + var(--i, 0) * 18) 70% 22%),
+      var(--surface-solid));
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  opacity: 0.85;
+}
+
+/* Expanding radar ping behind the core */
+.rec-vignette__sweep {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.rec-vignette__sweep::before,
+.rec-vignette__sweep::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent-border);
+  animation: ping-ring 2.2s var(--ease-snap) infinite;
+}
+
+.rec-vignette__sweep::after {
+  animation-delay: 1.1s;
+}
+
+@keyframes ping-ring {
+  0% { width: 40px; height: 40px; opacity: 0.9; }
+  100% { width: 190px; height: 190px; opacity: 0; }
+}
+
+.rec-vignette__core {
+  position: relative;
+  z-index: 2;
+  color: var(--accent-text);
+  filter: drop-shadow(0 4px 18px var(--accent-glow));
+  animation: core-turn 4s linear infinite;
+}
+
+@keyframes core-turn {
+  to { transform: rotate(360deg); }
+}
+
+.rec-vignette__label {
+  margin: 0;
+  color: var(--text-secondary);
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
 }
 
 @media (max-width: 720px) {
