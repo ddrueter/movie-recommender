@@ -167,11 +167,15 @@
 }
 
 .theme-toggle {
+  display: inline-grid;
+  place-items: center;
   background: var(--surface-glass);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 0.45rem 0.7rem;
-  font-size: 0.95rem;
+  padding: 0.5rem;
+  min-width: 2.2rem;
+  height: 2.2rem;
+  color: var(--text-muted);
   cursor: pointer;
   line-height: 1;
   transition: all var(--dur-micro) var(--ease-snap);
@@ -180,7 +184,8 @@
 .theme-toggle:hover {
   border-color: var(--accent-border);
   background: var(--accent-soft);
-  transform: rotate(12deg);
+  color: var(--text-primary);
+  transform: rotate(14deg);
 }
 
 .header-search__field {
@@ -851,6 +856,47 @@
 .state-card__actions button {
   border-radius: 999px;
   padding: 0.6rem 1.2rem;
+}
+
+/* ── Home loading skeleton ── */
+.home-skeleton {
+  display: grid;
+  gap: 1.4rem;
+  animation: fade-in var(--dur-structural) var(--ease-snap);
+}
+
+.home-skeleton__hero,
+.home-skeleton__card {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-glass);
+  border: 1px solid var(--border);
+}
+
+.home-skeleton__hero {
+  height: clamp(180px, 30vh, 280px);
+  border-radius: var(--radius-xl);
+}
+
+.home-skeleton__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(164px, 164px));
+  gap: 1.1rem;
+}
+
+.home-skeleton__card {
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-lg);
+}
+
+.home-skeleton__hero::after,
+.home-skeleton__card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 32%, var(--accent-soft) 50%, transparent 68%);
+  background-size: 240% 100%;
+  animation: poster-sheen 2s linear infinite;
 }
 
 /* ── Results footer ── */

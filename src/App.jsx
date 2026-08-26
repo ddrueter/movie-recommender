@@ -417,6 +417,23 @@ function MovieCard({
   );
 }
 
+/**
+ * Loading skeleton for the home page — placeholder hero + shimmering
+ * poster cards shown while data streams in. Presentational only.
+ */
+function HomeSkeleton() {
+  return (
+    <div className="home-skeleton" aria-hidden="true">
+      <div className="home-skeleton__hero" />
+      <div className="home-skeleton__grid">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="home-skeleton__card" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function StateCard({ title, message, tone = 'neutral', children }) {
   return (
     <div className={`state-card state-card--${tone}`} role={tone === 'error' ? 'alert' : 'status'} aria-live="polite">
@@ -1237,7 +1254,7 @@ function App() {
 
   const renderHomeBody = () => {
     if (homeDataLoading && !homeData) {
-      return <StateCard title="Loading" tone="loading" />;
+      return <HomeSkeleton />;
     }
 
     if (homeError && !homeData) {
@@ -1722,7 +1739,16 @@ function App() {
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
           >
-            {theme === 'dark' ? '☀️' : '🌙'}
+            {theme === 'dark' ? (
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="4.2" />
+                <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.4 14.2A8.2 8.2 0 0 1 9.8 3.6 8.5 8.5 0 1 0 20.4 14.2Z" />
+              </svg>
+            )}
           </button>
 
           {authSession ? (
