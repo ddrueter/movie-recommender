@@ -478,6 +478,7 @@ function App() {
   const [expandedRatingMovieId, setExpandedRatingMovieId] = useState(null);
   const [expandedSectionData, setExpandedSectionData] = useState(null);
   const [expandedSectionLoading, setExpandedSectionLoading] = useState(false);
+  const [expandedHasMore, setExpandedHasMore] = useState(true);
   const [announcement, setAnnouncement] = useState('');
   const searchTimer = useRef(null);
   const searchSequence = useRef(0);
@@ -976,10 +977,13 @@ function App() {
     const loadLimit = homeColumns * expandedRows;
 
     setExpandedSectionLoading(true);
+    setExpandedHasMore(true);
     fetchHomeData(authToken, fullPageSection, loadLimit)
       .then((data) => {
         if (!cancelled) {
-          setExpandedSectionData(data.results || []);
+          const results = data.results || [];
+          setExpandedSectionData(results);
+          setExpandedHasMore(results.length >= loadLimit);
           setExpandedSectionLoading(false);
         }
       })
@@ -1003,6 +1007,7 @@ function App() {
       const existingIds = new Set(existing.map((m) => String(m.tmdb_id)));
       const newItems = fresh.filter((m) => !existingIds.has(String(m.tmdb_id)));
       setExpandedSectionData([...existing, ...newItems]);
+      setExpandedHasMore(newItems.length > 0 && fresh.length >= loadLimit);
     } catch (err) {
       console.error('Failed to load more:', err.message);
     } finally {
@@ -1077,11 +1082,13 @@ function App() {
                   );
                 })}
               </div>
-              <div className="results-footer">
-                <button type="button" className="subtle-button" onClick={handleLoadMoreExpanded} disabled={expandedSectionLoading}>
-                  {expandedSectionLoading ? 'Loading…' : 'Load more'}
-                </button>
-              </div>
+              {expandedHasMore ? (
+                <div className="results-footer">
+                  <button type="button" className="subtle-button" onClick={handleLoadMoreExpanded} disabled={expandedSectionLoading}>
+                    {expandedSectionLoading ? 'Loading…' : 'Load more'}
+                  </button>
+                </div>
+              ) : null}
             </>
           )}
           </div>
