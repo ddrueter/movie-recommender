@@ -81,10 +81,6 @@ export async function getDemoSession() {
   return session;
 }
 
-export async function getDemoToken() {
-  return (await getDemoSession()).token;
-}
-
 export async function getFirebaseSession() {
   const auth = await getFirebaseAuth();
   const session = await buildSession(auth.currentUser);

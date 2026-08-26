@@ -1,10 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || '';
 
-async function getAccessToken() {
-  const { getDemoToken } = await import('./auth.js');
-  return getDemoToken();
-}
-
 function buildUrl(path) {
   return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
 }
@@ -63,7 +58,7 @@ export async function searchMovies(query, token, page = 1) {
   const data = await requestJson(
     `/api/search-tmdb?q=${encodeURIComponent(query)}&page=${encodeURIComponent(page)}`,
     {
-      token: token || (await getAccessToken()),
+      token,
     },
   );
 

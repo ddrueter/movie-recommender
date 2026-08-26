@@ -1,5 +1,3 @@
-import { getBearerToken, verifyFirebaseToken } from './_lib/auth.js';
-
 const TMDB_RESULT_LIMIT = 20;
 
 function mapMovieResult(movie) {
@@ -75,23 +73,13 @@ export default async function handler(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
   const query = url.searchParams.get('q') || '';
   const page = Math.max(1, Number(url.searchParams.get('page') || '1'));
-  const token = getBearerToken(request);
   const hasTmdbReadAccessToken = Boolean(process.env.TMDB_READ_ACCESS_TOKEN);
 
   console.info('[search-tmdb] incoming request', {
     queryLength: query.trim().length,
     page,
-    hasAuthToken: Boolean(token),
     hasTmdbReadAccessToken,
   });
-
-  try {
-    await verifyFirebaseToken(token);
-  } catch (error) {
-    console.warn('[search-tmdb] auth rejected', { error: error.message });
-    response.status(401).json({ error: error.message });
-    return;
-  }
 
   if (!query.trim()) {
     console.info('[search-tmdb] empty query, returning no results');
