@@ -325,8 +325,9 @@ function MovieCard({
                   width: '15%',
                 }}
                 aria-label={`Don't recommend ${movie.title}`}
+                aria-checked={ratingValue === -1}
                 disabled={savingRating}
-                tabIndex={isRatingOpen ? 0 : -1}
+                tabIndex={panelFocused || isRatingOpen ? 0 : -1}
                 onClick={(event) => {
                   event.stopPropagation();
                   // Toggle: if already hidden, clear it; otherwise hide
