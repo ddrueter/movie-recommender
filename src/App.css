@@ -24,7 +24,8 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 1rem 2rem;
-  width: min(1280px, 100%);
+  width: 100%;
+  max-width: var(--max-width);
   padding: 1rem 0 1.05rem;
   margin: 0 auto 1rem;
   position: sticky;
@@ -32,7 +33,7 @@
   z-index: 50;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  background: color-mix(in srgb, var(--color-canvas) 82%, transparent);
+  background: color-mix(in srgb, var(--color-canvas) 78%, transparent);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -42,6 +43,28 @@
   align-items: center;
   gap: 0.7rem;
   min-width: 0;
+}
+
+.brand-block__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  box-shadow: none;
+}
+
+.brand-block__link:hover {
+  background: none;
+  border: none;
+  color: inherit;
+}
+
+.brand-block__link:active {
+  transform: none;
 }
 
 .brand-icon {
@@ -335,12 +358,17 @@
 }
 
 .subtle-button {
-  background: var(--surface-raised);
-  border-color: var(--border-strong);
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent-text);
+  border-radius: 999px;
 }
 
 .subtle-button:hover {
-  background: var(--surface-hover);
+  background: var(--accent-soft-strong);
+  color: var(--accent-text);
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── Main content ── */
@@ -437,18 +465,24 @@
 
 .home-hero__dismiss {
   position: absolute;
-  top: 0.8rem;
-  right: 0.8rem;
+  top: 0.7rem;
+  right: 0.7rem;
   z-index: 3;
-  display: inline-grid;
+  display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: 1px solid var(--border);
   background: var(--surface-glass);
   color: var(--text-muted);
-  box-shadow: none;
+  padding: 0;
+  aspect-ratio: 1;
+  line-height: 1;
+}
+
+.home-hero__dismiss svg {
+  display: block;
 }
 
 .home-hero__dismiss:hover {
@@ -547,6 +581,12 @@
   color: var(--text-secondary);
   font-size: clamp(0.95rem, 1.6vw, 1.05rem);
   line-height: 1.6;
+}
+
+/* Vertical rhythm between home sections */
+.home-sections {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 /* ── Results grid ── */
@@ -1142,9 +1182,9 @@
 
 /* ── Primary accent button ── */
 .btn-primary {
-  border-color: var(--accent);
-  background: linear-gradient(180deg, #19ff8a, var(--accent));
-  color: #04140b;
+  border-color: transparent;
+  background: linear-gradient(120deg, var(--accent) 0%, var(--accent-secondary) 100%);
+  color: #06120b;
   font-weight: 700;
   box-shadow: 0 4px 16px var(--accent-glow);
   transition: transform var(--dur-micro) var(--ease-snap),
@@ -1154,8 +1194,8 @@
 }
 
 .btn-primary:hover {
-  color: #04140b;
-  background: linear-gradient(180deg, #4dffa0, #00e06a);
+  color: #06120b;
+  filter: brightness(1.06);
   box-shadow: 0 6px 24px var(--accent-glow);
   transform: translateY(-1px);
 }

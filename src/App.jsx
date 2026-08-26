@@ -1484,9 +1484,11 @@ function App() {
           </div>
         </section>
         ) : null}
-        {renderMovieSection(trending, 'Trending Now', 'trending')}
-        {renderMovieSection(popular, 'Popular', 'popular')}
-        {renderMovieSection(topRated, 'Most Acclaimed', 'topRated')}
+        <div className="home-sections">
+          {renderMovieSection(trending, 'Trending Now', 'trending')}
+          {renderMovieSection(popular, 'Popular', 'popular')}
+          {renderMovieSection(topRated, 'Most Acclaimed', 'topRated')}
+        </div>
       </div>
     );
   };
@@ -1726,11 +1728,13 @@ function App() {
     <div className="app-shell">
       <header className="app-header">
         <div className="brand-block">
+          <button type="button" className="brand-block__link" onClick={() => setActiveTab('home')} aria-label="CineHound home">
           <svg className="brand-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
             <defs>
               <linearGradient id="chRadarMark" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stopColor="#00ff77" />
-                <stop offset="100%" stopColor="#00cc5c" />
+                <stop offset="55%" stopColor="#38d889" />
+                <stop offset="100%" stopColor="#ff9a3d" />
               </linearGradient>
             </defs>
             <rect width="64" height="64" rx="15" fill="#0c0f16" />
@@ -1751,18 +1755,24 @@ function App() {
             </h1>
             <p className="brand-tagline">Tactical Recommendation Engine</p>
           </div>
+          </button>
         </div>
 
         <nav className="app-nav" aria-label="Main navigation">
-          <div className="nav-browse" ref={browseRef}>
+          <div
+            className="nav-browse"
+            ref={browseRef}
+            onMouseEnter={() => setBrowseOpen(true)}
+            onMouseLeave={() => setBrowseOpen(false)}
+          >
             <button
               type="button"
-              className={['nav-tab', activeTab === 'trending-full' || activeTab === 'popular-full' || activeTab === 'topRated-full' ? 'nav-tab--active' : ''].filter(Boolean).join(' ')}
-              onClick={() => setBrowseOpen((o) => !o)}
+              className={['nav-tab', activeTab === 'home' || activeTab === 'trending-full' || activeTab === 'popular-full' || activeTab === 'topRated-full' ? 'nav-tab--active' : ''].filter(Boolean).join(' ')}
+              onClick={() => { setBrowseOpen((o) => !o); if (activeTab !== 'home') setActiveTab('home'); }}
               aria-haspopup="true"
               aria-expanded={browseOpen}
             >
-              Browse
+              Home
               <svg className="nav-caret" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
             </button>
             {browseOpen ? (
@@ -1779,13 +1789,6 @@ function App() {
               </div>
             ) : null}
           </div>
-          <button
-            type="button"
-            className={activeTab === 'home' ? 'nav-tab nav-tab--active' : 'nav-tab'}
-            onClick={() => setActiveTab('home')}
-          >
-            Home
-          </button>
           <button
             type="button"
             className={activeTab === 'discover' ? 'nav-tab nav-tab--active' : 'nav-tab'}
