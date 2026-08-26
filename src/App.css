@@ -482,7 +482,7 @@
   gap: 1.1rem;
   grid-auto-flow: row;
   grid-template-columns: repeat(auto-fit, minmax(var(--card-size), var(--card-size)));
-  align-items: start;
+  align-items: stretch;
   justify-content: start;
 }
 
@@ -740,6 +740,9 @@
   overflow: hidden;
   font-weight: 600;
   letter-spacing: -0.01em;
+  /* Reserve two title lines so cards in the same grid stay equal-height
+     regardless of how short the title runs. */
+  min-height: calc(2 * 1.15em);
 }
 
 .movie-title-row p {
@@ -812,6 +815,8 @@
 
 /* ── State cards ── */
 .state-card {
+  position: relative;
+  overflow: hidden;
   min-height: 200px;
   padding: 1.4rem;
   place-content: center;
@@ -820,6 +825,39 @@
   margin: 0 auto;
   width: 100%;
   border-color: var(--border);
+}
+
+/* Ambient radar rings behind every launch/empty state card */
+.state-card::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 220px;
+  height: 220px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid var(--accent-border);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.state-card::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 140px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.state-card > * {
+  position: relative;
 }
 
 .state-card h3 {
@@ -879,8 +917,9 @@
 }
 
 .home-skeleton__grid {
+  --card-size: clamp(158px, 13.5vw, 208px);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(164px, 164px));
+  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), var(--card-size)));
   gap: 1.1rem;
 }
 
@@ -955,6 +994,41 @@
   text-decoration: underline;
 }
 
+/* ── Back to top ── */
+.back-top {
+  position: fixed;
+  right: clamp(1rem, 2.5vw, 2rem);
+  bottom: clamp(1rem, 3vh, 2rem);
+  z-index: 60;
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-border);
+  background: var(--surface-raised);
+  color: var(--accent-text);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity var(--dur-fast) var(--ease-snap),
+              transform var(--dur-fast) var(--ease-snap),
+              visibility var(--dur-fast) var(--ease-snap),
+              background var(--dur-fast) var(--ease-snap);
+}
+
+.back-top.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.back-top:hover {
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-glow);
+}
+
 /* ── Utilities ── */
 .rating-icon {
   width: 1.05rem;
@@ -1026,7 +1100,8 @@
   background: var(--surface-glass);
   box-shadow: var(--shadow-md);
   padding: 1.4rem;
-  max-width: 820px;
+  max-width: 860px;
+  margin-inline: auto;
   align-items: start;
   position: relative;
   overflow: hidden;
@@ -1250,6 +1325,7 @@
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  justify-content: center;
   margin-top: 0.25rem;
 }
 
@@ -1436,6 +1512,16 @@
     position: sticky;
   }
 
+  .nav-tab {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.84rem;
+  }
+
+  .app-nav {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .brand-icon {
     width: 32px;
     height: 32px;
@@ -1459,6 +1545,10 @@
     --card-size: clamp(150px, 43vw, 200px);
   }
 
+  .home-skeleton__grid {
+    --card-size: clamp(140px, 41vw, 186px);
+  }
+
   .movie-title-row {
     flex-direction: column;
   }
@@ -1480,10 +1570,50 @@
   }
 }
 
+/* Sub-thumb hygiene: keep the pill nav from overflowing ultra-narrow phones */
+@media (max-width: 400px) {
+  .nav-tab {
+    flex: 1 1 0;
+    padding: 0.5rem 0.4rem;
+    font-size: 0.8rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Touch-optimized rating controls ── */
+/* On coarse pointers (phones/tablets) the poster rating buttons are too
+   small to tap accurately, so enlarge their hit area when revealed. */
+@media (hover: none) and (pointer: coarse) {
+  .poster-rating__option {
+    width: 17.5% !important;
+    height: 2.3rem;
+    right: auto;
+    bottom: 0.45rem;
+    border-radius: 12px;
+  }
+
+  .poster-rating__option .rating-icon,
+  .spotlight-rating__option .rating-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
+  .spotlight-rating__option {
+    width: 3.1rem;
+    height: 3.1rem;
+  }
+
+  /* Poster ratings stay revealed while a card holds focus (no hover on touch) */
+  .movie-card:focus-within .poster-rating__option {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1) translateY(0);
   }
 }

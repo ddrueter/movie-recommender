@@ -306,7 +306,7 @@ function MovieCard({
       <div className="poster">
         <div className="poster-media">
           {posterUrl ? (
-            <img src={posterUrl} alt={`${movie.title} poster`} />
+            <img src={posterUrl} alt={`${movie.title} poster`} loading="lazy" decoding="async" />
           ) : (
             <PosterFallback title={movie.title} />
           )}
@@ -482,7 +482,7 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
     <article className="spotlight-card target-card">
       {posterUrl ? (
         <div className="spotlight-card__backdrop" aria-hidden="true">
-          <img src={posterUrl} alt="" />
+          <img src={posterUrl} alt="" loading="lazy" decoding="async" />
         </div>
       ) : null}
       <a
@@ -493,7 +493,7 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
         aria-label={'View ' + movie.title + ' on TMDB'}
       >
         {posterUrl ? (
-          <img src={posterUrl} alt={movie.title + ' poster'} />
+          <img src={posterUrl} alt={movie.title + ' poster'} loading="lazy" decoding="async" />
         ) : (
           <PosterFallback title={movie.title} />
         )}
@@ -654,7 +654,14 @@ function App() {
   }, [navigate]);
 
   const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem('cinehound-theme') || 'dark'; } catch { return 'dark'; }
+    try {
+      const saved = localStorage.getItem('cinehound-theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+      // First visit: respect the OS color-scheme preference
+      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
   });
   const [searchIsOpen, setSearchIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -672,7 +679,14 @@ function App() {
   const [recsTotalAvailable, setRecsTotalAvailable] = useState(0);
   const [recommendationState, setRecommendationState] = useState({ status: 'idle', message: '', error: '', debug: null });
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
-  const [recsViewMode, setRecsViewMode] = useState('spotlight');
+  const [recsViewMode, setRecsViewMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cinehound-recs-view');
+      return saved === 'browse' ? 'browse' : 'spotlight';
+    } catch {
+      return 'spotlight';
+    }
+  });
   const [spotlightPick, setSpotlightPick] = useState(null);
   const [spotlightLoading, setSpotlightLoading] = useState(false);
   const [homeData, setHomeData] = useState(null);
@@ -687,6 +701,7 @@ function App() {
   const [expandedSectionLoading, setExpandedSectionLoading] = useState(false);
   const [expandedHasMore, setExpandedHasMore] = useState(true);
   const [announcement, setAnnouncement] = useState('');
+  const [showBackTop, setShowBackTop] = useState(false);
   const searchTimer = useRef(null);
   const searchSequence = useRef(0);
   const recommendationsSequence = useRef(0);
@@ -729,6 +744,30 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
     try { localStorage.setItem('cinehound-theme', theme); } catch { /* ignore */ }
   }, [theme]);
+
+  // Persist the recommendation view-mode preference across sessions
+  useEffect(() => {
+    try { localStorage.setItem('cinehound-recs-view', recsViewMode); } catch { /* ignore */ }
+  }, [recsViewMode]);
+
+  // Reveal a back-to-top control once the page scrolls substantially
+  useEffect(() => {
+    const onScroll = () => {
+      setShowBackTop(window.scrollY > 720);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+  };
 
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
 
@@ -1826,6 +1865,18 @@ function App() {
           . This product uses the TMDB API but is not endorsed or certified by TMDB.
         </p>
       </footer>
+
+      <button
+        type="button"
+        className={'back-top' + (showBackTop ? ' is-visible' : '')}
+        onClick={scrollToTop}
+        aria-label="Back to top"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 19V5" />
+          <path d="m5 12 7-7 7 7" />
+        </svg>
+      </button>
     </div>
   );
 }

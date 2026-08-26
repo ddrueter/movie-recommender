@@ -17,6 +17,22 @@
     <meta property="og:image" content="/cinehound-icon.svg" />
     <meta name="twitter:card" content="summary" />
 
+    <!-- Prevent a theme flash on first paint: apply the stored/OS theme to
+         <html> before the app bundle runs. Pure cosmetic; no app logic. -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('cinehound-theme');
+          var theme = stored === 'light' || stored === 'dark'
+            ? stored
+            : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
