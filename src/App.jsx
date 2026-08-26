@@ -197,6 +197,9 @@ function MovieCard({
   const posterUrl = movie.poster_url || makePosterUrl(movie.poster_path);
   const ratingPanelId = movieKey ? `rating-panel-${movieKey}` : `rating-panel-${movie.title}`;
   const isRatingOpen = expandedRatingMovieId === movieKey;
+  // Track focus-within so rating buttons are keyboard-reachable only while this
+  // card (or one of its children) has focus — keeps the tab order tidy.
+  const [panelFocused, setPanelFocused] = useState(false);
 
   // 5 buttons evenly spaced across the poster bottom: Don't Recommend + 4 rating options
   // Each button is 15% of poster width. Left positions: 4%, 23%, 42%, 61%, 80%
@@ -227,11 +230,18 @@ function MovieCard({
       tabIndex={0}
       aria-label={`View ${movie.title} on TMDB`}
       onClick={handleCardClick}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          handleCardClick(event);
+      onFocus={() => setPanelFocused(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          setPanelFocused(false);
         }
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        // Let the rating buttons handle their own Enter/Space activation.
+        if (event.target.closest('.poster-rating__option')) return;
+        event.preventDefault();
+        handleCardClick(event);
       }}
     >
       <div className="poster">
@@ -284,7 +294,7 @@ function MovieCard({
                   aria-checked={ratingValue === option.value}
                   aria-label={option.label}
                   disabled={savingRating}
-                  tabIndex={isRatingOpen ? 0 : -1}
+                  tabIndex={panelFocused || isRatingOpen ? 0 : -1}
                   onClick={(event) => {
                     event.stopPropagation();
                     // Toggle: if already selected, clear the rating
