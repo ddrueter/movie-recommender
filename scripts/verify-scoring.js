@@ -81,13 +81,18 @@ const empty = scoreContentBasedRecommendations({ ratings: [], metadata, similari
 check('empty ratings yields empty results', empty.length, 0);
 
 console.log('weightedRandomPick');
-// Weights are score+1: a=11, b=6, c=2 => total 19.
+// Default exponent = 3: weights are score^3 + 1 => a=1001, b=126, c=2 (total 1129).
 const items = [{ id: 'a', score: 10 }, { id: 'b', score: 5 }, { id: 'c', score: 1 }];
 check('returns null for empty', weightedRandomPick([]), null);
 check('returns single item', weightedRandomPick([items[0]]).id, 'a');
 check('rng=0 picks first', weightedRandomPick(items, () => 0).id, 'a');
-check('rng=0.58 picks second', weightedRandomPick(items, () => 0.58).id, 'b');
-check('rng=0.9 picks third', weightedRandomPick(items, () => 0.9).id, 'c');
+// "a" (score 10) now owns ~89% of the distribution (vs ~58% when linear)
+check('rng=0.5 still picks first (heavy weight)', weightedRandomPick(items, () => 0.5).id, 'a');
+check('rng=0.89 picks second', weightedRandomPick(items, () => 0.89).id, 'b');
+check('rng=0.999 picks third', weightedRandomPick(items, () => 0.999).id, 'c');
+// Linear mode (exponent=1) matches the old score+1 behavior
+check('linear rng=0.58 picks second', weightedRandomPick(items, () => 0.58, 1).id, 'b');
+check('linear rng=0.9 picks third', weightedRandomPick(items, () => 0.9, 1).id, 'c');
 // Zero-score items still get a +1 floor (equal weights)
 const zeroItems = [{ id: 'x', score: 0 }, { id: 'y', score: 0 }];
 check('zero-score rng=0 picks first', weightedRandomPick(zeroItems, () => 0).id, 'x');

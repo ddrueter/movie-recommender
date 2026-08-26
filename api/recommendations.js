@@ -85,6 +85,8 @@ export default async function handler(request, response) {
   // Apply the default BEFORE coercion so an explicit "0" (pure collaborative
   // filtering) is honored instead of being swallowed by the || fallback.
   const acclaimBlend = Math.min(1, Math.max(0, Number(process.env.RECS_POPULARITY_WEIGHT || 0.35)));
+  // Steepness of the weighted-random pick: higher = more concentrated on top fits.
+  const randomPower = Math.max(1, Number(process.env.RECS_RANDOM_POWER) || 3);
 
   const debug = {
     userRatingsCount: 0,
@@ -98,6 +100,7 @@ export default async function handler(request, response) {
     limit,
     mode,
     acclaimBlend,
+    randomPower,
     notes: [],
   };
 
@@ -181,7 +184,7 @@ export default async function handler(request, response) {
 
   let responseResults;
   if (mode === 'weighted') {
-    const pick = weightedRandomPick(results);
+    const pick = weightedRandomPick(results, Math.random, randomPower);
     responseResults = pick ? [pick] : [];
     debug.pickedIndex = pick ? results.indexOf(pick) : null;
   } else {

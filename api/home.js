@@ -3,6 +3,11 @@ import { createSupabaseClient } from './_lib/supabase.js';
 
 const TMDB_TRENDING_URL = 'https://api.themoviedb.org/3/trending/movie/week';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+const TRENDING_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+// Trending changes slowly (weekly); cache the raw TMDB list so repeated home
+// loads don't pay a network round-trip every time.
+let trendingCache = { pages: [], fetchedAt: 0 };
 
 export default async function handler(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
@@ -12,29 +17,39 @@ export default async function handler(request, response) {
   // Home page does not require auth — shows trending/popular/top-rated movies to everyone
   const supabase = createSupabaseClient();
 
-  // --- 1. Fetch TMDB trending (real-time, from TMDB trending endpoint) ---
+  // --- 1. Fetch TMDB trending (cached for 10 min) ---
   let trendingRaw = [];
   const tmdbToken = process.env.TMDB_READ_ACCESS_TOKEN;
   if (tmdbToken) {
-    // Fetch up to 3 pages of trending when limit > 20
-    const trendingPages = (limit > 0 && limit > 20) ? Math.min(3, Math.ceil(limit / 20)) : 1;
-    for (let page = 1; page <= trendingPages; page += 1) {
-      try {
-        const tmdbUrl = new URL(TMDB_TRENDING_URL);
-        tmdbUrl.searchParams.set('language', 'en-US');
-        tmdbUrl.searchParams.set('page', String(page));
-        const tmdbResponse = await fetch(tmdbUrl, {
-          headers: { Authorization: `Bearer ${tmdbToken}`, Accept: 'application/json' },
-        });
-        if (tmdbResponse.ok) {
-          const payload = await tmdbResponse.json();
-          if (Array.isArray(payload.results)) {
-            trendingRaw.push(...payload.results);
+    const cacheFresh = Date.now() - trendingCache.fetchedAt < TRENDING_CACHE_TTL_MS;
+    if (cacheFresh && trendingCache.pages.length > 0) {
+      trendingRaw = trendingCache.pages;
+    } else {
+      // Fetch up to 3 pages of trending when limit > 20
+      const trendingPages = (limit > 0 && limit > 20) ? Math.min(3, Math.ceil(limit / 20)) : 1;
+      const fetched = [];
+      for (let page = 1; page <= trendingPages; page += 1) {
+        try {
+          const tmdbUrl = new URL(TMDB_TRENDING_URL);
+          tmdbUrl.searchParams.set('language', 'en-US');
+          tmdbUrl.searchParams.set('page', String(page));
+          const tmdbResponse = await fetch(tmdbUrl, {
+            headers: { Authorization: `Bearer ${tmdbToken}`, Accept: 'application/json' },
+          });
+          if (tmdbResponse.ok) {
+            const payload = await tmdbResponse.json();
+            if (Array.isArray(payload.results)) {
+              fetched.push(...payload.results);
+            }
+            if (!payload.results || payload.results.length < 20) break;
           }
-          if (!payload.results || payload.results.length < 20) break;
+        } catch (err) {
+          console.error(`[home] TMDB trending page ${page} failed:`, err.message);
         }
-      } catch (err) {
-        console.error(`[home] TMDB trending page ${page} failed:`, err.message);
+      }
+      if (fetched.length > 0) {
+        trendingCache = { pages: fetched, fetchedAt: Date.now() };
+        trendingRaw = fetched;
       }
     }
   }

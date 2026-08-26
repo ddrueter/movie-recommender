@@ -163,19 +163,26 @@ export function scoreContentBasedRecommendations({
 }
 
 /**
- * Pick a single item from a scored list using weighted random sampling:
- * the probability of selection is proportional to the item's score. A floor
- * of +1 is added to every weight so even low-scoring candidates keep a
- * non-zero chance, keeping recommendations varied.
+ * Pick a single item from a scored list using weighted random sampling.
+ * Weight = score^exponent (plus a +1 floor so nothing is ever impossible).
+ *
+ * The exponent controls how heavily the pick favors high-match candidates:
+ *   1 = linear (a 70% is only 1.2x more likely than a 60%)
+ *   3 = default (a 70% is ~1.6x more likely than a 60%, and a 90% ~4.4x a 55%)
+ *   higher = even more concentrated on the very best fits
  *
  * @param {Array<{score: number}>} scored - items with a numeric score
  * @param {() => number} random - injectable RNG for deterministic testing
+ * @param {number} [exponent=3] - steepness of the weighting
  * @returns the picked item, or null when the list is empty
  */
-export function weightedRandomPick(scored, random = Math.random) {
+export function weightedRandomPick(scored, random = Math.random, exponent = 3) {
   if (!Array.isArray(scored) || scored.length === 0) return null;
 
-  const weights = scored.map((item) => Math.max(0, Number(item.score) || 0) + 1);
+  const weights = scored.map((item) => {
+    const score = Math.max(0, Number(item.score) || 0);
+    return Math.pow(score, exponent) + 1;
+  });
   const total = weights.reduce((sum, weight) => sum + weight, 0);
   if (total <= 0) return scored[0];
 

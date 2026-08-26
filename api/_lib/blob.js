@@ -10,7 +10,13 @@ export function getStaticMatrixPath() {
   return matrixPath;
 }
 
+let matrixCache = null;
+
 export async function loadStaticSimilarityMatrix() {
+  // The matrix is ~66MB; parsing it on every request is the dominant cost.
+  // Cache it in module scope so only the first request pays the parse penalty.
+  if (matrixCache) return matrixCache;
   const raw = await fs.readFile(matrixPath, 'utf8');
-  return JSON.parse(raw);
+  matrixCache = JSON.parse(raw);
+  return matrixCache;
 }
