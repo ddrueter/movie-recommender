@@ -155,6 +155,9 @@ export function scoreContentBasedRecommendations({
     });
 
   const normalized = normalizeScoresTo100(raw, ratings.length, acclaimBlend);
-  // Remove internal fields from output
-  return normalized.map(({ rawScore, vote_count, vote_average, ...rest }) => rest);
+  // Remove internal scoring fields from the public output
+  const INTERNAL_FIELDS = new Set(['rawScore', 'vote_count', 'vote_average']);
+  return normalized.map((movie) =>
+    Object.fromEntries(Object.entries(movie).filter(([key]) => !INTERNAL_FIELDS.has(key))),
+  );
 }

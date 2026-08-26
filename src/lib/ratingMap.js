@@ -12,27 +12,6 @@ export function formatRatingValue(value) {
 }
 
 /**
- * Return a CSS tone class and label for a personal rating value.
- * Green-yellow-red gradient: Love = green, Like = blue-green, Meh = yellow, Dislike = red
- */
-export function getRatingTone(value) {
-  switch (value) {
-    case 2:
-      return { tone: 'love', label: 'Love' };
-    case 1:
-      return { tone: 'like', label: 'Like' };
-    case 0:
-      return { tone: 'meh', label: 'Meh' };
-    case -1:
-      return { tone: 'hidden', label: 'Hidden' };
-    case -2:
-      return { tone: 'dislike', label: 'Dislike' };
-    default:
-      return { tone: 'nr', label: '' };
-  }
-}
-
-/**
  * Return a CSS tone class and label for a community rating (vote_average).
  * Green-yellow-red gradient.
  */

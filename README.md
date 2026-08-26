@@ -46,7 +46,7 @@ Metadata and poster art come from TMDB, cached in Supabase for speed. The simila
 ### Quick Start
 
 ```bash
-git clone https://github.com/ddrueter/cinehound.git
+git clone https://github.com/ddrueter/movie-recommender.git
 cd cinehound
 npm install
 cp .env.example .env

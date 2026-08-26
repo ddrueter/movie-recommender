@@ -17,13 +17,6 @@ let SUPABASE_BATCH_SIZE = 100;
 let TMDB_BYTE_BUDGET = 450000000; // ~450MB (leaving headroom under 500MB)
 let TMDB_YEAR_RANGES = '';
 
-function redactValue(value) {
-  if (!value) return '';
-  const text = String(value);
-  if (text.length <= 8) return '***';
-  return `${text.slice(0, 4)}…${text.slice(-4)}`;
-}
-
 function parseEnvFile(content) {
   const entries = {};
   const lines = String(content || '').split(/\r?\n/);
@@ -101,9 +94,6 @@ let originalConsoleInfo = null;
 
 // Current movie title for progress display
 let currentMovieTitle = '';
-let currentMovieId = '';
-let currentSortLabel = '';
-let currentBucketLabel = '';
 
 // TMDB discover sorts to cycle through for maximum coverage
 // Each sort gives a different 10k movie set with minimal overlap
@@ -181,15 +171,12 @@ function saveCrawlState(state) {
 async function loadAndSave() {
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-  const envLoadResult = loadLocalEnv();
+  loadLocalEnv();
   resolveConfig();  // Re-read after .env is loaded
   const incremental = isIncremental();
 
   const startTime = Date.now();
 
-  const supabaseUrl = process.env.SUPABASE_URL || '';
-  const hasSupabaseSecret = Boolean(process.env.SUPABASE_SECRET_KEY);
-  const hasTmdbToken = Boolean(process.env.TMDB_READ_ACCESS_TOKEN);
 
   // Install console.info override BEFORE creating the supabase client,
   // so all metadata module messages are captured from the start.
@@ -203,10 +190,6 @@ async function loadAndSave() {
         const titleMatch = msg.match(/"title":\s*"([^"]+)"/);
         if (titleMatch) {
           currentMovieTitle = titleMatch[1];
-        }
-        const idMatch = msg.match(/"tmdbId":\s*"([^"]+)"/);
-        if (idMatch) {
-          currentMovieId = idMatch[1];
         }
       } catch {
         // ignore parse errors
@@ -271,8 +254,6 @@ async function loadAndSave() {
     crawlState,
     sorts: DISCOVER_SORTS,
     onPageProgress: (page, discovered, bucketLabel, sortLabel, byteUsage) => {
-      currentBucketLabel = bucketLabel || '';
-      currentSortLabel = sortLabel || '';
       writeProgress(page, discovered, TMDB_METADATA_LIMIT, bucketLabel, sortLabel, byteUsage, TMDB_BYTE_BUDGET);
     },
   });
