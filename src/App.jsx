@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import {
@@ -483,9 +483,6 @@ function App() {
   const hasSearchResults = searchResults.length > 0;
   const hasRecommendations = recommendations.length > 0;
   const recsHasMore = recsOffset + RECS_PER_PAGE < recsTotalAvailable;
-  const visibleSearchResults = useMemo(() => {
-    return searchResults;
-  }, [searchResults]);
 
   // Persistent auth: Firebase onAuthStateChanged survives page refreshes
   useEffect(() => {
@@ -910,8 +907,8 @@ function App() {
     return (
       <>
         <SectionHeader title={`Results for “${query.trim()}”`} />
-        <div className={`results-grid results-grid--search${visibleSearchResults.length <= 1 ? ' results-grid--single' : ''}`} aria-label="Search results">
-          {visibleSearchResults.map((movie) => {
+        <div className={`results-grid results-grid--search${searchResults.length <= 1 ? ' results-grid--single' : ''}`} aria-label="Search results">
+          {searchResults.map((movie) => {
             const movieKey = getMovieKey(movie);
             const currentRating = movieKey ? draftRatings[movieKey] ?? movie.personal_rating ?? null : movie.personal_rating ?? null;
             const isSelected = selectedMovieId === movieKey;

@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "node scripts/verify-scoring.js",
+    "test": "node scripts/verify-scoring.js && node scripts/verify-metadata.js",
     "preview": "vite preview",
     "build-matrix": "node scripts/rebuild-similarity-matrix.js",
     "refresh-metadata": "node scripts/cache-movie-metadata.js",
