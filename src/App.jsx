@@ -250,7 +250,6 @@ function MovieCard({
             className={[
               'poster-rating',
               isRatingOpen ? 'is-open' : '',
-              authEnabled ? '' : 'poster-rating--disabled',
             ]
               .filter(Boolean)
               .join(' ')}
@@ -350,11 +349,12 @@ function MovieCard({
   );
 }
 
-function StateCard({ title, message, tone = 'neutral' }) {
+function StateCard({ title, message, tone = 'neutral', children }) {
   return (
     <div className={`state-card state-card--${tone}`} role={tone === 'error' ? 'alert' : 'status'} aria-live="polite">
       <h3>{title}</h3>
       {message ? <p>{message}</p> : null}
+      {children}
     </div>
   );
 }
@@ -414,6 +414,7 @@ function App() {
     : location.pathname === '/trending' ? 'trending-full'
     : location.pathname === '/popular' ? 'popular-full'
     : location.pathname === '/most-acclaimed' ? 'topRated-full'
+    : location.pathname === '/search' ? 'search'
     : 'home';
 
   const setActiveTab = useCallback((tab) => {
@@ -438,7 +439,6 @@ function App() {
   const [searchError, setSearchError] = useState('');
   const [selectedMovieId, setSelectedMovieId] = useState(null);
   const [draftRatings, setDraftRatings] = useState({});
-  const [userId, setUserId] = useState('demo-user');
   const [authSession, setAuthSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
@@ -448,11 +448,12 @@ function App() {
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
   const [homeData, setHomeData] = useState(null);
   const [homeDataLoading, setHomeDataLoading] = useState(false);
+  const [homeError, setHomeError] = useState('');
   const [userRatingsHistory, setUserRatingsHistory] = useState([]);
   const [userRatingsLoading, setUserRatingsLoading] = useState(false);
+  const [userRatingsError, setUserRatingsError] = useState('');
   const [savingRatingMovieId, setSavingRatingMovieId] = useState(null);
   const [expandedRatingMovieId, setExpandedRatingMovieId] = useState(null);
-  const [expandedHomeSection, setExpandedHomeSection] = useState(null);
   const [expandedSectionData, setExpandedSectionData] = useState(null);
   const [expandedSectionLoading, setExpandedSectionLoading] = useState(false);
   const [announcement, setAnnouncement] = useState('');
@@ -462,9 +463,7 @@ function App() {
   const homeSequence = useRef(0);
   const searchInputRef = useRef(null);
   const recsOffsetRef = useRef(0);
-  const recsLoadMoreRef = useRef(null);
 
-  const resolvedUserId = userId.trim() || authSession?.uid || 'demo-user';
   const authToken = authSession?.token ?? '';
   const authLabel = authSession?.label ?? authSession?.email ?? authSession?.uid ?? '';
   const authEnabled = Boolean(authToken);
@@ -483,13 +482,7 @@ function App() {
 
     onAuthStateChanged((session) => {
       if (!mounted) return;
-      if (session) {
-        setAuthSession(session);
-        setUserId(session.uid || 'demo-user');
-      } else {
-        setAuthSession(null);
-        setUserId('demo-user');
-      }
+      setAuthSession(session);
     }).then((unsub) => {
       if (mounted) unsubscribe = unsub;
       else unsub?.();
@@ -515,14 +508,16 @@ function App() {
   const loadHomeData = useCallback(async () => {
     const requestId = ++homeSequence.current;
     setHomeDataLoading(true);
+    setHomeError('');
 
     try {
-      const data = await fetchHomeData(resolvedUserId, authToken);
+      const data = await fetchHomeData(authToken);
       if (homeSequence.current === requestId) {
         setHomeData(data);
       }
     } catch (error) {
       if (homeSequence.current === requestId) {
+        setHomeError(error.message);
         setAnnouncement(`Home data failed. ${error.message}`);
       }
     } finally {
@@ -530,7 +525,7 @@ function App() {
         setHomeDataLoading(false);
       }
     }
-  }, [authToken, resolvedUserId]);
+  }, [authToken]);
 
   const loadRecommendations = useCallback(async (append = false) => {
     const requestId = ++recommendationsSequence.current;
@@ -542,7 +537,7 @@ function App() {
     }
 
     try {
-      const data = await fetchRecommendations(resolvedUserId, authToken, append ? offset : undefined, RECS_PER_PAGE);
+      const data = await fetchRecommendations(authToken, append ? offset : undefined, RECS_PER_PAGE);
 
       if (recommendationsSequence.current !== requestId) {
         return;
@@ -584,26 +579,30 @@ function App() {
         setRecommendationsLoading(false);
       }
     }
-  }, [authToken, resolvedUserId]);
+  }, [authToken]);
 
   const loadUserRatings = useCallback(async () => {
     setUserRatingsLoading(true);
+    setUserRatingsError('');
     try {
-      const data = await fetchUserRatings(resolvedUserId, authToken);
+      const data = await fetchUserRatings(authToken);
       setUserRatingsHistory(data.results ?? []);
     } catch (error) {
+      setUserRatingsError(error.message);
       setAnnouncement(`Could not load ratings history. ${error.message}`);
     } finally {
       setUserRatingsLoading(false);
     }
-  }, [authToken, resolvedUserId]);
+  }, [authToken]);
 
   useEffect(() => {
     if (activeTab === 'home' || activeTab === 'trending-full' || activeTab === 'popular-full' || activeTab === 'topRated-full') {
       void loadHomeData();
       void loadRecommendations();
+    } else if (activeTab === 'discover') {
+      void loadRecommendations();
     }
-  }, [activeTab, loadHomeData]);
+  }, [activeTab, loadHomeData, loadRecommendations]);
 
   useEffect(() => {
     if (activeTab === 'history') {
@@ -615,8 +614,10 @@ function App() {
     setQuery(value);
     setSearchError('');
     if (value.trim()) {
-      setActiveTab('search');
       setSearchIsOpen(true);
+      if (location.pathname !== '/search') {
+        navigate('/search', { replace: true });
+      }
     }
 
     if (searchTimer.current) {
@@ -634,6 +635,9 @@ function App() {
         setSearchTotalPages(0);
         setSelectedMovieId(null);
         setExpandedRatingMovieId(null);
+        if (location.pathname === '/search') {
+          navigate('/', { replace: true });
+        }
         return;
       }
 
@@ -721,7 +725,6 @@ function App() {
 
       try {
         await saveRating({
-          userId: resolvedUserId,
           tmdbId: movieKey,
           rating: null,
           authToken,
@@ -758,7 +761,6 @@ function App() {
 
     try {
       await saveRating({
-        userId: resolvedUserId,
         tmdbId: movieKey,
         rating,
         authToken,
@@ -803,7 +805,6 @@ function App() {
       setAuthLoading(true);
       const session = await getDemoSession();
       setAuthSession(session);
-      setUserId(session.uid);
       setAnnouncement(`Signed in as ${session.label}.`);
     } catch (error) {
       setAnnouncement(`Demo auth failed. ${error.message}`);
@@ -817,7 +818,6 @@ function App() {
       setAuthLoading(true);
       const session = await signInWithFirebasePopup();
       setAuthSession(session);
-      setUserId(session.uid);
       setAnnouncement(`Signed in as ${session.label}.`);
     } catch (error) {
       setAnnouncement(`Firebase login failed. ${error.message}`);
@@ -885,6 +885,7 @@ function App() {
 
     return (
       <>
+        <SectionHeader title={`Results for “${query.trim()}”`} />
         <div className={`results-grid results-grid--search${visibleSearchResults.length <= 1 ? ' results-grid--single' : ''}`} aria-label="Search results">
           {visibleSearchResults.map((movie) => {
             const movieKey = getMovieKey(movie);
@@ -923,14 +924,14 @@ function App() {
   };
 
   const mainElRef = useRef(null);
-  const homeColumns = useGridColumns(mainElRef, 160, 16);
+  const homeColumns = useGridColumns(mainElRef);
   const homeRows = 2; // compact: 2 rows per section on home page
 
   // Derive expanded section key from state or route
   const fullPageSection = activeTab === 'trending-full' ? 'trending'
     : activeTab === 'popular-full' ? 'popular'
     : activeTab === 'topRated-full' ? 'topRated'
-    : expandedHomeSection;
+    : null;
 
   // Load expanded section data when a section is expanded
   useEffect(() => {
@@ -944,7 +945,7 @@ function App() {
     const loadLimit = homeColumns * expandedRows;
 
     setExpandedSectionLoading(true);
-    fetchHomeData(resolvedUserId, authToken, fullPageSection, loadLimit)
+    fetchHomeData(authToken, fullPageSection, loadLimit)
       .then((data) => {
         if (!cancelled) {
           setExpandedSectionData(data.results || []);
@@ -956,7 +957,7 @@ function App() {
       });
 
     return () => { cancelled = true; };
-  }, [fullPageSection, homeColumns, resolvedUserId, authToken]);
+  }, [fullPageSection, homeColumns, authToken]);
 
   const handleLoadMoreExpanded = useCallback(async () => {
     if (!fullPageSection || expandedSectionLoading) return;
@@ -965,7 +966,7 @@ function App() {
 
     setExpandedSectionLoading(true);
     try {
-      const data = await fetchHomeData(resolvedUserId, authToken, fullPageSection, loadLimit);
+      const data = await fetchHomeData(authToken, fullPageSection, loadLimit);
       const fresh = data.results || [];
       // Merge: keep existing items in place, append only new unique ones
       const existingIds = new Set(existing.map((m) => String(m.tmdb_id)));
@@ -976,11 +977,21 @@ function App() {
     } finally {
       setExpandedSectionLoading(false);
     }
-  }, [fullPageSection, expandedSectionLoading, expandedSectionData, homeColumns, resolvedUserId, authToken]);
+  }, [fullPageSection, expandedSectionLoading, expandedSectionData, homeColumns, authToken]);
 
   const renderHomeBody = () => {
     if (homeDataLoading && !homeData) {
       return <StateCard title="Loading" tone="loading" />;
+    }
+
+    if (homeError && !homeData) {
+      return (
+        <StateCard title="Couldn't load home" message={homeError} tone="error">
+          <div className="state-card__actions">
+            <button type="button" onClick={loadHomeData}>Retry</button>
+          </div>
+        </StateCard>
+      );
     }
 
     const trending = homeData?.trending ?? [];
@@ -1003,7 +1014,7 @@ function App() {
         <div>
           <SectionHeader
             title={activeSection.title}
-            onViewMore={() => { setExpandedHomeSection(null); navigate('/'); }}
+            onViewMore={() => navigate('/')}
             viewMoreLabel="← Back"
           />
           {expandedSectionLoading && movies.length === 0 ? (
@@ -1106,11 +1117,33 @@ function App() {
       return <StateCard title="Loading" tone="loading" />;
     }
 
+    if (!authEnabled) {
+      return (
+        <StateCard
+          title="Sign in to unlock recommendations"
+          message="CineHound builds a taste profile from the films you rate, then surfaces your next favorites. Sign in or jump into the Demo session to try it instantly."
+          tone="neutral"
+        >
+          <div className="state-card__actions">
+            <button type="button" onClick={handleFirebaseLogin} disabled={authLoading}>Sign in with Google</button>
+            <button type="button" className="subtle-button" onClick={handleDemoLogin} disabled={authLoading}>Try Demo</button>
+          </div>
+        </StateCard>
+      );
+    }
+
+    if (recommendationState.status === 'error') {
+      return (
+        <StateCard title="Recommendations unavailable" message={recommendationState.error || 'Something went wrong while generating your recommendations.'} tone="error">
+          <div className="state-card__actions">
+            <button type="button" onClick={() => loadRecommendations()} disabled={recommendationsLoading}>Retry</button>
+          </div>
+        </StateCard>
+      );
+    }
+
     if (!hasRecommendations) {
-      if (recommendationState.status === 'empty') {
-        return <StateCard title="No recommendations yet" message="Insufficient data vectors. Rate films to establish your taste profile." tone="neutral" />;
-      }
-      return null;
+      return <StateCard title="No recommendations yet" message="Rate a few films to establish your taste profile, then CineHound will surface your next favorites." tone="neutral" />;
     }
 
     return (
@@ -1159,8 +1192,18 @@ function App() {
       return <StateCard title="Loading" tone="loading" />;
     }
 
+    if (userRatingsError) {
+      return (
+        <StateCard title="Couldn't load your ratings" message={userRatingsError} tone="error">
+          <div className="state-card__actions">
+            <button type="button" onClick={loadUserRatings}>Retry</button>
+          </div>
+        </StateCard>
+      );
+    }
+
     if (userRatingsHistory.length === 0) {
-      return <StateCard title="No ratings yet" message="No ratings logged. Rate films to populate your scent trail." tone="neutral" />;
+      return <StateCard title="No ratings yet" message="Rate films to populate your scent trail, and they'll show up here." tone="neutral" />;
     }
 
     return (
@@ -1203,7 +1246,7 @@ function App() {
     if (!debug) return null;
 
     const rows = [
-      ['User ID', debug.userId ?? resolvedUserId],
+      ['User ID', debug.userId ?? authSession?.uid ?? '—'],
       ['Ratings', debug.ratingsCount ?? '—'],
       ['User ratings', debug.userRatingsCount ?? '—'],
       ['Metadata rows', debug.metadataCount ?? '—'],
@@ -1238,7 +1281,7 @@ function App() {
         </dl>
       </details>
     );
-  }, [recommendationState.debug, recommendationState.status, resolvedUserId]);
+  }, [recommendationState.debug, recommendationState.status, authSession?.uid]);
 
   return (
     <div className="app-shell">
@@ -1324,21 +1367,14 @@ function App() {
               </button>
             </div>
           ) : (
-            <>
-              <label className="identity-field">
-                <span className="sr-only">User ID</span>
-                <input value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="User ID" />
-              </label>
-
-              <div className="auth-actions">
-                <button type="button" onClick={handleFirebaseLogin} disabled={authLoading}>
-                  Sign in
-                </button>
-                <button type="button" className="subtle-button" onClick={handleDemoLogin} disabled={authLoading}>
-                  Demo
-                </button>
-              </div>
-            </>
+            <div className="auth-actions">
+              <button type="button" onClick={handleFirebaseLogin} disabled={authLoading}>
+                Sign in
+              </button>
+              <button type="button" className="subtle-button" onClick={handleDemoLogin} disabled={authLoading}>
+                Demo
+              </button>
+            </div>
           )}
         </div>
       </header>

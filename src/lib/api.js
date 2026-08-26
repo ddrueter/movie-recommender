@@ -74,11 +74,11 @@ export async function searchMovies(query, token, page = 1) {
   };
 }
 
-export async function saveRating(payload) {
+export async function saveRating({ authToken, tmdbId, rating }) {
   return requestJson('/api/ratings', {
     method: 'POST',
-    token: payload.authToken,
-    body: JSON.stringify(payload),
+    token: authToken,
+    body: JSON.stringify({ tmdbId, rating }),
   });
 }
 
@@ -94,33 +94,22 @@ export async function syncProfile(payload) {
   });
 }
 
-export async function fetchRecommendations(userId, token, offset, limit) {
+export async function fetchRecommendations(token, offset, limit) {
   const params = new URLSearchParams();
-  if (userId) params.set('userId', userId);
   if (offset != null) params.set('offset', String(offset));
   if (limit != null) params.set('limit', String(limit));
   const suffix = params.toString() ? `?${params.toString()}` : '';
   return requestJson(`/api/recommendations${suffix}`, { token });
 }
 
-export async function fetchHomeData(userId, token, section, limit) {
+export async function fetchHomeData(token, section, limit) {
   const params = new URLSearchParams();
-  if (userId) params.set('userId', userId);
   if (section) params.set('section', section);
   if (limit) params.set('limit', String(limit));
   const suffix = params.toString() ? `?${params.toString()}` : '';
   return requestJson(`/api/home${suffix}`, { token });
 }
 
-export async function fetchTrending(userId, token, limit = 20) {
-  const params = new URLSearchParams();
-  if (userId) params.set('userId', userId);
-  if (limit) params.set('limit', String(limit));
-  const suffix = params.toString() ? `?${params.toString()}` : '';
-  return requestJson(`/api/trending${suffix}`, { token });
-}
-
-export async function fetchUserRatings(userId, token) {
-  const suffix = userId ? `?userId=${encodeURIComponent(userId)}` : '';
-  return requestJson(`/api/user-ratings${suffix}`, { token });
+export async function fetchUserRatings(token) {
+  return requestJson('/api/user-ratings', { token });
 }

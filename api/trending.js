@@ -19,7 +19,6 @@ const TRENDING_PAGES = 3; // 3 pages × 20 = up to 60 trending movies
  */
 export default async function handler(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
-  const userId = url.searchParams.get('userId') || 'demo-user';
   const limit = Math.min(Number(url.searchParams.get('limit') || 20), 60);
 
   const tmdbToken = process.env.TMDB_READ_ACCESS_TOKEN;
@@ -143,18 +142,21 @@ export default async function handler(request, response) {
     }
   }
 
-  // --- 4. Load personal ratings if authenticated ---
+  // --- 4. Load personal ratings if authenticated (optional auth) ---
   let ratingsByTmdbId = new Map();
   try {
     const token = getBearerToken(request);
     if (token) {
-      await verifyFirebaseToken(token);
-      const ratingsResult = await supabase
-        .from('ratings')
-        .select('tmdb_id, rating')
-        .eq('user_id', userId);
-      const userRatings = ratingsResult.data || [];
-      ratingsByTmdbId = new Map(userRatings.map((r) => [String(r.tmdb_id), r.rating]));
+      const decoded = await verifyFirebaseToken(token);
+      const userId = String(decoded?.uid || '').trim();
+      if (userId) {
+        const ratingsResult = await supabase
+          .from('ratings')
+          .select('tmdb_id, rating')
+          .eq('user_id', userId);
+        const userRatings = ratingsResult.data || [];
+        ratingsByTmdbId = new Map(userRatings.map((r) => [String(r.tmdb_id), r.rating]));
+      }
     }
   } catch {
     // Auth is optional

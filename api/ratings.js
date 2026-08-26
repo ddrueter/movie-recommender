@@ -13,11 +13,19 @@ export default async function handler(request, response) {
     return;
   }
 
+  let decoded;
   try {
-    await verifyFirebaseToken(getBearerToken(request));
+    decoded = await verifyFirebaseToken(getBearerToken(request));
   } catch (error) {
     console.warn('[ratings] auth rejected', { error: error.message });
     response.status(401).json({ error: error.message });
+    return;
+  }
+
+  // The authenticated identity is authoritative — never trust a client-supplied userId.
+  const userId = String(decoded?.uid || '').trim();
+  if (!userId) {
+    response.status(401).json({ error: 'Invalid auth token' });
     return;
   }
 
@@ -40,12 +48,11 @@ export default async function handler(request, response) {
   }
 
   console.info('[ratings] parsed body', {
-    hasUserId: Boolean(body.userId),
     hasTmdbId: Boolean(body.tmdbId),
     ratingType: typeof body.rating,
   });
 
-  if (!body.userId || !body.tmdbId) {
+  if (!body.tmdbId) {
     response.status(400).json({ error: 'Missing required rating fields' });
     return;
   }
@@ -55,14 +62,14 @@ export default async function handler(request, response) {
   // If rating is null, delete the rating row
   if (body.rating === null) {
     console.info('[ratings] deleting rating', {
-      userId: body.userId,
+      userId,
       tmdbId: body.tmdbId,
     });
 
     const { error } = await supabase
       .from('ratings')
       .delete()
-      .eq('user_id', body.userId)
+      .eq('user_id', userId)
       .eq('tmdb_id', body.tmdbId);
 
     if (error) {
@@ -82,14 +89,14 @@ export default async function handler(request, response) {
   }
 
   console.info('[ratings] writing to Supabase', {
-    userId: body.userId,
+    userId,
     tmdbId: body.tmdbId,
     rating: body.rating,
   });
 
   const { data, error } = await supabase.from('ratings').upsert([
     {
-      user_id: body.userId,
+      user_id: userId,
       tmdb_id: body.tmdbId,
       rating: body.rating,
       created_at: new Date().toISOString(),

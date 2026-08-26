@@ -6,7 +6,6 @@ const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 
 export default async function handler(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
-  const userId = url.searchParams.get('userId') || 'demo-user';
   const section = url.searchParams.get('section'); // 'trending' | 'popular' | 'topRated' — single-section mode
   const limit = Math.min(Number(url.searchParams.get('limit') || 0) || 0, 100); // 0 = default
 
@@ -74,18 +73,21 @@ export default async function handler(request, response) {
     }
   }
 
-  // --- 4. Load user's personal ratings for annotation ---
+  // --- 4. Load user's personal ratings for annotation (optional auth) ---
   let ratingsByTmdbId = new Map();
   try {
     const token = getBearerToken(request);
     if (token) {
-      await verifyFirebaseToken(token);
-      const ratingsResult = await supabase
-        .from('ratings')
-        .select('tmdb_id, rating')
-        .eq('user_id', userId);
-      const userRatings = ratingsResult.data || [];
-      ratingsByTmdbId = new Map(userRatings.map((r) => [String(r.tmdb_id), r.rating]));
+      const decoded = await verifyFirebaseToken(token);
+      const userId = String(decoded?.uid || '').trim();
+      if (userId) {
+        const ratingsResult = await supabase
+          .from('ratings')
+          .select('tmdb_id, rating')
+          .eq('user_id', userId);
+        const userRatings = ratingsResult.data || [];
+        ratingsByTmdbId = new Map(userRatings.map((r) => [String(r.tmdb_id), r.rating]));
+      }
     }
   } catch {
     // Auth is optional; proceed without personal ratings
@@ -139,8 +141,8 @@ export default async function handler(request, response) {
 
   if (section) {
     const sectionData = { trending, popular, topRated };
-    return response.status(200).json({ results: sectionData[section] || [], userId });
+    return response.status(200).json({ results: sectionData[section] || [] });
   }
 
-  response.status(200).json({ trending, popular, topRated, userId });
+  response.status(200).json({ trending, popular, topRated });
 }

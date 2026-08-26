@@ -4,13 +4,18 @@ import { createSupabaseClient } from './_lib/supabase.js';
 const BATCH_SIZE = 50;
 
 export default async function handler(request, response) {
-  const url = new URL(request.url, `http://${request.headers.host}`);
-  const userId = url.searchParams.get('userId') || 'demo-user';
-
+  let decoded;
   try {
-    await verifyFirebaseToken(getBearerToken(request));
+    decoded = await verifyFirebaseToken(getBearerToken(request));
   } catch (error) {
     response.status(401).json({ error: error.message });
+    return;
+  }
+
+  // The authenticated identity is authoritative — never trust a client-supplied userId.
+  const userId = String(decoded?.uid || '').trim();
+  if (!userId) {
+    response.status(401).json({ error: 'Invalid auth token' });
     return;
   }
 

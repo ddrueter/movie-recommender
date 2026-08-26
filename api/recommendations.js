@@ -77,13 +77,11 @@ function collectCandidateIds(matrix, userRatingIds) {
 
 export default async function handler(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
-  const userId = url.searchParams.get('userId') || 'demo-user';
   const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0);
   const limit = Math.max(1, Math.min(100, Number(url.searchParams.get('limit')) || 24));
   const acclaimBlend = Math.min(1, Math.max(0, Number(process.env.RECS_POPULARITY_WEIGHT) || 0.35));
 
   const debug = {
-    userId,
     userRatingsCount: 0,
     candidateIdsFromMatrix: 0,
     metadataLoaded: 0,
@@ -97,12 +95,21 @@ export default async function handler(request, response) {
     notes: [],
   };
 
+  let decoded;
   try {
-    await verifyFirebaseToken(getBearerToken(request));
+    decoded = await verifyFirebaseToken(getBearerToken(request));
   } catch (error) {
     response.status(401).json({ error: error.message, debug: { ...debug, notes: [...debug.notes, 'Auth rejected before recommendation lookup.'] } });
     return;
   }
+
+  // The authenticated identity is authoritative — never trust a client-supplied userId.
+  const userId = String(decoded?.uid || '').trim();
+  if (!userId) {
+    response.status(401).json({ error: 'Invalid auth token', debug: { ...debug, notes: [...debug.notes, 'Auth token missing uid.'] } });
+    return;
+  }
+  debug.userId = userId;
 
   const supabase = createSupabaseClient();
 
