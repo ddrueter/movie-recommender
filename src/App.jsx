@@ -528,6 +528,12 @@ function App() {
   }, [authToken]);
 
   const loadRecommendations = useCallback(async (append = false) => {
+    if (!authToken) {
+      setRecommendations([]);
+      setRecommendationState({ status: 'idle', message: '', error: '', debug: null });
+      return;
+    }
+
     const requestId = ++recommendationsSequence.current;
     const offset = append ? recsOffsetRef.current : 0;
 
@@ -582,6 +588,12 @@ function App() {
   }, [authToken]);
 
   const loadUserRatings = useCallback(async () => {
+    if (!authToken) {
+      setUserRatingsHistory([]);
+      setUserRatingsError('');
+      return;
+    }
+
     setUserRatingsLoading(true);
     setUserRatingsError('');
     try {
@@ -1188,6 +1200,20 @@ function App() {
   };
 
   const renderHistoryBody = () => {
+    if (!authEnabled) {
+      return (
+        <StateCard
+          title="Sign in to view your ratings"
+          message="Your scent trail — every film you've rated — lives here. Sign in or jump into the Demo session to see it."
+          tone="neutral"
+        >
+          <div className="state-card__actions">
+            <button type="button" onClick={handleDemoLogin} disabled={authLoading}>Try Demo</button>
+          </div>
+        </StateCard>
+      );
+    }
+
     if (userRatingsLoading && userRatingsHistory.length === 0) {
       return <StateCard title="Loading" tone="loading" />;
     }
