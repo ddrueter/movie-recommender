@@ -42,7 +42,6 @@ function loadBackendEnv(mode) {
     'SUPABASE_PUBLISHABLE_KEY',
     'SUPABASE_SECRET_KEY',
     'TMDB_READ_ACCESS_TOKEN',
-    'BLOB_READ_WRITE_TOKEN',
     'RECS_POPULARITY_WEIGHT',
   ];
 
