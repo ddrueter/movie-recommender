@@ -521,22 +521,23 @@
 
 .home-hero__cross {
   position: absolute;
-  background: var(--accent-border);
+  background: linear-gradient(90deg, transparent, var(--accent-secondary-border), transparent);
 }
 
 .home-hero__cross--h {
   top: 50%;
-  right: -10%;
-  left: 70%;
+  left: 88%;
+  width: 188px;
   height: 1px;
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
 }
 
 .home-hero__cross--v {
-  top: 0;
-  bottom: 0;
+  top: 50%;
   left: 88%;
   width: 1px;
+  height: 188px;
+  transform: translate(-50%, -50%);
 }
 
 .home-hero__inner {
