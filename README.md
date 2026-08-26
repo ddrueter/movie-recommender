@@ -103,7 +103,6 @@ Push to GitHub and import into Vercel. Add all environment variables from your `
 ├── api/                        # Vercel serverless functions
 │   ├── _lib/                   # Shared backend utilities
 │   ├── home.js                 # GET /api/home — trending, popular, top rated
-│   ├── trending.js             # GET /api/trending — TMDB trending + cache
 │   ├── recommendations.js      # GET /api/recommendations
 │   ├── search-tmdb.js          # GET /api/search-tmdb
 │   ├── ratings.js              # POST /api/ratings
