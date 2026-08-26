@@ -1,6 +1,6 @@
 import { getBearerToken, verifyFirebaseToken } from './_lib/auth.js';
 import { createSupabaseClient } from './_lib/supabase.js';
-import { scoreContentBasedRecommendations } from './_lib/content-recs.js';
+import { scoreContentBasedRecommendations, weightedRandomPick } from './_lib/content-recs.js';
 import { getStaticMatrixPath, loadStaticSimilarityMatrix } from './_lib/blob.js';
 
 const METADATA_BATCH_SIZE = 100;
@@ -79,6 +79,9 @@ export default async function handler(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
   const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0);
   const limit = Math.max(1, Math.min(100, Number(url.searchParams.get('limit')) || 24));
+  // 'ranked' returns a deterministic, score-sorted page; 'weighted' returns a
+  // single recommendation chosen by weighted random sampling over all matches.
+  const mode = url.searchParams.get('mode') === 'weighted' ? 'weighted' : 'ranked';
   // Apply the default BEFORE coercion so an explicit "0" (pure collaborative
   // filtering) is honored instead of being swallowed by the || fallback.
   const acclaimBlend = Math.min(1, Math.max(0, Number(process.env.RECS_POPULARITY_WEIGHT || 0.35)));
@@ -93,6 +96,7 @@ export default async function handler(request, response) {
     totalAvailable: 0,
     offset,
     limit,
+    mode,
     acclaimBlend,
     notes: [],
   };
@@ -175,9 +179,16 @@ export default async function handler(request, response) {
 
   debug.totalAvailable = results.length;
 
-  // Apply pagination
-  const pagedResults = results.slice(offset, offset + limit);
-  debug.resultCount = pagedResults.length;
+  let responseResults;
+  if (mode === 'weighted') {
+    const pick = weightedRandomPick(results);
+    responseResults = pick ? [pick] : [];
+    debug.pickedIndex = pick ? results.indexOf(pick) : null;
+  } else {
+    // Deterministic, score-sorted page
+    responseResults = results.slice(offset, offset + limit);
+  }
+  debug.resultCount = responseResults.length;
   debug.offset = offset;
   debug.limit = limit;
 
@@ -195,7 +206,7 @@ export default async function handler(request, response) {
     userId,
     matrixLoaded: debug.matrixLoaded,
     matrixPath: debug.matrixPath,
-    results: pagedResults,
+    results: responseResults,
     totalAvailable: results.length,
     acclaimBlend,
     debug,

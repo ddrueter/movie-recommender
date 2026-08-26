@@ -161,3 +161,29 @@ export function scoreContentBasedRecommendations({
     Object.fromEntries(Object.entries(movie).filter(([key]) => !INTERNAL_FIELDS.has(key))),
   );
 }
+
+/**
+ * Pick a single item from a scored list using weighted random sampling:
+ * the probability of selection is proportional to the item's score. A floor
+ * of +1 is added to every weight so even low-scoring candidates keep a
+ * non-zero chance, keeping recommendations varied.
+ *
+ * @param {Array<{score: number}>} scored - items with a numeric score
+ * @param {() => number} random - injectable RNG for deterministic testing
+ * @returns the picked item, or null when the list is empty
+ */
+export function weightedRandomPick(scored, random = Math.random) {
+  if (!Array.isArray(scored) || scored.length === 0) return null;
+
+  const weights = scored.map((item) => Math.max(0, Number(item.score) || 0) + 1);
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  if (total <= 0) return scored[0];
+
+  let roll = random() * total;
+  for (let index = 0; index < scored.length; index += 1) {
+    roll -= weights[index];
+    if (roll <= 0) return scored[index];
+  }
+
+  return scored[scored.length - 1];
+}

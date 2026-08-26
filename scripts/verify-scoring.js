@@ -1,6 +1,6 @@
 // Lightweight verification for the pure scoring/formatting helpers.
 // Run with: npm test  (or: node scripts/verify-scoring.js)
-import { scoreContentBasedRecommendations } from '../api/_lib/content-recs.js';
+import { scoreContentBasedRecommendations, weightedRandomPick } from '../api/_lib/content-recs.js';
 import {
   formatRatingValue,
   getCommunityTone,
@@ -16,12 +16,12 @@ function check(name, actual, expected) {
   const e = JSON.stringify(expected);
   if (a === e) {
     passed += 1;
-    console.log(`  ok  ${name}`);
+    console.log('  ok  ' + name);
   } else {
     failed += 1;
-    console.error(`  FAIL ${name}`);
-    console.error(`       expected ${e}`);
-    console.error(`       actual   ${a}`);
+    console.error('  FAIL ' + name);
+    console.error('       expected ' + e);
+    console.error('       actual   ' + a);
   }
 }
 
@@ -45,11 +45,7 @@ check('formatMatchScore(-10) clamps to 0', formatMatchScore(-10).score, 0);
 check('formatMatchScore(500) clamps to 100', formatMatchScore(500).score, 100);
 
 // ratingOptions must cover the values the UI renders (Love/Like/Meh/Dislike)
-check(
-  'ratingOptions values',
-  ratingOptions.map((o) => o.value),
-  [-2, 0, 1, 2],
-);
+check('ratingOptions values', ratingOptions.map((o) => o.value), [-2, 0, 1, 2]);
 
 console.log('content-recs.js');
 // Pure CF (acclaimBlend=0): movie "3" accumulates 0.8*1 (from loved "1")
@@ -84,5 +80,24 @@ check('no internal fields leak (vote_count)', Object.prototype.hasOwnProperty.ca
 const empty = scoreContentBasedRecommendations({ ratings: [], metadata, similarityMatrix: matrix, acclaimBlend: 0.35 });
 check('empty ratings yields empty results', empty.length, 0);
 
-console.log(`\n${passed} passed, ${failed} failed`);
+console.log('weightedRandomPick');
+// Weights are score+1: a=11, b=6, c=2 => total 19.
+const items = [{ id: 'a', score: 10 }, { id: 'b', score: 5 }, { id: 'c', score: 1 }];
+check('returns null for empty', weightedRandomPick([]), null);
+check('returns single item', weightedRandomPick([items[0]]).id, 'a');
+check('rng=0 picks first', weightedRandomPick(items, () => 0).id, 'a');
+check('rng=0.58 picks second', weightedRandomPick(items, () => 0.58).id, 'b');
+check('rng=0.9 picks third', weightedRandomPick(items, () => 0.9).id, 'c');
+// Zero-score items still get a +1 floor (equal weights)
+const zeroItems = [{ id: 'x', score: 0 }, { id: 'y', score: 0 }];
+check('zero-score rng=0 picks first', weightedRandomPick(zeroItems, () => 0).id, 'x');
+check('zero-score rng=0.6 picks second', weightedRandomPick(zeroItems, () => 0.6).id, 'y');
+// Deterministic: same seed always returns same item
+let seed = 0.42;
+const pick1 = weightedRandomPick(items, () => seed).id;
+seed = 0.42;
+const pick2 = weightedRandomPick(items, () => seed).id;
+check('deterministic same seed', pick1, pick2);
+
+console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed > 0 ? 1 : 0);
