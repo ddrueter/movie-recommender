@@ -66,6 +66,7 @@
   --good: #22c55e;
   --good-text: #a7f3b8;
   --good-soft: rgba(34, 197, 94, 0.14);
+  --good-border: rgba(34, 197, 94, 0.45);
 
   /* Semantic aliases */
   --color-canvas: var(--ch-abyss);
@@ -150,6 +151,7 @@
   --good: #15803d;
   --good-text: #166534;
   --good-soft: rgba(21, 128, 61, 0.1);
+  --good-border: rgba(21, 128, 61, 0.38);
 
   --color-canvas: #f6f7fb;
   --color-surface: #e8ebf2;

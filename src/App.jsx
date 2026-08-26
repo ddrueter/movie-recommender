@@ -708,6 +708,7 @@ function App() {
   });
   const [browseOpen, setBrowseOpen] = useState(false);
   const browseRef = useRef(null);
+  const browseCloseTimer = useRef(null);
   const searchTimer = useRef(null);
   const searchSequence = useRef(0);
   const recommendationsSequence = useRef(0);
@@ -792,7 +793,10 @@ function App() {
   useEffect(() => {
     if (!browseOpen) return undefined;
     const onDoc = (event) => {
-      if (browseRef.current && !browseRef.current.contains(event.target)) setBrowseOpen(false);
+      if (browseRef.current && !browseRef.current.contains(event.target)) {
+        if (browseCloseTimer.current) clearTimeout(browseCloseTimer.current);
+        setBrowseOpen(false);
+      }
     };
     const onKey = (event) => { if (event.key === 'Escape') setBrowseOpen(false); };
     document.addEventListener('mousedown', onDoc);
@@ -800,6 +804,7 @@ function App() {
     return () => {
       document.removeEventListener('mousedown', onDoc);
       document.removeEventListener('keydown', onKey);
+      if (browseCloseTimer.current) clearTimeout(browseCloseTimer.current);
     };
   }, [browseOpen]);
 
@@ -1762,8 +1767,11 @@ function App() {
           <div
             className="nav-browse"
             ref={browseRef}
-            onMouseEnter={() => setBrowseOpen(true)}
-            onMouseLeave={() => setBrowseOpen(false)}
+            onMouseEnter={() => { if (browseCloseTimer.current) clearTimeout(browseCloseTimer.current); setBrowseOpen(true); }}
+            onMouseLeave={() => {
+              if (browseCloseTimer.current) clearTimeout(browseCloseTimer.current);
+              browseCloseTimer.current = setTimeout(() => setBrowseOpen(false), 160);
+            }}
           >
             <button
               type="button"
