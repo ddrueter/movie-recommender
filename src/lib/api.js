@@ -4,9 +4,13 @@ function buildUrl(path) {
   return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
 }
 
+function getAuthHeader(token) {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function requestJson(path, options = {}) {
   const { token, headers = {}, ...fetchOptions } = options;
-  const authHeader = token ? (await import('./auth.js')).getAuthHeader(token) : {};
+  const authHeader = getAuthHeader(token);
   const url = buildUrl(path);
 
   const response = await fetch(url, {
@@ -89,10 +93,11 @@ export async function syncProfile(payload) {
   });
 }
 
-export async function fetchRecommendations(token, offset, limit) {
+export async function fetchRecommendations(token, offset, limit, mode) {
   const params = new URLSearchParams();
   if (offset != null) params.set('offset', String(offset));
   if (limit != null) params.set('limit', String(limit));
+  if (mode) params.set('mode', mode);
   const suffix = params.toString() ? `?${params.toString()}` : '';
   return requestJson(`/api/recommendations${suffix}`, { token });
 }

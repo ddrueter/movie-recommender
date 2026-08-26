@@ -1,4 +1,5 @@
 import { appConfig } from './config.js';
+import { syncProfile as syncProfileRequest } from './api.js';
 
 let authModulePromise;
 let appModulePromise;
@@ -50,7 +51,6 @@ async function buildSession(user) {
 async function syncProfile(session, extra = {}) {
   if (!session?.token || !session?.uid) return null;
 
-  const { syncProfile: syncProfileRequest } = await import('./api.js');
   return syncProfileRequest({
     authToken: session.token,
     userId: session.uid,
@@ -59,10 +59,6 @@ async function syncProfile(session, extra = {}) {
     providerId: session.providerId,
     ...extra,
   });
-}
-
-export function getAuthHeader(token) {
-  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export async function getDemoSession() {
