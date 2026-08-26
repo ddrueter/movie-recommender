@@ -380,24 +380,36 @@ function useGridColumns(containerRef) {
   const [columns, setColumns] = useState(6);
 
   useEffect(() => {
+    let frame = 0;
+
     const measure = () => {
       // Measure the first results-grid--home to match CSS auto-fit exactly
       const grid = document.querySelector('.results-grid--home');
       if (!grid) return;
       const style = getComputedStyle(grid);
-      const cols = style.gridTemplateColumns.split(' ').length;
+      const cols = style.gridTemplateColumns.split(' ').filter(Boolean).length;
       if (cols > 0) setColumns(cols);
     };
 
-    // Delay measurement slightly so DOM is painted
-    const timer = setTimeout(measure, 50);
-    const observer = new ResizeObserver(measure);
+    // Coalesce bursts of DOM/resize events into one measurement per frame.
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    };
+
+    schedule();
+
     const el = containerRef.current;
-    if (el) observer.observe(el);
+    const resizeObserver = el ? new ResizeObserver(schedule) : null;
+    const mutationObserver = el ? new MutationObserver(schedule) : null;
+
+    if (resizeObserver) resizeObserver.observe(el);
+    if (mutationObserver) mutationObserver.observe(el, { childList: true, subtree: true });
 
     return () => {
-      clearTimeout(timer);
-      observer.disconnect();
+      cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
     };
   }, [containerRef]);
 

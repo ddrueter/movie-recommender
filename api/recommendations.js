@@ -79,7 +79,9 @@ export default async function handler(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
   const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0);
   const limit = Math.max(1, Math.min(100, Number(url.searchParams.get('limit')) || 24));
-  const acclaimBlend = Math.min(1, Math.max(0, Number(process.env.RECS_POPULARITY_WEIGHT) || 0.35));
+  // Apply the default BEFORE coercion so an explicit "0" (pure collaborative
+  // filtering) is honored instead of being swallowed by the || fallback.
+  const acclaimBlend = Math.min(1, Math.max(0, Number(process.env.RECS_POPULARITY_WEIGHT || 0.35)));
 
   const debug = {
     userRatingsCount: 0,
