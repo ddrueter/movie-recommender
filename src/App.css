@@ -388,6 +388,7 @@
   color: var(--accent-text);
   flex-shrink: 0;
   box-shadow: 0 0 12px var(--accent-glow);
+  background: linear-gradient(180deg, var(--accent-soft), var(--accent-secondary-soft));
 }
 
 .section-header__radar svg {
@@ -1181,14 +1182,14 @@
 /* ── Spotlight recommendation card ── */
 .spotlight-card {
   display: grid;
-  grid-template-columns: minmax(180px, 260px) 1fr;
-  gap: 1.5rem;
+  grid-template-columns: minmax(160px, 220px) 1fr;
+  gap: 1.25rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface-glass);
   box-shadow: var(--shadow-md);
-  padding: 1.4rem;
-  max-width: 860px;
+  padding: 1.25rem;
+  max-width: 720px;
   margin-inline: auto;
   align-items: start;
   position: relative;
@@ -1297,7 +1298,7 @@
   font-family: var(--font-data);
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: currentColor;
   line-height: 1;
 }
 
@@ -1308,7 +1309,7 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--accent-secondary-text);
   white-space: nowrap;
 }
 

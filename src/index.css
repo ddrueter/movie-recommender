@@ -46,6 +46,14 @@
   --accent-border: rgba(0, 255, 119, 0.45);
   --accent-glow: rgba(0, 255, 119, 0.28);
 
+  /* Secondary accent (dark: orange) — pairs with the green primary */
+  --accent-secondary: #ff9a3d;
+  --accent-secondary-text: #ffc78f;
+  --accent-secondary-soft: rgba(255, 154, 61, 0.1);
+  --accent-secondary-strong: rgba(255, 154, 61, 0.18);
+  --accent-secondary-border: rgba(255, 154, 61, 0.42);
+  --accent-secondary-glow: rgba(255, 154, 61, 0.24);
+
   --danger: #ff3366;
   --danger-text: #ffa9bd;
   --danger-soft: rgba(255, 51, 102, 0.14);
@@ -115,12 +123,20 @@
   --border-strong: rgba(15, 23, 42, 0.2);
   --input-bg: #ffffff;
 
-  --accent: #0fa968;
-  --accent-text: #0b7a4b;
-  --accent-soft: rgba(15, 169, 104, 0.09);
-  --accent-soft-strong: rgba(15, 169, 104, 0.16);
-  --accent-border: rgba(15, 169, 104, 0.42);
-  --accent-glow: rgba(15, 169, 104, 0.22);
+  --accent: #ea8a2a;
+  --accent-text: #b4641a;
+  --accent-soft: rgba(234, 138, 42, 0.1);
+  --accent-soft-strong: rgba(234, 138, 42, 0.17);
+  --accent-border: rgba(234, 138, 42, 0.42);
+  --accent-glow: rgba(234, 138, 42, 0.2);
+
+  /* Secondary accent (light: green) — primary flips to orange here */
+  --accent-secondary: #0f9d5b;
+  --accent-secondary-text: #0b6e40;
+  --accent-secondary-soft: rgba(15, 157, 91, 0.1);
+  --accent-secondary-strong: rgba(15, 157, 91, 0.16);
+  --accent-secondary-border: rgba(15, 157, 91, 0.4);
+  --accent-secondary-glow: rgba(15, 157, 91, 0.18);
 
   --danger: #dc2626;
   --danger-text: #b91c1c;

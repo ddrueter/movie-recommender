@@ -50,10 +50,10 @@ function RatingIcon({ kind }) {
     case 'meh':
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="8.5" />
-          <circle cx="8.8" cy="11" r="1" fill="currentColor" stroke="none" />
-          <circle cx="15.2" cy="11" r="1" fill="currentColor" stroke="none" />
-          <path d="M8 16h8" />
+          <circle cx="12" cy="12" r="8.8" />
+          <circle cx="8.9" cy="10.6" r="1" fill="currentColor" stroke="none" />
+          <circle cx="15.1" cy="10.6" r="1" fill="currentColor" stroke="none" />
+          <path d="M9.2 15.2h5.6" />
         </svg>
       );
     case 'plus':
