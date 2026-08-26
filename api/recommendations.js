@@ -84,7 +84,7 @@ export default async function handler(request, response) {
   const mode = url.searchParams.get('mode') === 'weighted' ? 'weighted' : 'ranked';
   // Apply the default BEFORE coercion so an explicit "0" (pure collaborative
   // filtering) is honored instead of being swallowed by the || fallback.
-  const acclaimBlend = Math.min(1, Math.max(0, Number(process.env.RECS_POPULARITY_WEIGHT || 0.35)));
+  const acclaimBlend = Math.min(1, Math.max(0, Number(process.env.RECS_POPULARITY_WEIGHT || 0.2)));
   // Steepness of the weighted-random pick: higher = more concentrated on top fits.
   const randomPower = Math.max(1, Number(process.env.RECS_RANDOM_POWER) || 3);
 

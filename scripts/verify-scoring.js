@@ -80,6 +80,24 @@ check('no internal fields leak (vote_count)', Object.prototype.hasOwnProperty.ca
 const empty = scoreContentBasedRecommendations({ ratings: [], metadata, similarityMatrix: matrix, acclaimBlend: 0.35 });
 check('empty ratings yields empty results', empty.length, 0);
 
+// Score calibration: a strong match (rawScore ~2.4) hits ~100%, and a moderate
+// match (rawScore 1.0) lands ~63% — the scores must not collapse low.
+const strongResults = scoreContentBasedRecommendations({
+  ratings: [{ tmdb_id: '1', rating: 2 }, { tmdb_id: '2', rating: 2 }, { tmdb_id: '3', rating: 2 }],
+  metadata: [{ tmdb_id: '5', title: 'E', vote_count: 100, vote_average: 8, year: '2020' }],
+  similarityMatrix: { 1: { 5: 0.9 }, 2: { 5: 0.8 }, 3: { 5: 0.7 } },
+  acclaimBlend: 0,
+});
+check('strong match scores 100', strongResults[0].score, 100);
+
+const moderateResults = scoreContentBasedRecommendations({
+  ratings: [{ tmdb_id: '1', rating: 2 }],
+  metadata: [{ tmdb_id: '6', title: 'F', vote_count: 100, vote_average: 8, year: '2020' }],
+  similarityMatrix: { 1: { 6: 1.0 } },
+  acclaimBlend: 0,
+});
+check('moderate match scores 63', moderateResults[0].score, 63);
+
 console.log('weightedRandomPick');
 // Default exponent = 3: weights are score^3 + 1 => a=1001, b=126, c=2 (total 1129).
 const items = [{ id: 'a', score: 10 }, { id: 'b', score: 5 }, { id: 'c', score: 1 }];
