@@ -1857,9 +1857,25 @@
   z-index: 0;
 }
 
+/* Foreground "lighting" cue over the wheel: only the face passing front-center
+   is in the spotlight; faces receding to the sides/back fall into shadow, which
+   makes the rotating wheel read with real depth. Placed above the wheel but
+   below the radar sweep/core. */
+.rec-vignette__stage::after {
+  content: '';
+  position: absolute;
+  inset: -30% -12%;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(28% 42% at 50% 46%, transparent 0%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.55) 100%),
+    radial-gradient(80% 90% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.3) 100%);
+}
+
 .rec-vignette__wheel {
   position: absolute;
   inset: 0;
+  z-index: 0;
   display: flex;
   align-items: center;
   justify-content: center;

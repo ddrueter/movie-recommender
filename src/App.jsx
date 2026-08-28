@@ -1220,6 +1220,10 @@ function App() {
     } else if (activeTab === 'discover') {
       if (recsViewMode === 'spotlight') {
         void loadSpotlightPick();
+        // Preload the browsable home catalogs too, so the loading carousel can
+        // show real movie posters even on a fresh page reload (when history and
+        // prior recs aren't in state yet).
+        void loadHomeData();
       } else {
         void loadRecommendations();
       }

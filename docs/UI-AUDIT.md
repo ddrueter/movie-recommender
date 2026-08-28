@@ -65,6 +65,8 @@
 | A42 | Loading states for search / recommendations / history were boxes (StateCard); user wants full-width loaders. | ✅ — replaced with a full-width labeled shimmer band (FullWidthLoading) |
 | A43 | The recommendation loading "vignette" read as a static row of cards and could visually "end"; wanted a continuous, movie-poster carousel surface. | ✅ — now a continuous 3D wheel of real poster thumbnails orbiting a radar core (seamless, endless) |
 | A46 | The rec-loading 3D wheel showed blank faces / no posters and felt uncanny against the page. | ✅ — removed the stage `overflow:hidden` that was flattening the `preserve-3d` (hiding faces), made poster imgs eager-load, and added a dark translucent backdrop so the spinning wheel reads as a carousel receding into darkness |
+| A47 | On a fresh reload to Recommendations the carousel had no posters (only placeholders), because home/history data wasn't loaded yet. | ✅ — the spotlight branch now also preloads the home catalogs so the carousel has real posters even on a cold load |
+| A48 | Poster faces receding to the back of the 3D wheel looked the same brightness as the front — weak depth cue. | ✅ — added a foreground "spotlight" overlay so only the face at front-center is lit and receding faces fall into shadow |
 | A44 | After the bottom-right anchor change, Love sat on the right; user want it back on the left. | ✅ — rack order restored (Love left → Don't-recommend right) while anchored bottom-right |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
@@ -301,6 +303,12 @@
   The results grid now uses `auto-fit` + a capped `--card-max`, so when a filter
   leaves few movies the cards collapse to bounded tracks with no ballooning and
   no empty trailing-track dead space between items (A41). ESLint clean.
+- **Round 35 (R35, user feedback):** The loading carousel now gets real posters on
+  a fresh page reload — the spotlight branch also preloads the home catalogs, so
+  a cold load to Recommendations isn't left with placeholder slabs (A47). Added a
+  foreground "spotlight-lighting" overlay over the 3D wheel so the face passing
+  front-center is lit and the receding back faces fall darker — a much stronger
+  depth cue (A48). ESLint clean.
 - **Round 33 (R33, user feedback):** The recommendations 3D loading wheel was
   showing blank faces and looked uncanny. Removed the stage `overflow:hidden`
   that was flattening the wheel's `preserve-3d` (which hid the poster faces),
