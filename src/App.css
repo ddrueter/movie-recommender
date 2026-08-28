@@ -1895,12 +1895,53 @@
   height: 126px;
   margin: 0;
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  /* NOT overflow:hidden here — that would flatten preserve-3d and break the
+     backface flip. Clipping lives on each face instead. */
   border: 1px solid var(--border);
   box-shadow: var(--shadow-lg);
   background: var(--surface-solid);
+  /* Keep children (front/back faces) in real 3D so the backface flip works. */
+  transform-style: preserve-3d;
   /* Each face is fixed at its angular slot around the radius. */
   transform: rotateY(calc(var(--i) * (360deg / var(--n, 6)))) translateZ(190px);
+}
+
+/* Poster front (artwork) and the solid brand-marked back. The back is rotated
+   180° so it shows only when the card turns away from the viewer — a solid
+   backing instead of a blank/see-through flip. */
+.rec-vignette__poster-front,
+.rec-vignette__poster-back {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.rec-vignette__poster-front {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.rec-vignette__poster-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(180deg);
+  display: grid;
+  place-items: center;
+  color: var(--accent-text);
+  background:
+    radial-gradient(120% 90% at 30% 20%, var(--accent-soft-strong), transparent 60%),
+    linear-gradient(160deg, var(--surface-raised), var(--surface-solid));
+}
+
+.rec-vignette__poster-back svg {
+  width: 52%;
+  height: 52%;
+  color: inherit;
 }
 
 /* On narrow screens shrink the wheel radius + poster size so the rotating
@@ -1929,14 +1970,9 @@
   background: radial-gradient(120% 120% at 50% 40%, transparent 30%, black 100%);
 }
 
-.rec-vignette__poster img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
 .rec-vignette__poster-fallback {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
   width: 100%;
@@ -1945,6 +1981,8 @@
   font-family: var(--font-data);
   font-size: 1.1rem;
   font-weight: 700;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   background:
     radial-gradient(120% 90% at 30% 20%, var(--accent-soft-strong), transparent 60%),
     linear-gradient(160deg, var(--surface-raised), var(--surface-solid));

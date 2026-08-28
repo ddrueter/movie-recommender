@@ -670,8 +670,10 @@ function RecommendationVignette({ movies }) {
               className="rec-vignette__poster"
               style={{ ['--i']: i, ['--n']: n }}
             >
+              {/* Poster face (front) */}
               {movie.poster_url || movie.poster_path ? (
                 <img
+                  className="rec-vignette__poster-front"
                   src={movie.poster_url || makePosterUrl(movie.poster_path)}
                   alt=""
                   /* Eager: lazy-loading inside an animated 3D element can defer
@@ -683,6 +685,16 @@ function RecommendationVignette({ movies }) {
               ) : (
                 <span className="rec-vignette__poster-fallback" aria-hidden="true">{movie.title?.[0] ?? '?'}</span>
               )}
+              {/* Solid back face: the brand mark, visible when the card turns away */}
+              <span className="rec-vignette__poster-back" aria-hidden="true">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <rect width="64" height="64" rx="15" fill="none" />
+                  <circle cx="32" cy="32" r="19" fill="none" stroke="currentColor" strokeWidth="2.4" opacity="0.85" />
+                  <circle cx="32" cy="32" r="13" fill="none" stroke="currentColor" strokeWidth="1.8" opacity="0.5" />
+                  <line x1="32" y1="32" x2="32" y2="13" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+                  <circle cx="32" cy="13" r="2.4" fill="currentColor" />
+                </svg>
+              </span>
             </figure>
           ))}
         </div>

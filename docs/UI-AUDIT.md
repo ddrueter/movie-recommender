@@ -74,6 +74,7 @@
 | A53 | On narrow screens the 3D wheel's 190px radius could exceed the content width, letting poster faces bleed past the page (horizontal scroll). | ✅ — added a ≤560px override that shrinks the wheel radius + poster size to stay within the viewport |
 | A54 | The single-recommendation page left a large empty band below the card + buttons when there was viewport height to spare. | ✅ — the spotlight content section is now vertically centered (fills available height) |
 | A55 | Cold-reload posters still didn't show: home data was awaited only after the engine fetch, so it never hit state during the load. | ✅ — `loadSpotlightPick` now sets home data the moment it resolves (fire-and-forget in parallel), so the carousel gains real posters as soon as they arrive |
+| A56 | The carousel cards turned around blank/see-through on the far side; asked for a solid backing (ideally the brand mark). | ✅ — each card now has a solid back face showing the CineHound radar mark, shown via 3D backface flip as the card turns away |
 | A44 | After the bottom-right anchor change, Love sat on the right; user want it back on the left. | ✅ — rack order restored (Love left → Don't-recommend right) while anchored bottom-right |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
@@ -339,6 +340,11 @@
   (A54). Fixed the persistent cold-reload carousel: home data is now set the
   moment it resolves (in parallel) so the wheel shows real posters during the
   load rather than after the engine settled (A55). ESLint clean.
+- **Round 41 (R41, user feedback):** Carousel cards now have a solid back face
+  showing the CineHound radar mark (3D backface flip), so the far side of the
+  wheel shows the brand rather than a blank/see-through flip. Moved corner
+  clipping onto each face so `preserve-3d` (and thus the flip) is preserved
+  (A56). ESLint clean.
 - **Round 33 (R33, user feedback):** The recommendations 3D loading wheel was
   showing blank faces and looked uncanny. Removed the stage `overflow:hidden`
   that was flattening the wheel's `preserve-3d` (which hid the poster faces),
