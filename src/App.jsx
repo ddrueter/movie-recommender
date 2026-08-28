@@ -163,6 +163,35 @@ function PosterFallback({ title }) {
   );
 }
 
+/**
+ * Radiogroup keyboard support shared by the poster and spotlight rating rows.
+ * Arrow keys rove focus between options, Home/End jump, and the currently
+ * focused option is where Enter/Space/click commits. Options are queried within
+ * the same radiogroup as the focused radio.
+ */
+function radioGroupKeyDown(event) {
+  const radios = Array.from(
+    event.currentTarget.parentElement.querySelectorAll('[role="radio"]:not([disabled])'),
+  );
+  if (radios.length === 0) return;
+
+  let nextIndex = -1;
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    nextIndex = (radios.indexOf(event.currentTarget) - 1 + radios.length) % radios.length;
+  } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+    nextIndex = (radios.indexOf(event.currentTarget) + 1) % radios.length;
+  } else if (event.key === 'Home') {
+    nextIndex = 0;
+  } else if (event.key === 'End') {
+    nextIndex = radios.length - 1;
+  }
+
+  if (nextIndex >= 0) {
+    event.preventDefault();
+    radios[nextIndex].focus();
+  }
+}
+
 function normalizeText(value) {
   return String(value ?? '')
     .toLowerCase()
@@ -295,11 +324,8 @@ function MovieCard({
     }
   };
 
-  // Radiogroup keyboard support for the rating controls: arrow keys rove focus
-  // between options and Home/End jump. The actual rating is committed by the
-  // Enter/Space/click activation on the focused radio (never auto-selected on
-  // arrow, so navigation never accidentally mutates a rating). Escape closes
-  // the rack and returns focus to the card.
+  // Radiogroup keyboard support: roving arrow keys plus Escape to close the rack
+  // and return focus to the card. (Shared roving logic lives in radioGroupKeyDown.)
   const handleRatingKeyDown = (event) => {
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -307,26 +333,7 @@ function MovieCard({
       event.currentTarget.closest('.movie-card')?.focus();
       return;
     }
-    const radios = Array.from(
-      event.currentTarget.parentElement.querySelectorAll('.poster-rating__option:not([disabled])'),
-    );
-    if (radios.length === 0) return;
-
-    let nextIndex = -1;
-    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-      nextIndex = (radios.indexOf(event.currentTarget) - 1 + radios.length) % radios.length;
-    } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-      nextIndex = (radios.indexOf(event.currentTarget) + 1) % radios.length;
-    } else if (event.key === 'Home') {
-      nextIndex = 0;
-    } else if (event.key === 'End') {
-      nextIndex = radios.length - 1;
-    }
-
-    if (nextIndex >= 0) {
-      event.preventDefault();
-      radios[nextIndex].focus();
-    }
+    radioGroupKeyDown(event);
   };
 
   return (
@@ -574,6 +581,7 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
                 aria-checked={ratingValue === option.value}
                 aria-label={option.label}
                 disabled={savingRating}
+                onKeyDown={radioGroupKeyDown}
                 onClick={() => onRate(movie, ratingValue === option.value ? null : option.value)}
               >
                 <RatingIcon kind={option.icon} />
@@ -591,6 +599,7 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
               aria-label={"Don't recommend " + movie.title}
               aria-checked={ratingValue === -1}
               disabled={savingRating}
+              onKeyDown={radioGroupKeyDown}
               onClick={() => onRate(movie, ratingValue === -1 ? null : -1)}
             >
               <RatingIcon kind="hide" />

@@ -42,6 +42,7 @@
 | A13 | A chosen rating was invisible without hover — the active rating button was `opacity:0` like the others. | ✅ — active rating control stays visible and interactive |
 | A14 | Rating controls were spread flat across the poster bottom at a fixed slot; when a film was rated, the chosen icon sat in its lane with no relationship to the reveal. | ✅ — corner-anchored, staggered left→right fan-out with the chosen rating carried into its lane |
 | A15 | Poster rating is a `radiogroup` but had no keyboard support — no arrow-key roving, no Escape; only bare tab focus. | ✅ — arrow-key roving (←/↑/→/↓, Home/End) without mutating ratings; Escape closes and returns focus to the card |
+| A16 | SpotlightCard rating is also a `radiogroup` but lacked keyboard support. | ✅ — shared `radioGroupKeyDown` helper now gives the spotlight rating the same arrow-key roving / Home / End behaviour as the poster rating |
 
 ## B. Theming / tokens / consistency
 
@@ -172,3 +173,7 @@
   focus between the rating options without mutating the rating, and Escape that
   closes the rack and returns focus to the card. Focus remains on the chosen
   control; rating is still committed by Enter/Space/click. ESLint clean.
+- **Round 14 (R14):** Extracted the radiogroup roving into a shared
+  `radioGroupKeyDown` helper and applied it to the SpotlightCard rating row too,
+  so both rating radiogroups (poster compact + spotlight featured) offer
+  identical arrow-key / Home / End keyboard support. ESLint clean.
