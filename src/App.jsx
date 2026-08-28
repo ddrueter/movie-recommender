@@ -917,6 +917,10 @@ function App() {
     const name = sectionNames[activeTab];
     if (!name) return;
     setAnnouncement(name);
+    // Don't highjack focus on the search route: typing pushes the path to
+    // /search on the first keystroke, and stealing focus to <main> would
+    // interrupt continued typing. The search input manages its own focus.
+    if (activeTab === 'search') return;
     requestAnimationFrame(() => mainElRef.current?.focus({ preventScroll: true }));
   }, [activeTab, setAnnouncement]);
 

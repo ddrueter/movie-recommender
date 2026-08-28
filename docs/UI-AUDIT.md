@@ -61,6 +61,7 @@
 | C5 | No "skip to content" affordance — keyboard users must tab through the sticky header + nav before reaching content. | ✅ |
 | C6 | The `aria-live` region only announced when the text actually changed — setting the same announcement back-to-back was silently skipped by SRs. | ✅ |
 | C7 | Tab navigation left screen-reader focus unchanged; no announcement of the destination section or focus move into content. | ✅ |
+| C8 | Route-change focus-move regression (from R4): typing in search navigates to `/search`, and the focus-move-to-main effect yanked focus out of the search input mid-typing. | ✅ |
 
 ## D. Responsive / device edge cases
 
@@ -68,7 +69,7 @@
 |---|-------|--------|
 | D1 | Poster rating buttons on coarse pointers become 17.5%-wide bars with rounded 12px radius while spotlight buttons stay circles — verify visual family coherence; consider same radius family. | ✅ — coarse-pointer poster buttons are now pills (999px) matching the app's pill-button language |
 | D2 | `.spotlight-card` single-column ≤720px: poster is `max-width: 220px` and left-aligned in a full-width track — verify it centers nicely. | ✅ |
-| D3 | Ultra-narrow ≤400px: nav pill flexes; verify caret + padding still breathe. | 🎯 |
+| D3 | Ultra-narrow ≤400px: nav pill flexes; verify caret + padding still breathe. | ✅ reviewed + add ≤560px tagline hide to stop header overflow on phones |
 | D4 | Very wide ≥2150px: max-width cap 1760 centers content; hero FX rings pinned near right edge (88%) may look detached on ultrawide. | ✅ reviewed — FX contained inside the capped hero container, not detached |
 | D5 | Back-to-top threshold fixed at 720px scroll — fine on all pages? Verify on short pages (search with few results). | ✅ reviewed — appears only after substantial scroll, never on short pages (correct) |
 
