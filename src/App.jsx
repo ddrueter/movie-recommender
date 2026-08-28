@@ -959,6 +959,15 @@ function App() {
     }
   }, [activeTab, loadHomeData, loadRecommendations, loadSpotlightPick, recsViewMode]);
 
+  // The "recently shown" memory is ephemeral: clear it when leaving the
+  // Recommendations tab so it doesn't linger across navigation. (It also
+  // resets on every page refresh, since it's only held in a ref.)
+  useEffect(() => {
+    if (activeTab !== 'discover') {
+      recentPickIdsRef.current = [];
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     if (activeTab === 'history') {
       void loadUserRatings();
