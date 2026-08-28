@@ -718,37 +718,34 @@
   gap: clamp(1.5rem, 3vw, 2.5rem);
 }
 
-/* ── Results grid ── */
+/* ── Results grid ──
+   auto-fill + 1fr: the browser creates as many equal columns as fit at --card-size
+   and stretches each to 1fr, so the row is always fully filled (no dead half-column)
+   AND columns never balloon past ~card-size — a 2-result history stays two normal
+   cards, never two screensized ones. */
 .results-grid {
   --card-size: clamp(164px, 14.5vw, 216px);
-  /* Hard ceiling on a single card so a few items never stretch across the
-     whole row into oversized artworks. */
-  --card-max: clamp(210px, 22vw, 320px);
   display: grid;
   gap: 1.1rem;
   grid-auto-flow: row;
-  /* auto-fit + a finite max: columns fill up to --card-max; when there are many
-     items they tile edge-to-edge, and when there are few they stay bounded. */
-  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), min(1fr, var(--card-max))));
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-size), 1fr));
   align-items: stretch;
   justify-content: start;
 }
 
 .results-grid--single {
-  grid-template-columns: minmax(0, min(var(--card-max), var(--card-size)));
+  grid-template-columns: minmax(0, var(--card-size));
   justify-content: center;
 }
 
 .results-grid--home,
 .results-grid--history,
 .results-grid--discover {
-  --card-size: clamp(158px, 13.5vw, 208px);
-  --card-max: clamp(200px, 20vw, 300px);
+  --card-size: clamp(158px, 12vw, 190px);
 }
 
 .results-grid--search {
-  --card-size: clamp(170px, 15vw, 224px);
-  --card-max: clamp(220px, 24vw, 340px);
+  --card-size: clamp(170px, 14vw, 210px);
 }
 
 /* ── Movie & state cards ── */
@@ -1193,13 +1190,12 @@
 }
 
 .home-skeleton__grid {
-  --card-size: clamp(158px, 13.5vw, 208px);
-  --card-max: clamp(200px, 20vw, 300px);
+  --card-size: clamp(158px, 12vw, 190px);
   display: grid;
-  /* Match the real results grid exactly (including the finite card ceiling)
-     so the measured column count — and thus the rendered full rows — match
-     the loaded grid with no jump. */
-  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), min(1fr, var(--card-max))));
+  /* Match the real results grid exactly (auto-fill/1fr) so the measured column
+     count — and thus the rendered full rows — match the loaded grid with no
+     jump. */
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-size), 1fr));
   gap: 1.1rem;
 }
 
