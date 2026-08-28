@@ -1167,8 +1167,13 @@ function App() {
     }
 
     setSpotlightLoading(true);
+    // Fire the poster source (home catalogs) in parallel with the engine fetch
+    // so that on a cold reload the loading carousel has real posters to show.
+    const homePromise = fetchHomeData(authToken).catch(() => null);
     try {
       const data = await fetchRecommendations(authToken, undefined, undefined, 'weighted');
+      const home = await homePromise;
+      if (home) setHomeData(home);
       const picked = data.results && data.results.length > 0 ? data.results[0] : null;
       setSpotlightPick(picked);
       setRecsTotalAvailable(data.totalAvailable ?? (picked ? 1 : 0));

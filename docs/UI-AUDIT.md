@@ -69,6 +69,8 @@
 | A48 | Poster faces receding to the back of the 3D wheel looked the same brightness as the front — weak depth cue. | ✅ — added a foreground "spotlight" overlay so only the face at front-center is lit and receding faces fall into shadow |
 | A49 | With a short filtered history, vertical space stretched between the tab/menu bar, the page title, and the filters (instead of pooling at the bottom). | ✅ — `.app-main` is now `align-content: start` so leftover space pools only at the bottom before the footer |
 | A50 | Movie cards stretched to equal row height, leaving excessive blank space inside shorter cards while the cards felt under-width. | ✅ — grid uses `align-items: start` so each card takes its natural height with no internal whitespace; card width left modest & fixed |
+| A51 | On a cold reload the loading carousel still showed no posters — the home-catalog poster source raced with, and was abandoned by, the engine fetch. | ✅ — `loadSpotlightPick` now fetches home data in parallel and awaits it, so the vignette always has real posters on a cold load |
+| A52 | The carousel's dark-ground-plane overlay lost visual cohesion and didn't actually darken the far-side faces. | ✅ — removed the heavy global overlay; kept a subtle edge vignette, and added per-face depth shading so faces on the far side of the wheel are gently darker |
 | A44 | After the bottom-right anchor change, Love sat on the right; user want it back on the left. | ✅ — rack order restored (Love left → Don't-recommend right) while anchored bottom-right |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
@@ -319,6 +321,11 @@
   bottom before the footer (A49). Movie cards no longer stretch to equal row
   height (`align-items: start`), removing the blank space inside shorter cards
   (A50). The formatted action buttons below were left untouched. ESLint clean.
+- **Round 38 (R38, user feedback):** Cold-reload posters — `loadSpotlightPick`
+  now fetches home data in parallel and awaits it so the carousel always has real
+  posters instead of placeholder slabs (A51). Removed the heavy global overlay
+  that broke page cohesion and added subtle per-face depth shading so the far
+  side of the wheel is gently darker (A52). ESLint clean.
 - **Round 33 (R33, user feedback):** The recommendations 3D loading wheel was
   showing blank faces and looked uncanny. Removed the stage `overflow:hidden`
   that was flattening the wheel's `preserve-3d` (which hid the poster faces),

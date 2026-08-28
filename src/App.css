@@ -1851,31 +1851,14 @@
 }
 
 /* Dark, translucent ground plane behind the wheel so the rotating posters
-   read as a carousel receding into darkness, not floating on the page. */
+   read as a carousel receding into the canvas — subtle, not a heavy band. */
 .rec-vignette__stage::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(60% 60% at 50% 50%, transparent 40%, var(--color-canvas) 100%),
-    radial-gradient(55% 85% at 50% 55%, var(--surface-glass) 0%, transparent 70%);
+  background: radial-gradient(70% 80% at 50% 50%, transparent 55%, var(--color-canvas) 100%);
   z-index: 0;
-}
-
-/* Foreground "lighting" cue over the wheel: only the face passing front-center
-   is in the spotlight; faces receding to the sides/back fall into shadow, which
-   makes the rotating wheel read with real depth. Placed above the wheel but
-   below the radar sweep/core. */
-.rec-vignette__stage::after {
-  content: '';
-  position: absolute;
-  inset: -30% -12%;
-  pointer-events: none;
-  z-index: 1;
-  background:
-    radial-gradient(28% 42% at 50% 46%, transparent 0%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.55) 100%),
-    radial-gradient(80% 90% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.3) 100%);
 }
 
 .rec-vignette__wheel {
@@ -1910,6 +1893,19 @@
   background: var(--surface-solid);
   /* Each face is fixed at its angular slot around a 190px radius. */
   transform: rotateY(calc(var(--i) * (360deg / var(--n, 6)))) translateZ(190px);
+}
+
+/* Per-face depth shading: the slot angle drives a subtle darkening so faces on
+   the far side of the wheel (opposite the viewer) are gently darker, giving a
+   cohesive depth read without a harsh global overlay. */
+.rec-vignette__poster::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: calc(0.15 * (1 - cos(var(--i) * (2 * pi) / var(--n, 6))));
+  background: radial-gradient(120% 120% at 50% 40%, transparent 30%, black 100%);
 }
 
 .rec-vignette__poster img {
