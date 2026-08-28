@@ -719,16 +719,18 @@
 }
 
 /* ── Results grid ──
-   auto-fill + 1fr: the browser creates as many equal columns as fit at --card-size
-   and stretches each to 1fr, so the row is always fully filled (no dead half-column)
-   AND columns never balloon past ~card-size — a 2-result history stays two normal
-   cards, never two screensized ones. */
+   auto-fit + a capped max: columns shrink to the cell count when content is
+   light (so a few filtered movies never balloon across the row or leave large
+   empty trailing tracks), and stretch up to --card-max at most. Full content
+   tiles normally; light content stays modest with any leftover space pooling
+   at the end (before the footer) rather than between items. */
 .results-grid {
   --card-size: clamp(164px, 14.5vw, 216px);
+  --card-max: clamp(200px, 20vw, 300px);
   display: grid;
   gap: 1.1rem;
   grid-auto-flow: row;
-  grid-template-columns: repeat(auto-fill, minmax(var(--card-size), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), var(--card-max)));
   align-items: stretch;
   justify-content: start;
 }
@@ -741,11 +743,13 @@
 .results-grid--home,
 .results-grid--history,
 .results-grid--discover {
-  --card-size: clamp(158px, 12vw, 190px);
+  --card-size: clamp(128px, 12vw, 180px);
+  --card-max: clamp(200px, 20vw, 300px);
 }
 
 .results-grid--search {
-  --card-size: clamp(170px, 14vw, 210px);
+  --card-size: clamp(150px, 14vw, 200px);
+  --card-max: clamp(220px, 22vw, 320px);
 }
 
 /* ── Movie & state cards ── */
@@ -1190,12 +1194,12 @@
 }
 
 .home-skeleton__grid {
-  --card-size: clamp(158px, 12vw, 190px);
+  --card-size: clamp(128px, 12vw, 180px);
+  --card-max: clamp(200px, 20vw, 300px);
   display: grid;
-  /* Match the real results grid exactly (auto-fill/1fr) so the measured column
-     count — and thus the rendered full rows — match the loaded grid with no
-     jump. */
-  grid-template-columns: repeat(auto-fill, minmax(var(--card-size), 1fr));
+  /* Match the real results grid exactly (auto-fit + capped max) so the measured
+     column count — and thus the rendered full rows — match the loaded grid. */
+  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), var(--card-max)));
   gap: 1.1rem;
 }
 
@@ -2024,7 +2028,7 @@
   }
 
   .results-grid--single {
-    grid-template-columns: minmax(0, min(260px, 88vw));
+    grid-template-columns: minmax(0, var(--card-size));
   }
 
   .results-grid--home,

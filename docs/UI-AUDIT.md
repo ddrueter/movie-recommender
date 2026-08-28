@@ -59,8 +59,9 @@
 | A37 | Long section-header actions (e.g. the "Switch to Spotlight" pill) could crowd/overflow next to the title on narrow screens. | ✅ — header row wraps gracefully (flex-wrap) so the title and action stack on small widths |
 | A38 | A filter that matched nothing rendered an empty grid with a state card after it (odd). | ✅ — when a filter yields nothing, show only the friendly empty state (no empty grid) |
 | A39 | History "Dislike" filter also included "Hidden" (don't-recommend) — two distinct meanings lumped together. | ✅ — Dislike (=-2) and Hidden (=-1) are now separate filters |
-| A40 | History sort lacked descending / Oldest options. | ✅ — added Oldest, and Title (Z–A) alongside Title (A-Z) |
-| A41 | A few recommendation cards could stretch across the whole row into oversized artworks (no max). | ✅ — grid columns now cap at a finite `--card-max` so a few cards stay bounded |
+| A40 | History sort lacked descending / Oldest options; "Oldest" had no code path so it repeated "Most recent". | ✅ — split into sort **type** (Most recent / Rating / Title / Release year) + **order** toggle (Newest↓ / Oldest↑); release-year sort added |
+| A41 | A few recommendation cards could stretch across the whole row into oversized artworks, or auto-fill left empty trailing track space between items. | ✅ — grid uses auto-fit + a capped `--card-max`, so light content collapses to bounded cards with no dead gaps |
+| A45 | Sorting "Oldest" did nothing (it re-used server order / same as most recent). | ✅ — fixed via the sort-type + direction split (default desc = newest) |
 | A42 | Loading states for search / recommendations / history were boxes (StateCard); user wants full-width loaders. | ✅ — replaced with a full-width labeled shimmer band (FullWidthLoading) |
 | A43 | The recommendation loading "vignette" read as a static row of cards and could visually "end"; wanted a continuous, movie-poster carousel surface. | ✅ — now a continuous 3D wheel of real poster thumbnails orbiting a radar core (seamless, endless) |
 | A44 | After the bottom-right anchor change, Love sat on the right; user want it back on the left. | ✅ — rack order restored (Love left → Don't-recommend right) while anchored bottom-right |
@@ -285,5 +286,17 @@
   Replaced with `auto-fill, minmax(card-size, 1fr)` so full rows show several
   normal equal cards without ballooning; the home skeleton matches. The
   spotlight action buttons ("Show me another" / "View all recommendations") are
+  - **Round 31 (R31):** Fixed a card grid regression that the prior `auto-fit` /
+  `min(1fr, card)` formula caused — every row collapsed to one oversized card.
+  Replaced with `auto-fill, minmax(card-size, 1fr)` so full rows show several
+  normal equal cards without ballooning; the home skeleton matches. The
+  spotlight action buttons ("Show me another" / "View all recommendations") are
   now a matched pair of compact outline pills — both `btn-soft` with an explicit
   `height: 2.5rem` + horizontal-only padding (A33). ESLint clean.
+- **Round 32 (R32, user feedback):** History sorting became a clean two-control
+  split — a sort **type** (Most recent / Rating / Title / Release year, adding a
+  release-year sort) plus an **order** toggle (Newest↓ / Oldest↑). This fixes
+  "Oldest" silently doing nothing (it previously had no code path) (A40/A45).
+  The results grid now uses `auto-fit` + a capped `--card-max`, so when a filter
+  leaves few movies the cards collapse to bounded tracks with no ballooning and
+  no empty trailing-track dead space between items (A41). ESLint clean.

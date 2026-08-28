@@ -829,6 +829,7 @@ function App() {
   const [userRatingsLoading, setUserRatingsLoading] = useState(false);
   const [userRatingsError, setUserRatingsError] = useState('');
   const [historySort, setHistorySort] = useState('recent');
+  const [historySortDir, setHistorySortDir] = useState('desc');
   const [historyFilter, setHistoryFilter] = useState('all');
   const [savingRatingMovieId, setSavingRatingMovieId] = useState(null);
   const [expandedRatingMovieId, setExpandedRatingMovieId] = useState(null);
@@ -1966,17 +1967,26 @@ function App() {
       return <StateCard title="No ratings yet" message="Rate films to populate your scent trail, and they'll show up here." tone="neutral" />;
     }
 
-    // Sort: by rating recency (server order), the rating value, or title — each
-    // with its ascending and descending variant.
+    // Sort by a key (recency / rating / title / release year) plus an explicit
+    // direction (desc or asc). Defaults to desc (most recent first).
+    const dir = historySortDir === 'asc' ? -1 : 1;
     const sorted = [...userRatingsHistory];
     const rate = (m) => m.personal_rating ?? -99;
-    if (historySort === 'rating-high') {
-      sorted.sort((a, b) => rate(b) - rate(a));
-    } else if (historySort === 'rating-low') {
-      sorted.sort((a, b) => rate(a) - rate(b));
-    } else if (historySort === 'title' || historySort === 'title-za') {
-      const dir = historySort === 'title-za' ? -1 : 1;
+    const when = (m) => (m.rated_at ? new Date(m.rated_at).getTime() : 0);
+    const yearOf = (m) => {
+      const n = Number(String(m.release_date || m.year || '').slice(0, 4));
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    if (historySort === 'rating') {
+      sorted.sort((a, b) => dir * (rate(b) - rate(a)));
+    } else if (historySort === 'title') {
       sorted.sort((a, b) => dir * String(a.title ?? '').localeCompare(String(b.title ?? '')));
+    } else if (historySort === 'year') {
+      sorted.sort((a, b) => dir * (yearOf(b) - yearOf(a)));
+    } else {
+      // 'recent' — rating recency
+      sorted.sort((a, b) => dir * (when(a) - when(b)));
     }
 
     // Filter by rating tone: Love / Like / Meh / Dislike / Hidden (separate).
@@ -2007,16 +2017,35 @@ function App() {
         <SectionHeader title={`Your Ratings (${filtered.length}/${userRatingsHistory.length})`} />
         <div className="history-controls" aria-label="Sort and filter your ratings">
           <label className="history-control">
-            <span>Sort</span>
+            <span>Sort by</span>
             <select value={historySort} onChange={(e) => setHistorySort(e.target.value)}>
               <option value="recent">Most recent</option>
-              <option value="oldest">Oldest</option>
-              <option value="rating-high">Rating: high → low</option>
-              <option value="rating-low">Rating: low → high</option>
-              <option value="title">Title (A–Z)</option>
-              <option value="title-za">Title (Z–A)</option>
+              <option value="rating">Rating</option>
+              <option value="title">Title</option>
+              <option value="year">Release year</option>
             </select>
           </label>
+          <div className="history-control" role="group" aria-label="Sort direction">
+            <span>Order</span>
+            <div className="history-filter">
+              <button
+                type="button"
+                aria-pressed={historySortDir === 'desc'}
+                className={historySortDir === 'desc' ? 'is-active' : ''}
+                onClick={() => setHistorySortDir('desc')}
+              >
+                Newest ↓
+              </button>
+              <button
+                type="button"
+                aria-pressed={historySortDir === 'asc'}
+                className={historySortDir === 'asc' ? 'is-active' : ''}
+                onClick={() => setHistorySortDir('asc')}
+              >
+                Oldest ↑
+              </button>
+            </div>
+          </div>
           <div className="history-control" role="group" aria-label="Filter by rating">
             <span>Filter</span>
             <div className="history-filter">
