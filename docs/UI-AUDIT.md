@@ -46,6 +46,9 @@
 | A24 | Single recommendation card had dead empty space at its bottom because the body didn't fill the card height. | ✅ — card `align-items: stretch` + body `height:100%`, so the rating row pins to the bottom |
 | A25 | Back-to-top arrow was not centered in its fixed 46px circle — the global button padding pushed it off-center. | ✅ — `padding:0` + `line-height:0` on the bubble centers the arrow icon |
 | A26 | "One at a time" label for switching the recommendations grid back to the spotlight was unclear and only rendered as a tiny subtitle-style header link, easy to miss. | ✅ — renamed to a prominent "Switch to Spotlight" pill button in the section header |
+| A27 | Hover highlighting lagged under fast cursor movement — card + poster hover used slow 320ms durations and an expensive `filter` on the image, and the rating fan-out stagger was long. | ✅ — card/poster hover are now fast transform-only (120–140ms, no filter), and the rating rack fan-out uses a short 12ms stagger with no frosted blur |
+| A28 | Rating reveal was anchored in the bottom-left corner; bottom-right is more pleasing. | ✅ — re-anchored to the bottom-right corner, fanning leftward |
+| A29 | History had no way to sort or filter, making a long scent trail painful to navigate. | ✅ — added a sort control (recent / rating high-low / low-high / title) and rating filter chips (All / Love / Like / Meh / Dislike), with an empty state when nothing matches |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
@@ -218,3 +221,10 @@
   Renamed the unclear "One at a time" switch label to a prominent **"Switch to
   Spotlight"** pill button so it reads as a real control, not a footnote
   (A26). ESLint clean.
+- **Round 21 (R21, user feedback):** Performance — hover feedback is now fast
+  and GPU-cheap (transform-only, 120–140ms, no per-frame filter) so it no
+  longer lags under quick cursor movement (A27). The rating reveal is
+  re-anchored to the **bottom-right corner** and fans leftward with a snappier
+  short stagger and no frosted-blur cost (A27/A28). **History is now sortable
+  and filterable** — sort by recent / rating / title and filter chips for
+  All / Love / Like / Meh / Dislike, with an empty state (A29). ESLint clean.

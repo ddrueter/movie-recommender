@@ -765,10 +765,13 @@
   width: 100%;
   align-content: start;
   cursor: pointer;
-  transition: transform var(--dur-fast) var(--ease-snap),
-              border-color var(--dur-fast) var(--ease-snap),
-              background var(--dur-fast) var(--ease-snap),
-              box-shadow var(--dur-fast) var(--ease-snap);
+  /* Fast, GPU-cheap hover: transform + border/background only. Avoid slow
+     durations and per-frame filters so fast cursor moves stay responsive. */
+  transition: transform 120ms var(--ease-snap),
+              border-color 120ms var(--ease-snap),
+              background 120ms var(--ease-snap),
+              box-shadow 120ms var(--ease-snap);
+  will-change: transform;
 }
 
 .movie-card:hover,
@@ -826,13 +829,13 @@
 .poster img {
   object-fit: cover;
   display: block;
-  transition: transform var(--dur-structural) var(--ease-snap),
-              filter var(--dur-structural) var(--ease-snap);
+  /* Fast hover: transform-only, no filter — smooth even under rapid cursor
+     movement. */
+  transition: transform 140ms var(--ease-snap);
 }
 
 .movie-card:hover .poster img {
   transform: scale(1.05);
-  filter: brightness(1.06);
 }
 
 .poster-fallback {
@@ -899,38 +902,36 @@
   border: 1px solid var(--border-strong);
   background: var(--surface-solid);
   color: var(--text-body);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
   aspect-ratio: 1;
   padding: 0;
   opacity: 0;
-  /* Collapsed: every control stacks at the bottom-left corner; a rated choice
+  /* Collapsed: every control stacks at the bottom-right corner; a rated choice
      sits there alone until the rack opens. */
-  left: 2.5%;
+  left: 82%;
   transform: scale(0.4) translateY(4px);
   transition:
-    left var(--dur-fast) var(--ease-snap),
-    transform var(--dur-micro) var(--ease-snap),
-    opacity var(--dur-micro) var(--ease-snap),
+    left var(--dur-micro) var(--ease-snap),
+    transform 60ms var(--ease-snap),
+    opacity 60ms var(--ease-snap),
     background var(--dur-micro) var(--ease-snap),
     border-color var(--dur-micro) var(--ease-snap),
     box-shadow var(--dur-micro) var(--ease-snap);
-  /* Close folds rightmost-first back toward the corner. */
-  transition-delay: calc((4 - var(--i, 0)) * 22ms);
+  /* Close folds leftmost-first back toward the corner; tight stagger keeps it
+     snappy (no frosted blur + clear transition delays that cause lag). */
+  transition-delay: calc(var(--i, 0) * 12ms);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
 }
 
 /* Slot targets: where each control lands when the rack is open. */
-.poster-rating__option:nth-child(1) { --slot: 4%; }
-.poster-rating__option:nth-child(2) { --slot: 23%; }
+.poster-rating__option:nth-child(1) { --slot: 80%; }
+.poster-rating__option:nth-child(2) { --slot: 61%; }
 .poster-rating__option:nth-child(3) { --slot: 42%; }
-.poster-rating__option:nth-child(4) { --slot: 61%; }
-.poster-rating__option:nth-child(5) { --slot: 80%; }
+.poster-rating__option:nth-child(4) { --slot: 23%; }
+.poster-rating__option:nth-child(5) { --slot: 4%; }
 
-/* Open: every control fans out from the corner to its slot. The active choice
-   is carried forward with the sweeping rack; earlier controls drop into their
-   slots and are "left behind" as the sweep moves right — a left-to-right
-   cascade with the chosen rating travelling from the corner into place. */
+/* Open: every control fans out from the bottom-right corner toward the rack.
+   Each control drops into its slot and is "left behind" as the sweep moves
+   leftward; the active choice is carried into its lane. */
 .poster:hover .poster-rating__option,
 .poster:focus-within .poster-rating__option,
 .poster-rating.is-open .poster-rating__option,
@@ -939,7 +940,7 @@
   opacity: 1;
   pointer-events: auto;
   transform: scale(1) translateY(0);
-  transition-delay: calc(var(--i, 0) * 22ms);
+  transition-delay: calc((4 - var(--i, 0)) * 12ms);
 }
 
 /* A chosen rating stays visible (and interactive) in the corner without hover —
@@ -1237,6 +1238,51 @@
 .results-footer__spacer {
   display: block;
   min-height: 1px;
+}
+
+/* ── History sort & filter controls ── */
+.history-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 1.5rem;
+  padding: 0.4rem 0.25rem 0.6rem;
+}
+
+.history-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.history-control > span {
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.history-control select {
+  min-width: 150px;
+}
+
+.history-filter {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.history-filter button {
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+.history-filter button.is-active {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
 }
 
 /* ── App footer ── */

@@ -780,6 +780,8 @@ function App() {
   const [userRatingsHistory, setUserRatingsHistory] = useState([]);
   const [userRatingsLoading, setUserRatingsLoading] = useState(false);
   const [userRatingsError, setUserRatingsError] = useState('');
+  const [historySort, setHistorySort] = useState('recent');
+  const [historyFilter, setHistoryFilter] = useState('all');
   const [savingRatingMovieId, setSavingRatingMovieId] = useState(null);
   const [expandedRatingMovieId, setExpandedRatingMovieId] = useState(null);
   const [expandedSectionData, setExpandedSectionData] = useState(null);
@@ -1906,11 +1908,69 @@ function App() {
       return <StateCard title="No ratings yet" message="Rate films to populate your scent trail, and they'll show up here." tone="neutral" />;
     }
 
+    // Sort: by rating recency (server order) or by the rating value itself.
+    const sorted = [...userRatingsHistory];
+    if (historySort === 'rating-high') {
+      sorted.sort((a, b) => (b.personal_rating ?? -99) - (a.personal_rating ?? -99));
+    } else if (historySort === 'rating-low') {
+      sorted.sort((a, b) => (a.personal_rating ?? -99) - (b.personal_rating ?? -99));
+    } else if (historySort === 'title') {
+      sorted.sort((a, b) => String(a.title ?? '').localeCompare(String(b.title ?? '')));
+    }
+
+    // Filter by rating tone (Love / Like / Meh / Dislike / Hidden).
+    const filtered =
+      historyFilter === 'all'
+        ? sorted
+        : sorted.filter((movie) => {
+            const v = movie.personal_rating;
+            if (historyFilter === 'love') return v === 2;
+            if (historyFilter === 'like') return v === 1;
+            if (historyFilter === 'meh') return v === 0;
+            if (historyFilter === 'dislike') return v === -2 || v === -1;
+            return true;
+          });
+
+    const filterOptions = [
+      { value: 'all', label: 'All' },
+      { value: 'love', label: 'Love' },
+      { value: 'like', label: 'Like' },
+      { value: 'meh', label: 'Meh' },
+      { value: 'dislike', label: 'Dislike' },
+    ];
+
     return (
       <>
-        <SectionHeader title={`Your Ratings (${userRatingsHistory.length})`} />
+        <SectionHeader title={`Your Ratings (${filtered.length}/${userRatingsHistory.length})`} />
+        <div className="history-controls" aria-label="Sort and filter your ratings">
+          <label className="history-control">
+            <span>Sort</span>
+            <select value={historySort} onChange={(e) => setHistorySort(e.target.value)}>
+              <option value="recent">Most recent</option>
+              <option value="rating-high">Rating: high → low</option>
+              <option value="rating-low">Rating: low → high</option>
+              <option value="title">Title (A–Z)</option>
+            </select>
+          </label>
+          <div className="history-control" role="group" aria-label="Filter by rating">
+            <span>Filter</span>
+            <div className="history-filter">
+              {filterOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  aria-pressed={historyFilter === opt.value}
+                  className={historyFilter === opt.value ? 'is-active' : ''}
+                  onClick={() => setHistoryFilter(opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
         <div className="results-grid results-grid--history" aria-label="Your rated movies">
-          {userRatingsHistory.map((movie) => {
+          {filtered.map((movie) => {
             const movieKey = getMovieKey(movie);
             const currentRating = movie.personal_rating ?? null;
             const isSelected = selectedMovieId === movieKey;
@@ -1937,6 +1997,9 @@ function App() {
             );
           })}
         </div>
+        {filtered.length === 0 ? (
+          <StateCard title="Nothing here" message="Try a different filter or sort." tone="neutral" />
+        ) : null}
       </>
     );
   };
