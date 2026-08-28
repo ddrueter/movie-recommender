@@ -281,10 +281,6 @@ function MovieCard({
   // card (or one of its children) has focus — keeps the tab order tidy.
   const [panelFocused, setPanelFocused] = useState(false);
 
-  // 5 buttons evenly spaced across the poster bottom: Don't Recommend + 4 rating options
-  // Each button is 15% of poster width. Left positions: 4%, 23%, 42%, 61%, 80%
-  const ratingButtonPositions = [4, 23, 42, 61, 80];
-
   const tmdbUrl = movie.tmdb_id ? `https://www.themoviedb.org/movie/${movie.tmdb_id}` : null;
 
   const handleCardClick = (event) => {
@@ -369,10 +365,7 @@ function MovieCard({
                     ratingValue === option.value ? 'active' : '',
                     `poster-rating__option--${option.label.toLowerCase()}`,
                   ].filter(Boolean).join(' ')}
-                  style={{
-                    left: `${ratingButtonPositions[index]}%`,
-                    width: '15%',
-                  }}
+                  style={{ ['--i']: index }}
                   aria-checked={ratingValue === option.value}
                   aria-label={option.label}
                   disabled={savingRating}
@@ -402,10 +395,7 @@ function MovieCard({
                   'poster-rating__option--hide',
                   ratingValue === -1 ? 'active' : '',
                 ].filter(Boolean).join(' ')}
-                style={{
-                  left: `${ratingButtonPositions[4]}%`,
-                  width: '15%',
-                }}
+                style={{ ['--i']: 4 }}
                 aria-label={`Don't recommend ${movie.title}`}
                 aria-checked={ratingValue === -1}
                 disabled={savingRating}

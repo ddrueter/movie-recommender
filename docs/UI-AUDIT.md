@@ -39,7 +39,8 @@
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
-| A13 | A chosen rating was invisible without hover — the active rating button was `opacity:0` like the others. | ✅ — active rating control now stays visible (and interactive) on the poster |
+| A13 | A chosen rating was invisible without hover — the active rating button was `opacity:0` like the others. | ✅ — active rating control stays visible and interactive |
+| A14 | Rating controls were spread flat across the poster bottom at a fixed slot; when a film was rated, the chosen icon sat in its lane with no relationship to the reveal. | ✅ — a rated film's icon now anchors in the bottom-left corner, and opening the rack fans every control left → right from that corner with a staggered sweep (each slot "left behind" as the sweep passes it; the chosen rating is carried into its lane) |
 
 ## B. Theming / tokens / consistency
 
@@ -155,3 +156,10 @@
   are consolidated into one Account dropdown (trigger + theme toggle + Your
   Ratings + Sign in/out/Demo) with full keyboard nav, replacing the old separate
   theme-toggle and session chip (Other 2). ESLint clean.
+- **Round 11 (R11, user feedback):** Rating-reveal choreography — a rated film's
+  chosen icon now sits alone in the poster's bottom-left corner; opening the
+  rating rack (hover/focus/tap) fans the four options + don't-recommend out from
+  that corner to their lanes as a left→right staggered sweep. Each control drops
+  into its slot / is "left behind" as the sweep passes, and the active choice is
+  carried from the corner into its lane. Replaced fixed inline slot positions
+  with CSS `--slot`/`--i` stagger (A14). ESLint clean.

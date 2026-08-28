@@ -872,6 +872,7 @@
 .poster-rating__option {
   position: absolute;
   bottom: 0.5rem;
+  width: 15%;
   display: inline-grid;
   place-items: center;
   border-radius: 50%;
@@ -883,26 +884,46 @@
   aspect-ratio: 1;
   padding: 0;
   opacity: 0;
-  transform: scale(0.5) translateY(4px);
-  transition: transform var(--dur-micro) var(--ease-snap),
-              opacity var(--dur-micro) var(--ease-snap),
-              background var(--dur-micro) var(--ease-snap),
-              border-color var(--dur-micro) var(--ease-snap),
-              box-shadow var(--dur-micro) var(--ease-snap);
+  /* Collapsed: every control stacks at the bottom-left corner; a rated choice
+     sits there alone until the rack opens. */
+  left: 2.5%;
+  transform: scale(0.4) translateY(4px);
+  transition:
+    left var(--dur-fast) var(--ease-snap),
+    transform var(--dur-micro) var(--ease-snap),
+    opacity var(--dur-micro) var(--ease-snap),
+    background var(--dur-micro) var(--ease-snap),
+    border-color var(--dur-micro) var(--ease-snap),
+    box-shadow var(--dur-micro) var(--ease-snap);
+  /* Close folds rightmost-first back toward the corner. */
+  transition-delay: calc((4 - var(--i, 0)) * 22ms);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
 }
 
+/* Slot targets: where each control lands when the rack is open. */
+.poster-rating__option:nth-child(1) { --slot: 4%; }
+.poster-rating__option:nth-child(2) { --slot: 23%; }
+.poster-rating__option:nth-child(3) { --slot: 42%; }
+.poster-rating__option:nth-child(4) { --slot: 61%; }
+.poster-rating__option:nth-child(5) { --slot: 80%; }
+
+/* Open: every control fans out from the corner to its slot. The active choice
+   is carried forward with the sweeping rack; earlier controls drop into their
+   slots and are "left behind" as the sweep moves right — a left-to-right
+   cascade with the chosen rating travelling from the corner into place. */
 .poster:hover .poster-rating__option,
 .poster:focus-within .poster-rating__option,
-.poster-rating.is-open .poster-rating__option {
+.poster-rating.is-open .poster-rating__option,
+.movie-card:focus-within .poster-rating__option {
+  left: var(--slot, 45%);
   opacity: 1;
   pointer-events: auto;
   transform: scale(1) translateY(0);
+  transition-delay: calc(var(--i, 0) * 22ms);
 }
 
-/* A chosen rating stays visible (and interactive) on the poster without hover —
-   the user should see what they rated at a glance. Hover still reveals the
-   full set, and the active choice keeps its accent tint. */
+/* A chosen rating stays visible (and interactive) in the corner without hover —
+   the user should see what they rated at a glance. */
 .poster-rating__menu .poster-rating__option.active {
   opacity: 1;
   pointer-events: auto;
