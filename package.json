@@ -1,6 +1,6 @@
 {
   "name": "cinehound",
-  "description": "CineHound — Sniff out your next favorite film. A personalized movie recommendation engine.",
+  "description": "CineHound — Sniff out your next favorite film. A personalized movie recommendation engine powered by collaborative filtering over the MovieLens 25M dataset, with live TMDB metadata.",
   "homepage": "https://github.com/ddrueter/movie-recommender",
   "private": true,
   "version": "0.0.0",
