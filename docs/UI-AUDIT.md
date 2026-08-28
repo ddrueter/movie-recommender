@@ -40,7 +40,8 @@
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
 | A13 | A chosen rating was invisible without hover — the active rating button was `opacity:0` like the others. | ✅ — active rating control stays visible and interactive |
-| A14 | Rating controls were spread flat across the poster bottom at a fixed slot; when a film was rated, the chosen icon sat in its lane with no relationship to the reveal. | ✅ — a rated film's icon now anchors in the bottom-left corner, and opening the rack fans every control left → right from that corner with a staggered sweep (each slot "left behind" as the sweep passes it; the chosen rating is carried into its lane) |
+| A14 | Rating controls were spread flat across the poster bottom at a fixed slot; when a film was rated, the chosen icon sat in its lane with no relationship to the reveal. | ✅ — corner-anchored, staggered left→right fan-out with the chosen rating carried into its lane |
+| A15 | Poster rating is a `radiogroup` but had no keyboard support — no arrow-key roving, no Escape; only bare tab focus. | ✅ — arrow-key roving (←/↑/→/↓, Home/End) without mutating ratings; Escape closes and returns focus to the card |
 
 ## B. Theming / tokens / consistency
 
@@ -166,3 +167,8 @@
 - **Round 12 (R12):** Copy consistency — the "load more" buttons now all say
   "Loading…" (search, expanded sections, recommendations) instead of mixing
   "Processing…" and "Loading…" for the same in-flight state. ESLint clean.
+- **Round 13 (R13):** The poster rating controls exposed a `radiogroup` role but
+  had no keyboard support. Added arrow-key roving (←/↑/→/↓, Home/End) that moves
+  focus between the rating options without mutating the rating, and Escape that
+  closes the rack and returns focus to the card. Focus remains on the chosen
+  control; rating is still committed by Enter/Space/click. ESLint clean.

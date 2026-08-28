@@ -295,6 +295,40 @@ function MovieCard({
     }
   };
 
+  // Radiogroup keyboard support for the rating controls: arrow keys rove focus
+  // between options and Home/End jump. The actual rating is committed by the
+  // Enter/Space/click activation on the focused radio (never auto-selected on
+  // arrow, so navigation never accidentally mutates a rating). Escape closes
+  // the rack and returns focus to the card.
+  const handleRatingKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onCloseRating(movieKey);
+      event.currentTarget.closest('.movie-card')?.focus();
+      return;
+    }
+    const radios = Array.from(
+      event.currentTarget.parentElement.querySelectorAll('.poster-rating__option:not([disabled])'),
+    );
+    if (radios.length === 0) return;
+
+    let nextIndex = -1;
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      nextIndex = (radios.indexOf(event.currentTarget) - 1 + radios.length) % radios.length;
+    } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      nextIndex = (radios.indexOf(event.currentTarget) + 1) % radios.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = radios.length - 1;
+    }
+
+    if (nextIndex >= 0) {
+      event.preventDefault();
+      radios[nextIndex].focus();
+    }
+  };
+
   return (
     <article
       className={[
@@ -346,11 +380,6 @@ function MovieCard({
                 onCloseRating(movieKey);
               }
             }}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') {
-                onCloseRating(movieKey);
-              }
-            }}
           >
             <div className="poster-rating__menu" id={ratingPanelId} role="radiogroup" aria-orientation="horizontal" aria-label={`Rate ${movie.title}`}>
               {/* Rating options: Love → Like → Meh → Dislike left to right */}
@@ -380,6 +409,7 @@ function MovieCard({
                       onRate(movie, option.value);
                     }
                   }}
+                  onKeyDown={handleRatingKeyDown}
                 >
                   <RatingIcon kind={option.icon} />
                   <span className="sr-only">{option.label}</span>
@@ -410,6 +440,7 @@ function MovieCard({
                   }
                   onCloseRating(movieKey);
                 }}
+                onKeyDown={handleRatingKeyDown}
               >
                 <RatingIcon kind="hide" />
                 <span className="sr-only">Don't recommend</span>
