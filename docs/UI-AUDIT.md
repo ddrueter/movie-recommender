@@ -57,6 +57,7 @@
 | A35 | Full-page section (Trending/Popular/Most Acclaimed) used a centered "Loading…" card while loading — inconsistent with the home page's grid skeleton. | ✅ — now renders a matching full-row card skeleton grid |
 | A36 | Mobile nav pill (≤720px) was forced full-width and left-aligned, so the pill background spanned the row with tabs hugging one side. | ✅ — mobile nav stays shrink-wrapped and centered (fit-content + centered) |
 | A37 | Long section-header actions (e.g. the "Switch to Spotlight" pill) could crowd/overflow next to the title on narrow screens. | ✅ — header row wraps gracefully (flex-wrap) so the title and action stack on small widths |
+| A38 | A filter that matched nothing rendered an empty grid with a state card after it (odd). | ✅ — when a filter yields nothing, show only the friendly empty state (no empty grid) |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
@@ -262,3 +263,6 @@
 - **Round 28 (R28):** Section-header rows now wrap gracefully on narrow screens
   so a title and its action pill (e.g. "Switch to Spotlight") stack instead of
   crowding/overflowing (A37). ESLint clean.
+- **Round 29 (R29):** When a history filter matched nothing, the page rendered
+  an empty grid plus an empty-state card below; it now shows only the friendly
+  empty state (no stray empty grid) (A38). ESLint clean.

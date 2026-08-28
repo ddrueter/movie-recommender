@@ -1973,37 +1973,38 @@ function App() {
             </div>
           </div>
         </div>
-        <div className="results-grid results-grid--history" aria-label="Your rated movies">
-          {filtered.map((movie) => {
-            const movieKey = getMovieKey(movie);
-            const currentRating = movie.personal_rating ?? null;
-            const isSelected = selectedMovieId === movieKey;
-            const communityTone = getCommunityTone(movie.vote_average, movie.vote_count);
-            // Show community rating badge
-            const badgeText = communityTone.label;
-            const badgeTone = communityTone.tone;
-
-            return (
-              <MovieCard
-                key={movieKey ?? movie.title}
-                movie={movie}
-                mode="history"
-                selected={isSelected}
-                badgeText={badgeText}
-                badgeTone={badgeTone}
-                ratingValue={currentRating}
-                authEnabled={authEnabled}
-                savingRating={savingRatingMovieId === movieKey}
-                expandedRatingMovieId={expandedRatingMovieId}
-                onRate={handleQuickRate}
-                onCloseRating={(key) => setExpandedRatingMovieId((current) => (current === key ? null : current))}
-              />
-            );
-          })}
-        </div>
         {filtered.length === 0 ? (
-          <StateCard title="Nothing here" message="Try a different filter or sort." tone="neutral" />
-        ) : null}
+          <StateCard title="Nothing here yet" message="Try a different filter or sort." tone="neutral" />
+        ) : (
+          <div className="results-grid results-grid--history" aria-label="Your rated movies">
+            {filtered.map((movie) => {
+              const movieKey = getMovieKey(movie);
+              const currentRating = movie.personal_rating ?? null;
+              const isSelected = selectedMovieId === movieKey;
+              const communityTone = getCommunityTone(movie.vote_average, movie.vote_count);
+              // Show community rating badge
+              const badgeText = communityTone.label;
+              const badgeTone = communityTone.tone;
+
+              return (
+                <MovieCard
+                  key={movieKey ?? movie.title}
+                  movie={movie}
+                  mode="history"
+                  selected={isSelected}
+                  badgeText={badgeText}
+                  badgeTone={badgeTone}
+                  ratingValue={currentRating}
+                  authEnabled={authEnabled}
+                  savingRating={savingRatingMovieId === movieKey}
+                  expandedRatingMovieId={expandedRatingMovieId}
+                  onRate={handleQuickRate}
+                  onCloseRating={(key) => setExpandedRatingMovieId((current) => (current === key ? null : current))}
+                />
+              );
+            })}
+          </div>
+        )}
       </>
     );
   };
