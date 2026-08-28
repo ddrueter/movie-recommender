@@ -163,3 +163,6 @@
   into its slot / is "left behind" as the sweep passes, and the active choice is
   carried from the corner into its lane. Replaced fixed inline slot positions
   with CSS `--slot`/`--i` stagger (A14). ESLint clean.
+- **Round 12 (R12):** Copy consistency — the "load more" buttons now all say
+  "Loading…" (search, expanded sections, recommendations) instead of mixing
+  "Processing…" and "Loading…" for the same in-flight state. ESLint clean.

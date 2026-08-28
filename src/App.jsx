@@ -1433,7 +1433,7 @@ function App() {
         <div className="results-footer">
           {searchHasMore ? (
             <button type="button" className="subtle-button" onClick={handleLoadMoreSearch} disabled={searchLoading}>
-              {searchLoading ? 'Processing…' : 'Load more'}
+              {searchLoading ? 'Loading…' : 'Load more'}
             </button>
           ) : null}
         </div>
@@ -1777,7 +1777,7 @@ function App() {
         <div className="results-footer">
           {recsHasMore ? (
             <button type="button" className="btn-soft" onClick={handleLoadMoreRecs} disabled={recommendationsLoading}>
-              {recommendationsLoading ? 'Processing…' : 'Load more recommendations'}
+              {recommendationsLoading ? 'Loading…' : 'Load more recommendations'}
             </button>
           ) : null}
         </div>
