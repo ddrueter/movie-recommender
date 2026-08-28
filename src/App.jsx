@@ -1468,7 +1468,7 @@ function App() {
     }
 
     if (searchError && searchResults.length === 0) {
-      return <StateCard title="Search error" message={searchError} tone="error" />;
+      return <StateCard title="Search error" message={friendlyError(searchError)} tone="error" />;
     }
 
     if (!query.trim()) {
@@ -1587,7 +1587,7 @@ function App() {
 
     if (homeError && !homeData) {
       return (
-        <StateCard title="Couldn't load home" message={homeError} tone="error">
+        <StateCard title="Couldn't load home" message={friendlyError(homeError)} tone="error">
           <div className="state-card__actions">
             <button type="button" onClick={loadHomeData}>Retry</button>
           </div>
@@ -1772,7 +1772,7 @@ function App() {
 
       if (recommendationState.status === 'error' && !spotlightPick) {
         return (
-          <StateCard title="Recommendations unavailable" message={recommendationState.error || 'Something went wrong while generating your recommendations.'} tone="error">
+          <StateCard title="Recommendations unavailable" message={recommendationState.error ? friendlyError(recommendationState.error) : 'Something went wrong while generating your recommendations.'} tone="error">
             <div className="state-card__actions">
               <button type="button" onClick={loadSpotlightPick} disabled={spotlightLoading}>Retry</button>
             </div>
@@ -1816,7 +1816,7 @@ function App() {
 
     if (recommendationState.status === 'error') {
       return (
-        <StateCard title="Recommendations unavailable" message={recommendationState.error || 'Something went wrong while generating your recommendations.'} tone="error">
+        <StateCard title="Recommendations unavailable" message={recommendationState.error ? friendlyError(recommendationState.error) : 'Something went wrong while generating your recommendations.'} tone="error">
           <div className="state-card__actions">
             <button type="button" onClick={() => loadRecommendations()} disabled={recommendationsLoading}>Retry</button>
           </div>
@@ -1896,7 +1896,7 @@ function App() {
 
     if (userRatingsError) {
       return (
-        <StateCard title="Couldn't load your ratings" message={userRatingsError} tone="error">
+        <StateCard title="Couldn't load your ratings" message={friendlyError(userRatingsError)} tone="error">
           <div className="state-card__actions">
             <button type="button" onClick={loadUserRatings}>Retry</button>
           </div>

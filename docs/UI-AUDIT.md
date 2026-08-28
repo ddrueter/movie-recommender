@@ -49,6 +49,7 @@
 | A27 | Hover highlighting lagged under fast cursor movement — card + poster hover used slow 320ms durations and an expensive `filter` on the image, and the rating fan-out stagger was long. | ✅ — card/poster hover are now fast transform-only (120–140ms, no filter), and the rating rack fan-out uses a short 12ms stagger with no frosted blur |
 | A28 | Rating reveal was anchored in the bottom-left corner; bottom-right is more pleasing. | ✅ — re-anchored to the bottom-right corner, fanning leftward |
 | A29 | History had no way to sort or filter, making a long scent trail painful to navigate. | ✅ — added a sort control (recent / rating high-low / low-high / title) and rating filter chips (All / Love / Like / Meh / Dislike), with an empty state when nothing matches |
+| A30 | Error state-cards (home, search, recommendations, history) showed raw server error text, while the live-region announcements used friendly messages — inconsistent. | ✅ — all four error cards now render the friendly, humanized message too |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
@@ -228,3 +229,7 @@
   short stagger and no frosted-blur cost (A27/A28). **History is now sortable
   and filterable** — sort by recent / rating / title and filter chips for
   All / Love / Like / Meh / Dislike, with an empty state (A29). ESLint clean.
+- **Round 22b (R22):** Consistency — the four error state-cards (home, search,
+  recommendations, history) now render the friendly humanized message like the
+  live-region announcements already did, instead of raw server text (A30).
+  ESLint clean.
