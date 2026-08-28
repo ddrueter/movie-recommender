@@ -444,7 +444,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin: 0.25rem 0 0.15rem;
+  /* Uniform vertical rhythm: a little air above each section title (so it
+     reads as part of the previous context) and a clear, consistent gap below
+     it before its content — used on every page (home / discover / search /
+     history / expanded) so headings never hug or float oddly. */
+  margin: 0.5rem 0 1rem;
 }
 
 .section-header {
@@ -654,7 +658,11 @@
   display: grid;
   gap: 1.1rem;
   grid-auto-flow: row;
-  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), var(--card-size)));
+  /* auto-fit + 1fr: surviving columns stretch to fill the row, so a partial
+     grid never leaves an awkward half-column of dead space on the right.
+     (The home/discover slices already render full rows — this only affects
+     rows that genuinely have fewer items than columns.) */
+  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), 1fr));
   align-items: stretch;
   justify-content: start;
 }
@@ -842,6 +850,15 @@
 .poster:hover .poster-rating__option,
 .poster:focus-within .poster-rating__option,
 .poster-rating.is-open .poster-rating__option {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1) translateY(0);
+}
+
+/* A chosen rating stays visible (and interactive) on the poster without hover —
+   the user should see what they rated at a glance. Hover still reveals the
+   full set, and the active choice keeps its accent tint. */
+.poster-rating__menu .poster-rating__option.active {
   opacity: 1;
   pointer-events: auto;
   transform: scale(1) translateY(0);

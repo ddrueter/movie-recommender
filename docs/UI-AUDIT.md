@@ -32,11 +32,14 @@
 | A3 | Loading vignette film-reel loops with a visible seam: 10 slides translate −50%, but the flex `gap` makes one set ≠ half the strip, and there is no duplicated copy — a gap flashes at loop end. | ✅ |
 | A4 | `useGridColumns` measures only in `useEffect` (post-paint): first paint shows a guessed column count (6), then content count jumps. Should measure as early as layout pass. | ✅ |
 | A5 | Auth-gate CTAs inconsistent between tabs: Recommendations offers "Sign in with Google" + "Try Demo", History offers only "Try Demo". | ✅ |
-| A6 | `toggleHeaderSearch` uses stale `searchIsOpen` closure to decide focusing the input, and the search field has no Escape-to-close. | ✅ |
-| A7 | Header "Search" toggle is text-only while every other header control carries an icon; the field's ✕ close uses a raw text glyph instead of the SVG icon family. | ✅ |
+| A6 | `toggleHeaderSearch` uses stale `searchIsOpen` closure to focus the input post-toggle, and the search field has no Escape-to-close. | ✅ |
+| A7 | Header "Search" toggle is text-only while other header controls carry an icon; the field's ✕ close uses a raw text glyph instead of the SVG icon family. | ✅ |
 | A8 | Mid-width header (≈700–1080px) with search open risks overflow/wrap jitter: search input is a fixed 280px. Needs a mid-breakpoint cap. | ✅ |
-| A9 | Double-fetch on Discover and refetch-on-resize: data effects keyed on loader callbacks whose identity changes with the measured column count (page size). | ✅ |
-| A10 | Browse dropdown uses `role="menu"` with buttons but no arrow-key navigation; focus is not moved into the menu when opened. (Polish.) | ✅ |
+| A9 | Double-fetch on Discover and refetch-on- resize: the fetcher callbacks change identity with the measured column count (page size), re-running the data effect. | ✅ |
+| A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
+| A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
+| A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
+| A13 | A chosen rating was invisible without hover — the active rating button was `opacity:0` like the others. | ✅ — active rating control now stays visible (and interactive) on the poster |
 
 ## B. Theming / tokens / consistency
 
@@ -74,6 +77,8 @@
 | D3 | Ultra-narrow ≤400px: nav pill flexes; verify caret + padding still breathe. | ✅ reviewed + add ≤560px tagline hide to stop header overflow on phones |
 | D4 | Very wide ≥2150px: max-width cap 1760 centers content; hero FX rings pinned near right edge (88%) may look detached on ultrawide. | ✅ reviewed — FX contained inside the capped hero container, not detached |
 | D5 | Back-to-top threshold fixed at 720px scroll — fine on all pages? Verify on short pages (search with few results). | ✅ reviewed — appears only after substantial scroll, never on short pages (correct) |
+| D6 | Grid left a dead half-column on the right when a row had fewer items than columns (e.g. 7 movies, 7.5 columns of space, always left-aligned). | ✅ — `auto-fit` tracks stretch to `1fr` so surviving columns fill the row on every window/screen |
+| D7 | Homepage vertical rhythm inconsistent: header rows hugged their grids (0.15rem gap) while sections were far apart; reveal spacing varied. | ✅ — uniform `.section-header-row` margin (0.5rem above, 1rem below) across all pages + links |
 
 ## E. Copy / labels
 
@@ -126,3 +131,9 @@
   search input is now `type="search"` with `enterKeyHint="search"` for a better
   mobile keyboard and semantics; the native clear button is hidden since we ship
   our own (A12). ESLint clean.
+- **Round 7 (R7, user feedback):** A rated movie no longer hides its rating — the
+  active rating control stays visible and interactive on the poster without hover
+  (A13). Grid columns now stretch to `1fr` via `auto-fit`, so a partial row never
+  leaves an awkward half-column of dead space (D6). Section headers get a uniform,
+  comfortable gap above & below on every page, fixing erratic header↔section
+  spacing on the homepage and elsewhere (D7).
