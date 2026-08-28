@@ -519,6 +519,78 @@ function FullWidthLoading({ label }) {
   );
 }
 
+/**
+ * Themed dropdown select, styled to match the site's other menus (Home/Account
+ * dropdowns) instead of a bare native <select>. Supports outside-click close,
+ * Escape, and arrow-key roving; exposes the chosen value via onChange.
+ */
+function SelectMenu({ label, value, options, onChange, ariaLabel }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const itemRefs = useRef([]);
+  const current = options.find((o) => o.value === value) || options[0];
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDoc = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const onKeyDown = (e) => {
+    const items = itemRefs.current;
+    const idx = items.indexOf(document.activeElement);
+    let next = -1;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = (idx + 1) % items.length;
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = (idx - 1 + items.length) % items.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = items.length - 1;
+    if (next >= 0) { e.preventDefault(); items[next]?.focus(); }
+  };
+
+  return (
+    <div className="select-menu" ref={ref} onKeyDown={onKeyDown}>
+      <button
+        type="button"
+        className={['select-menu__trigger', open ? 'is-open' : ''].filter(Boolean).join(' ')}
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel || label}
+      >
+        <span className="select-menu__label">{label}:</span>
+        <span className="select-menu__value">{current?.label}</span>
+        <svg className="nav-caret" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+      </button>
+      {open ? (
+        <div className="select-menu__dropdown" role="listbox" aria-label={ariaLabel || label}>
+          {options.map((opt, i) => (
+            <button
+              key={opt.value}
+              type="button"
+              role="option"
+              aria-selected={opt.value === value}
+              className={['select-menu__item', opt.value === value ? 'is-active' : ''].filter(Boolean).join(' ')}
+              ref={(el) => { itemRefs.current[i] = el; }}
+              onMouseDown={() => { onChange(opt.value); }}
+              onClick={() => { setOpen(false); onChange(opt.value); }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SectionHeader({ title, onViewMore, viewMoreLabel, viewMoreVariant = 'link' }) {
   return (
     <div className="section-header-row">
@@ -698,7 +770,6 @@ function RecommendationVignette({ movies }) {
             </figure>
           ))}
         </div>
-        <div className="rec-vignette__sweep" />
       </div>
       <p className="rec-vignette__label">Sniffing out your next film…</p>
     </div>
@@ -2049,15 +2120,21 @@ function App() {
       <>
         <SectionHeader title={`Your Ratings (${filtered.length}/${userRatingsHistory.length})`} />
         <div className="history-controls" aria-label="Sort and filter your ratings">
-          <label className="history-control">
+          <div className="history-control">
             <span>Sort by</span>
-            <select value={historySort} onChange={(e) => setHistorySort(e.target.value)}>
-              <option value="recent">Most recent</option>
-              <option value="rating">Rating</option>
-              <option value="title">Title</option>
-              <option value="year">Release year</option>
-            </select>
-          </label>
+            <SelectMenu
+              label="Sort"
+              value={historySort}
+              ariaLabel="Sort by"
+              options={[
+                { value: 'recent', label: 'Most recent' },
+                { value: 'rating', label: 'Rating' },
+                { value: 'title', label: 'Title' },
+                { value: 'year', label: 'Release year' },
+              ]}
+              onChange={setHistorySort}
+            />
+          </div>
           <div className="history-control" role="group" aria-label="Sort direction">
             <span>Order</span>
             <div className="history-filter">

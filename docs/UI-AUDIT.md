@@ -77,7 +77,10 @@
 | A56 | The carousel cards turned around blank/see-through on the far side; asked for a solid backing (ideally the brand mark). | ✅ — each card now has a solid back face showing the CineHound radar mark, shown via 3D backface flip as the card turns away |
 | A57 | Cold-reload carousel still had no posters; the shared home-data state was a fragile source. | ✅ — the carousel now fetches **Trending directly** into its own `vignettePosters` state the instant the spotlight begins loading, so it always has a reliable poster set independent of the home tab |
 | A58 | The history sort `select`'s native dropdown menu rendered as a white popup with light text in dark mode (incoherent). | ✅ — added `color-scheme: dark/light` to the theme roots; made the select background solid and themed its `<option>` list (dark bg + light text) |
-| A59 | Wanted more faces on the loading carousel and no central loading icon now that cards have a branded back. | ✅ — carousel now shows 10 faces and the center radar icon was removed (the subtle radar sweep/pulse remains) |
+| A59 | Wanted more faces on the loading carousel and no central loading icon now that cards have a branded back. | ✅ — carousel now shows 10 faces; the center icon and its radar "ping" were removed |
+| A60 | The history sort dropdown was a plain native `<select>` (could look white/light in dark mode); wanted it cohesive like the Home/Account menus. | ✅ — replaced with a themed custom `SelectMenu` sharing the account-menu styling (trigger pill + dropdown, outside-click/Escape/arrow-key support) |
+| A61 | The single recommendation card felt too small on a 1440p monitor. | ✅ — scaled the whole spotlight group (card max-width 720→900px, larger poster column, bigger title/overview/rating + action buttons) while keeping the buttons formatted |
+| A62 | The carousel's radar "ping" looked out of place after the center icon was removed. | ✅ — removed the sweep/ping-ring animation entirely |
 | A44 | After the bottom-right anchor change, Love sat on the right; user want it back on the left. | ✅ — rack order restored (Love left → Don't-recommend right) while anchored bottom-right |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
@@ -358,8 +361,15 @@
   with a solid dark background and readable text (A58). ESLint clean.
 - **Round 44 (R44, user feedback):** The loading carousel now shows 10 faces
   (bumped from 8) and the central radar loading icon was removed — the cards'
-  back faces now carry the visual interest (A59). The subtle radar sweep pulse
-  remains. ESLint clean.
+  back faces now carry the visual interest (A59). ESLint clean.
+- **Round 45 (R45, user feedback):** Replaced the history sort native
+  `<select>` with a themed custom `SelectMenu` that matches the Home/Account
+  menus (pill trigger + dropdown, outside-click/Escape/arrow keys), so the sort
+  dropdown is fully cohesive in both themes (A60). Scaled up the whole single
+  recommendation card (max-width 900px, larger poster, title, overview, rating
+  and action buttons) for larger monitors while keeping the buttons correctly
+  formatted (A61). Removed the carousel's radar "ping" sweep, which looked out
+  of place with no center icon (A62). ESLint clean.
 - **Round 33 (R33, user feedback):** The recommendations 3D loading wheel was
   showing blank faces and looked uncanny. Removed the stage `overflow:hidden`
   that was flattening the wheel's `preserve-3d` (which hid the poster faces),
