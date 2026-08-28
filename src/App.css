@@ -747,7 +747,6 @@
 
 .results-grid--search {
   --card-size: clamp(150px, 14vw, 200px);
-  --card-max: clamp(220px, 22vw, 320px);
 }
 
 /* ── Movie & state cards ── */
