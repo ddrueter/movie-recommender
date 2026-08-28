@@ -715,6 +715,7 @@ function App() {
   const homeSequence = useRef(0);
   const searchInputRef = useRef(null);
   const recsOffsetRef = useRef(0);
+  const recentPickIdsRef = useRef([]);
   const mainElRef = useRef(null);
 
   // Measured grid column counts. Declared before the callbacks that use them.
@@ -905,9 +906,16 @@ function App() {
 
     setSpotlightLoading(true);
     try {
-      const data = await fetchRecommendations(authToken, undefined, undefined, 'weighted');
+      // Exclude the recently-shown picks so "Show me another" never repeats.
+      const data = await fetchRecommendations(authToken, undefined, undefined, 'weighted', recentPickIdsRef.current);
       const picked = data.results && data.results.length > 0 ? data.results[0] : null;
       setSpotlightPick(picked);
+      if (picked) {
+        const key = getMovieKey(picked);
+        if (key) {
+          recentPickIdsRef.current = [key, ...recentPickIdsRef.current.filter((id) => id !== key)].slice(0, 10);
+        }
+      }
       setRecsTotalAvailable(data.totalAvailable ?? (picked ? 1 : 0));
       setRecommendationState({ status: picked ? 'ready' : 'empty', message: '', error: '', debug: data.debug ?? null });
     } catch (error) {
@@ -1192,6 +1200,7 @@ function App() {
     setRecommendations([]);
     setRecommendationState({ status: 'idle', message: '', error: '', debug: null });
     setExpandedRatingMovieId(null);
+    recentPickIdsRef.current = [];
     setAnnouncement('Signed out.');
   };
 

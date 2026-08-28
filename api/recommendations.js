@@ -91,6 +91,13 @@ export default async function handler(request, response) {
   const acclaimBlend = Math.min(1, Math.max(0, Number(process.env.RECS_POPULARITY_WEIGHT || 0.35)));
   // Geometric decay for the weighted-random pick over rank (0..1).
   const randomDecay = Math.min(0.999, Math.max(0.001, Number(process.env.RECS_RANDOM_DECAY) || 0.5));
+  // Recently-shown tmdb_ids to skip so "Show me another" never repeats.
+  const excludeIds = new Set(
+    (url.searchParams.get('exclude') || '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean),
+  );
 
   const debug = {
     userRatingsCount: 0,
@@ -188,9 +195,16 @@ export default async function handler(request, response) {
 
   let responseResults;
   if (mode === 'weighted') {
-    const pick = weightedRandomPick(results, Math.random, randomDecay);
+    let pickPool = results;
+    if (excludeIds.size > 0) {
+      const filtered = results.filter((movie) => !excludeIds.has(String(movie.tmdb_id)));
+      // Only fall back to the full list if exclusion would leave nothing.
+      if (filtered.length > 0) pickPool = filtered;
+    }
+    const pick = weightedRandomPick(pickPool, Math.random, randomDecay);
     responseResults = pick ? [pick] : [];
     debug.pickedIndex = pick ? results.indexOf(pick) : null;
+    debug.excludedCount = results.length - pickPool.length;
   } else {
     // Deterministic, score-sorted page
     responseResults = results.slice(offset, offset + limit);
