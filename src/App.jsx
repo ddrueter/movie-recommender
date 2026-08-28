@@ -1168,12 +1168,15 @@ function App() {
 
     setSpotlightLoading(true);
     // Fire the poster source (home catalogs) in parallel with the engine fetch
-    // so that on a cold reload the loading carousel has real posters to show.
-    const homePromise = fetchHomeData(authToken).catch(() => null);
+    // and update state the moment IT resolves — so the loading carousel gains
+    // real posters as soon as they arrive, not only after the engine finishes.
+    fetchHomeData(authToken)
+      .then((home) => {
+        if (home) setHomeData(home);
+      })
+      .catch(() => {});
     try {
       const data = await fetchRecommendations(authToken, undefined, undefined, 'weighted');
-      const home = await homePromise;
-      if (home) setHomeData(home);
       const picked = data.results && data.results.length > 0 ? data.results[0] : null;
       setSpotlightPick(picked);
       setRecsTotalAvailable(data.totalAvailable ?? (picked ? 1 : 0));
@@ -2436,7 +2439,10 @@ function App() {
         ) : null}
 
         {activeTab === 'discover' ? (
-          <section className="content-section" aria-label="Recommendations">
+          <section
+            className={['content-section', recsViewMode === 'spotlight' ? 'content-section--centered' : ''].filter(Boolean).join(' ')}
+            aria-label="Recommendations"
+          >
             {renderRecommendationsBody()}
           </section>
         ) : null}

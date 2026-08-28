@@ -488,6 +488,14 @@
   animation: fade-in var(--dur-structural) var(--ease-snap);
 }
 
+/* Spotlight (single recommendation) view: fill the available height and
+   vertically center the card + its action buttons, instead of leaving a large
+   empty band below them. */
+.content-section--centered {
+  align-content: center;
+  min-height: calc(100vh - 16rem);
+}
+
 /* ── Section headers ── */
 .section-header-row {
   display: flex;
