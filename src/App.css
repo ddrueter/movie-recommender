@@ -1891,8 +1891,21 @@
   border: 1px solid var(--border);
   box-shadow: var(--shadow-lg);
   background: var(--surface-solid);
-  /* Each face is fixed at its angular slot around a 190px radius. */
+  /* Each face is fixed at its angular slot around the radius. */
   transform: rotateY(calc(var(--i) * (360deg / var(--n, 6)))) translateZ(190px);
+}
+
+/* On narrow screens shrink the wheel radius + poster size so the rotating
+   posters stay within the content width (no horizontal bleed/scroll). */
+@media (max-width: 560px) {
+  .rec-vignette__stage {
+    height: 220px;
+  }
+  .rec-vignette__poster {
+    width: 62px;
+    height: 93px;
+    transform: rotateY(calc(var(--i) * (360deg / var(--n, 6)))) translateZ(96px);
+  }
 }
 
 /* Per-face depth shading: the slot angle drives a subtle darkening so faces on

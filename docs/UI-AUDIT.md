@@ -71,6 +71,7 @@
 | A50 | Movie cards stretched to equal row height, leaving excessive blank space inside shorter cards while the cards felt under-width. | ✅ — grid uses `align-items: start` so each card takes its natural height with no internal whitespace; card width left modest & fixed |
 | A51 | On a cold reload the loading carousel still showed no posters — the home-catalog poster source raced with, and was abandoned by, the engine fetch. | ✅ — `loadSpotlightPick` now fetches home data in parallel and awaits it, so the vignette always has real posters on a cold load |
 | A52 | The carousel's dark-ground-plane overlay lost visual cohesion and didn't actually darken the far-side faces. | ✅ — removed the heavy global overlay; kept a subtle edge vignette, and added per-face depth shading so faces on the far side of the wheel are gently darker |
+| A53 | On narrow screens the 3D wheel's 190px radius could exceed the content width, letting poster faces bleed past the page (horizontal scroll). | ✅ — added a ≤560px override that shrinks the wheel radius + poster size to stay within the viewport |
 | A44 | After the bottom-right anchor change, Love sat on the right; user want it back on the left. | ✅ — rack order restored (Love left → Don't-recommend right) while anchored bottom-right |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
@@ -326,6 +327,10 @@
   posters instead of placeholder slabs (A51). Removed the heavy global overlay
   that broke page cohesion and added subtle per-face depth shading so the far
   side of the wheel is gently darker (A52). ESLint clean.
+- **Round 39 (R39):** Narrow-screen polish — the 3D wheel's 190px radius could
+  overflow a phone's content width (horizontal bleed/scroll); a ≤560px override
+  now shrinks the wheel radius and poster size to stay within the viewport (A53).
+  ESLint clean.
 - **Round 33 (R33, user feedback):** The recommendations 3D loading wheel was
   showing blank faces and looked uncanny. Removed the stage `overflow:hidden`
   that was flattening the wheel's `preserve-3d` (which hid the poster faces),
