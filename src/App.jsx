@@ -1874,6 +1874,7 @@ function App() {
             <span className="home-hero__ring home-hero__ring--3" />
             <span className="home-hero__cross home-hero__cross--h" />
             <span className="home-hero__cross home-hero__cross--v" />
+            <span className="home-hero__sweep" />
           </div>
           <div className="home-hero__inner">
             <div className="home-hero__mark" aria-hidden="true">

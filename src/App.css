@@ -647,17 +647,39 @@
   transform: translate(-50%, -50%);
   border-radius: 50%;
   border: 1px solid var(--accent-border);
-  transform-origin: center;
-  animation: radar-ping 4.5s var(--ease-snap) infinite;
+  opacity: 0.55;
 }
 
 .home-hero__ring--1 { width: 160px; height: 160px; }
-.home-hero__ring--2 { width: 160px; height: 160px; animation-delay: 1.5s; }
-.home-hero__ring--3 { width: 160px; height: 160px; animation-delay: 3s; }
+.home-hero__ring--2 { width: 160px; height: 160px; }
+.home-hero__ring--3 { width: 160px; height: 160px; }
 
-@keyframes radar-ping {
-  0% { transform: translate(-50%, -50%) scale(0.35); opacity: 0.9; }
-  100% { transform: translate(-50%, -50%) scale(1.9); opacity: 0; }
+/* Rotating radar scan: a sweeping wedge + leading line pivots around the ring
+   centre, like an active radar — continuous, on-brand rotation. */
+.home-hero__sweep {
+  position: absolute;
+  top: 50%;
+  left: 88%;
+  width: 170px;
+  height: 170px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 348deg,
+    var(--accent-secondary-border) 356deg,
+    transparent 360deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 0 38%, #000 39% 100%);
+  mask: radial-gradient(circle, transparent 0 38%, #000 39% 100%);
+  animation: radar-sweep-rotate 3.6s linear infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes radar-sweep-rotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 .home-hero__cross {
@@ -2209,7 +2231,8 @@
     opacity: 0.4;
   }
 
-  .home-hero__ring {
+  .home-hero__ring,
+  .home-hero__sweep {
     left: 92%;
   }
 }
