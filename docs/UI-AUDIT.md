@@ -36,6 +36,7 @@
 | A7 | Header "Search" toggle is text-only while other header controls carry an icon; the field's ✕ close uses a raw text glyph instead of the SVG icon family. | ✅ |
 | A8 | Mid-width header (≈700–1080px) with search open risks overflow/wrap jitter: search input is a fixed 280px. Needs a mid-breakpoint cap. | ✅ |
 | A9 | Double-fetch on Discover and refetch-on- resize: the fetcher callbacks change identity with the measured column count (page size), re-running the data effect. | ✅ |
+| A17 | Home page prefetched recommendations even though home never renders the recs grid — a wasted network call plus a spurious "Loaded N recommendations." announcement on a page that shows none. | ✅ — home/trending/popular/topRated only load home data; recommendations are fetched only when the Discover tab (browse or spotlight) is shown |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
@@ -181,3 +182,8 @@
   `aria-controls="search-results"` (with `aria-expanded`), and the results grid
   is an `aria-live="polite"` region, so screen readers announce result updates.
   ESLint clean.
+- **Round 16 (R16):** The home/trending/popular/topRated tabs no longer prefetch
+  the recommendations engine — those pages never render the recs grid, so this
+  was a wasted fetch plus a spurious "Loaded N recommendations." announcement
+  on a page showing none (A17). Recommendations load only when the Discover tab
+  is shown. ESLint clean.

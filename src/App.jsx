@@ -1145,8 +1145,12 @@ function App() {
   useEffect(() => {
     const { loadHomeData, loadRecommendations, loadSpotlightPick } = dataLoaderRef.current;
     if (activeTab === 'home' || activeTab === 'trending-full' || activeTab === 'popular-full' || activeTab === 'topRated-full') {
+      // The home page never renders the recommendations grid, so fetching
+      // them here would be a wasted network call that also fires a spurious
+      // "Loaded N recommendations." announcement visible nowhere on the page.
+      // Recommendations (browse or spotlight) load only when the Discover tab
+      // is actually shown.
       void loadHomeData();
-      void loadRecommendations();
     } else if (activeTab === 'discover') {
       if (recsViewMode === 'spotlight') {
         void loadSpotlightPick();
