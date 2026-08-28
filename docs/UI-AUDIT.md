@@ -58,6 +58,9 @@
 | C2 | `.header-search__field` input lacks `aria-controls`/result association; results grid has `aria-label="Search results"` — acceptable, review live-region announcements. | 🎯 |
 | C3 | Theme toggle announces mode change only via `aria-label` swap — no live region; confirm acceptable. | ✅ |
 | C4 | Reduced-motion global override kills stagger/fade animations (`0.01ms`) — confirm no `forwards`-fill flicker (state end is fine). | ✅ reviewed |
+| C5 | No "skip to content" affordance — keyboard users must tab through the sticky header + nav before reaching content. | ✅ |
+| C6 | The `aria-live` region only announced when the text actually changed — setting the same announcement back-to-back was silently skipped by SRs. | ✅ |
+| C7 | Tab navigation left screen-reader focus unchanged; no announcement of the destination section or focus move into content. | ✅ |
 
 ## D. Responsive / device edge cases
 
@@ -106,3 +109,9 @@
   buttons are now pills (999px) to match the app's pill-button language (D1).
   Reviewed-and-closed B6, D4, D5 (containers keep hero FX/back-to-top correct).
   ESLint clean throughout.
+- **Round 4 (R4):** Accessibility depth. Added a "Skip to content" link (C5) that
+  slides in on focus and jumps to `#main-content` (also made main focusable).
+  The live region now re-announces even identical back-to-back announcements via
+  a monotonic sequence key (C6). Tab navigation now announces the destination
+  section and moves keyboard focus into the content area (C7). Fixed an impure
+  setState-in-updater in `toggleTheme` (StrictMode double-fire). ESLint clean.

@@ -4,6 +4,36 @@
    ============================================================ */
 
 /* ── App Shell ── */
+.skip-link {
+  position: fixed;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 100;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  border: 1px solid var(--accent-border);
+  color: var(--accent-text);
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: var(--shadow-lg);
+  /* Off-screen until focused so it doesn't add visual noise. */
+  transform: translateY(-160%);
+  opacity: 0;
+  transition: transform var(--dur-fast) var(--ease-snap), opacity var(--dur-fast) var(--ease-snap);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Main is focused by the skip link and on tab navigation; keep the focus
+   ring from painting a big outline around the whole content column. */
+#main-content:focus-visible {
+  outline: none;
+}
+
 .app-shell {
   min-height: 100vh;
   display: flex;

@@ -760,7 +760,14 @@ function App() {
   const [expandedSectionData, setExpandedSectionData] = useState(null);
   const [expandedSectionLoading, setExpandedSectionLoading] = useState(false);
   const [expandedHasMore, setExpandedHasMore] = useState(true);
-  const [announcement, setAnnouncement] = useState('');
+  const [announcement, setAnnouncementRaw] = useState({ text: '', seq: 0 });
+  const announceSeq = useRef(0);
+  // Wrap the setter so the live region re-announces even when the same text
+  // is set back-to-back (identical text alone wouldn't remount the node).
+  const setAnnouncement = useCallback((text) => {
+    announceSeq.current += 1;
+    setAnnouncementRaw({ text, seq: announceSeq.current });
+  }, []);
   const [showBackTop, setShowBackTop] = useState(false);
   const [heroVisible, setHeroVisible] = useState(() => {
     try { return localStorage.getItem('cinehound-hero-hidden') !== '1'; } catch { return true; }
@@ -895,13 +902,29 @@ function App() {
     }
   }, [browseOpen]);
 
+  // On tab navigation, move keyboard focus to the content area and announce
+  // the destination so screen-reader users aren't left where they were.
+  useEffect(() => {
+    const sectionNames = {
+      home: 'Home',
+      search: 'Search',
+      discover: 'Recommendations',
+      history: 'History',
+      'trending-full': 'Trending',
+      'popular-full': 'Popular',
+      'topRated-full': 'Most Acclaimed',
+    };
+    const name = sectionNames[activeTab];
+    if (!name) return;
+    setAnnouncement(name);
+    requestAnimationFrame(() => mainElRef.current?.focus({ preventScroll: true }));
+  }, [activeTab, setAnnouncement]);
+
   const toggleTheme = () => {
-    setTheme((t) => {
-      const next = t === 'dark' ? 'light' : 'dark';
-      // Announce the change so screen-reader users aren't left guessing.
-      setAnnouncement(`${next === 'dark' ? 'Dark' : 'Light'} mode enabled.`);
-      return next;
-    });
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    // Announce the change so screen-reader users aren't left guessing.
+    setAnnouncement(`${next === 'dark' ? 'Dark' : 'Light'} mode enabled.`);
   };
 
   const loadHomeData = useCallback(async () => {
@@ -924,7 +947,7 @@ function App() {
         setHomeDataLoading(false);
       }
     }
-  }, [authToken]);
+  }, [authToken, setAnnouncement]);
 
   const loadRecommendations = useCallback(async (append = false) => {
     if (!authToken) {
@@ -988,7 +1011,7 @@ function App() {
         setRecommendationsLoading(false);
       }
     }
-  }, [authToken, recsPageSize]);
+  }, [authToken, recsPageSize, setAnnouncement]);
 
   const loadSpotlightPick = useCallback(async () => {
     if (!authToken) {
@@ -1030,7 +1053,7 @@ function App() {
     } finally {
       setUserRatingsLoading(false);
     }
-  }, [authToken]);
+  }, [authToken, setAnnouncement]);
 
   // Latest-ref pattern: the data effects below must re-run only when the
   // tab / view mode / session changes. Keying them on the loader callbacks
@@ -1836,6 +1859,8 @@ function App() {
 
   return (
     <div className="app-shell">
+      {/* Keyboard users can jump past the sticky header + nav straight to content. */}
+      <a className="skip-link" href="#main-content">Skip to content</a>
       <header className="app-header">
         <div className="brand-block">
           <button type="button" className="brand-block__link" onClick={() => setActiveTab('home')} aria-label="CineHound home">
@@ -2044,7 +2069,7 @@ function App() {
         </div>
       </header>
 
-      <main className="app-main" ref={mainElRef}>
+      <main className="app-main" ref={mainElRef} id="main-content" tabIndex={-1}>
         {(activeTab === 'home' || activeTab === 'trending-full' || activeTab === 'popular-full' || activeTab === 'topRated-full') ? (
           <section className="content-section" aria-label="Home">
             {renderHomeBody()}
@@ -2070,7 +2095,7 @@ function App() {
         ) : null}
 
         <div className="sr-only" aria-live="polite" aria-atomic="true">
-          {announcement}
+          <span key={announcement.seq}>{announcement.text}</span>
         </div>
       </main>
 
