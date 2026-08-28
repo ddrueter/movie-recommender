@@ -721,20 +721,21 @@
 /* ── Results grid ── */
 .results-grid {
   --card-size: clamp(164px, 14.5vw, 216px);
+  /* Hard ceiling on a single card so a few items never stretch across the
+     whole row into oversized artworks. */
+  --card-max: clamp(210px, 22vw, 320px);
   display: grid;
   gap: 1.1rem;
   grid-auto-flow: row;
-  /* auto-fit + 1fr: surviving columns stretch to fill the row, so a partial
-     grid never leaves an awkward half-column of dead space on the right.
-     (The home/discover slices already render full rows — this only affects
-     rows that genuinely have fewer items than columns.) */
-  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), 1fr));
+  /* auto-fit + a finite max: columns fill up to --card-max; when there are many
+     items they tile edge-to-edge, and when there are few they stay bounded. */
+  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), min(1fr, var(--card-max))));
   align-items: stretch;
   justify-content: start;
 }
 
 .results-grid--single {
-  grid-template-columns: minmax(0, var(--card-size));
+  grid-template-columns: minmax(0, min(var(--card-max), var(--card-size)));
   justify-content: center;
 }
 
@@ -742,10 +743,12 @@
 .results-grid--history,
 .results-grid--discover {
   --card-size: clamp(158px, 13.5vw, 208px);
+  --card-max: clamp(200px, 20vw, 300px);
 }
 
 .results-grid--search {
   --card-size: clamp(170px, 15vw, 224px);
+  --card-max: clamp(220px, 24vw, 340px);
 }
 
 /* ── Movie & state cards ── */
@@ -923,12 +926,14 @@
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
 }
 
-/* Slot targets: where each control lands when the rack is open. */
-.poster-rating__option:nth-child(1) { --slot: 80%; }
-.poster-rating__option:nth-child(2) { --slot: 61%; }
-.poster-rating__option:nth-child(3) { --slot: 42%; }
-.poster-rating__option:nth-child(4) { --slot: 23%; }
-.poster-rating__option:nth-child(5) { --slot: 4%; }
+/* Slot targets: where each control lands when the rack opens. DOM order is the
+   visually left→right order: Love, Like, Meh, Dislike, then Don't-recommend
+   (far right). */
+.poster-rating__option:nth-child(1) { --slot: 4%; }   /* Love */
+.poster-rating__option:nth-child(2) { --slot: 23%; }  /* Like */
+.poster-rating__option:nth-child(3) { --slot: 42%; }  /* Meh */
+.poster-rating__option:nth-child(4) { --slot: 61%; }  /* Dislike */
+.poster-rating__option:nth-child(5) { --slot: 80%; }  /* Don't recommend */
 
 /* Open: every control fans out from the bottom-right corner toward the rack.
    Each control drops into its slot and is "left behind" as the sweep moves
@@ -1189,10 +1194,12 @@
 
 .home-skeleton__grid {
   --card-size: clamp(158px, 13.5vw, 208px);
+  --card-max: clamp(200px, 20vw, 300px);
   display: grid;
-  /* Match the real results grid exactly so content doesn't jump when the
-     skeleton swaps in the movies (auto-fit + 1fr fills the row). */
-  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), 1fr));
+  /* Match the real results grid exactly (including the finite card ceiling)
+     so the measured column count — and thus the rendered full rows — match
+     the loaded grid with no jump. */
+  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), min(1fr, var(--card-max))));
   gap: 1.1rem;
 }
 
@@ -1239,6 +1246,49 @@
 .results-footer__spacer {
   display: block;
   min-height: 1px;
+}
+
+/* ── Full-width loading band ──
+   A non-card loading state that spans the whole content column (not a fixed
+   box): a labeled rail shimmer. Used for search / recommendations / history. */
+.fullwidth-loading {
+  display: grid;
+  gap: 1.2rem;
+  justify-items: center;
+  padding: clamp(2.5rem, 8vh, 4.5rem) 1rem;
+  width: 100%;
+  text-align: center;
+}
+
+.fullwidth-loading__label {
+  color: var(--text-secondary);
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fullwidth-loading__track {
+  position: relative;
+  width: min(420px, 80vw);
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.fullwidth-loading__rail {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: loading-rail 1.2s ease-in-out infinite;
+}
+
+@keyframes loading-rail {
+  0% { left: -40%; }
+  100% { left: 100%; }
 }
 
 /* ── History sort & filter controls ── */
@@ -1727,13 +1777,16 @@
   margin-top: 0.25rem;
 }
 
-/* Keep the two action buttons identical in height irrespective of label
-   length, so the row never looks lopsided. */
+/* Keep the two action buttons identical in height and width irrespective of
+   label length, so the row never looks lopsided. */
+.spotlight__actions .btn-primary,
 .spotlight__actions .btn-soft {
-  min-height: 2.8rem;
+  min-height: 2.85rem;
+  padding-inline: 1.35rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
 }
 
 /* ── Recommendation loading vignette ── */
@@ -1745,12 +1798,13 @@
   animation: fade-in var(--dur-structural) var(--ease-snap);
 }
 
+/* Continuous 3D "wheel": poster faces orbit a central radar core so it reads
+   as a spinning carousel's perimeter surface (not a flat line). The wheel
+   rotates freely on a radial loop, so there is no seam or end to reach. */
 .rec-vignette__stage {
   position: relative;
   width: 100%;
-  height: 200px;
-  /* Full-bleed ambient band — not a bordered card, so it occupies the whole
-     content width instead of a fixed 520px box. */
+  height: 260px;
   border: none;
   background: transparent;
   box-shadow: none;
@@ -1758,42 +1812,60 @@
   overflow: hidden;
   display: grid;
   place-items: center;
+  /* Gives the wheel's translateZ depth so faces recede into the distance. */
+  perspective: 900px;
 }
 
-/* Film-reel: a row of stylized poster slides that scroll past.
-   20 slides (two identical copies) translate -50% for a seamless loop;
-   the per-slide margin keeps every stride identical so the seam is invisible. */
-.rec-vignette__reel {
+.rec-vignette__wheel {
   position: absolute;
   inset: 0;
   display: flex;
-  gap: 0;
   align-items: center;
-  padding: 0 24px;
-  animation: reel-scroll 3.4s linear infinite;
-  pointer-events: none;
+  justify-content: center;
+  transform-style: preserve-3d;
+  /* Slight top-down tilt so we see the wheel as a surface, not an edge-on line. */
+  transform: rotateX(-3deg);
+  /* The whole wheel revolves on the Y axis, turning each poster across the
+     front as a seamless, continuous carousel — no seam, no endpoint. */
+  animation: wheel-spin 16s linear infinite;
 }
 
-@keyframes reel-scroll {
-  0% { transform: translateX(0); }
-  /* Strip = 24px left padding + 2 identical sets (each 10 × (74px + 14px
-     margin) = 880px). −50% of the (padded) width overshoots one set by the
-     24px left padding, so back off exactly that for a seamless loop. */
-  100% { transform: translateX(calc(-50% + 24px)); }
+@keyframes wheel-spin {
+  from { transform: rotateX(-3deg) rotateY(0deg); }
+  to   { transform: rotateX(-3deg) rotateY(360deg); }
 }
 
-.rec-vignette__slide {
-  flex: 0 0 auto;
-  width: 74px;
-  height: 112px;
-  margin-right: 14px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(160deg,
-      hsl(calc(150 + var(--i, 0) * 18) 70% 22%),
-      var(--surface-solid));
-  box-shadow: var(--shadow-sm);
+.rec-vignette__poster {
+  position: absolute;
+  width: 84px;
+  height: 126px;
+  margin: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
   border: 1px solid var(--border);
-  opacity: 0.85;
+  box-shadow: var(--shadow-md);
+  background: var(--surface-solid);
+  /* Each face is fixed at its angular slot around a 190px radius. */
+  transform: rotateY(calc(var(--i) * (360deg / var(--n, 6)))) translateZ(190px);
+}
+
+.rec-vignette__poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.rec-vignette__poster-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--accent-text);
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: linear-gradient(160deg, var(--accent-soft-strong), var(--surface-solid));
 }
 
 /* Expanding radar ping behind the core */

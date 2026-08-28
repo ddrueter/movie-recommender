@@ -474,13 +474,18 @@ function MovieCard({
  * Loading skeleton for the home page — placeholder hero + shimmering
  * poster cards shown while data streams in. Presentational only.
  */
-function HomeSkeleton({ columns = 6, rows = 2 } = {}) {
-  const count = Math.max(1, Math.round(columns)) * Math.max(1, Math.round(rows));
+function HomeSkeleton() {
+  const skeletonRef = useRef(null);
+  // Measure the loaded skeleton's own grid so the placeholder renders exactly
+  // full rows for the live column count (never a fractional row).
+  const columns = useGridColumns(skeletonRef, '.home-skeleton__grid');
+  const rows = 2;
+
   return (
     <div className="home-skeleton" aria-hidden="true">
       <div className="home-skeleton__hero" />
-      <div className="home-skeleton__grid">
-        {Array.from({ length: count }).map((_, i) => (
+      <div className="home-skeleton__grid" ref={skeletonRef}>
+        {Array.from({ length: Math.max(1, columns) * rows }).map((_, i) => (
           <div key={i} className="home-skeleton__card" />
         ))}
       </div>
@@ -494,6 +499,22 @@ function StateCard({ title, message, tone = 'neutral', children }) {
       <h3>{title}</h3>
       {message ? <p>{message}</p> : null}
       {children}
+    </div>
+  );
+}
+
+/**
+ * Full-width, non-card loading band. Unlike a StateCard (a fixed-width box),
+ * this spans the whole content column and shows a labeled shimmer, matching
+ * the loading language used elsewhere.
+ */
+function FullWidthLoading({ label }) {
+  return (
+    <div className="fullwidth-loading" role="status" aria-live="polite">
+      <span className="fullwidth-loading__label">{label || 'Loading…'}</span>
+      <div className="fullwidth-loading__track" aria-hidden="true">
+        <span className="fullwidth-loading__rail" />
+      </div>
     </div>
   );
 }
@@ -623,22 +644,48 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
 
 /**
  * Animated loading vignette shown while the engine picks your next film.
- * Purely presentational — a film-reel of stylized poster slides scrolls past
- * a sweeping radar ping so wait time feels intentional.
+ * A continuous 3D "wheel" of real poster thumbnails rotates about its central
+ * axis (we see the perimeter surface), with a radar ping in the centre. The
+ * rotation loops seamlessly — it never visibly "ends" — until a pick arrives.
  */
-function RecommendationVignette() {
+function RecommendationVignette({ movies }) {
+  const posters = (movies || []).filter((m) => m.poster_url || m.poster_path);
+  // Use the limited set we already have on screen; pad with stylized placeholders
+  // so the wheel always has enough faces. Keep it modest to stay cheap.
+  const items = (
+    posters.length >= 3
+      ? posters
+      : [...posters, ...Array.from({ length: 6 - posters.length }, (_, i) => ({ poster_path: null, title: `Slide ${i + 1}` }))]
+  ).slice(0, 8);
+
+  const n = Math.max(3, items.length);
+
   return (
     <div className="rec-vignette" role="status" aria-live="polite" aria-label="Generating your recommendation">
       <div className="rec-vignette__stage" aria-hidden="true">
-        <div className="rec-vignette__reel">
-          {/* Two identical copies so the -50% scroll loop is seamless. */}
-          {Array.from({ length: 20 }).map((_, i) => (
-            <span key={i} className="rec-vignette__slide" style={{ ['--i']: i % 10 }} />
+        <div className="rec-vignette__wheel">
+          {items.map((movie, i) => (
+            <figure
+              key={i}
+              className="rec-vignette__poster"
+              style={{ ['--i']: i, ['--n']: n }}
+            >
+              {movie.poster_url || movie.poster_path ? (
+                <img
+                  src={movie.poster_url || makePosterUrl(movie.poster_path)}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <span className="rec-vignette__poster-fallback" aria-hidden="true">{movie.title?.[0] ?? '?'}</span>
+              )}
+            </figure>
           ))}
         </div>
         <div className="rec-vignette__sweep" />
         <div className="rec-vignette__core">
-          <svg viewBox="0 0 64 64" width="36" height="36">
+          <svg viewBox="0 0 64 64" width="40" height="40">
             <circle cx="32" cy="32" r="21" fill="none" stroke="currentColor" strokeWidth="3" opacity="0.7" />
             <circle cx="32" cy="32" r="12" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.45" />
             <line x1="32" y1="32" x2="32" y2="11" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
@@ -1465,7 +1512,7 @@ function App() {
 
   const renderSearchBody = () => {
     if (searchLoading && searchResults.length === 0) {
-      return <StateCard title="Searching…" tone="loading" />;
+      return <FullWidthLoading label="Searching…" />;
     }
 
     if (searchError && searchResults.length === 0) {
@@ -1583,7 +1630,7 @@ function App() {
 
   const renderHomeBody = () => {
     if (homeDataLoading && !homeData) {
-      return <HomeSkeleton columns={homeColumns} rows={homeRows} />;
+      return <HomeSkeleton />;
     }
 
     if (homeError && !homeData) {
@@ -1772,7 +1819,14 @@ function App() {
 
     if (recsViewMode === 'spotlight') {
       if (spotlightLoading && !spotlightPick) {
-        return <RecommendationVignette />;
+        const vignetteMovies = [
+          ...recommendations,
+          ...(homeData?.trending || []),
+          ...(homeData?.popular || []),
+          ...(homeData?.topRated || []),
+          ...userRatingsHistory,
+        ];
+        return <RecommendationVignette movies={vignetteMovies} />;
       }
 
       if (recommendationState.status === 'error' && !spotlightPick) {
@@ -1802,7 +1856,7 @@ function App() {
             onRate={handleQuickRate}
           />
           <div className="spotlight__actions">
-            <button type="button" className="btn-soft" onClick={loadSpotlightPick} disabled={spotlightLoading}>
+            <button type="button" className="btn-primary" onClick={loadSpotlightPick} disabled={spotlightLoading}>
               {spotlightLoading ? 'Picking…' : 'Show me another'}
             </button>
             {recsTotalAvailable > 1 ? (
@@ -1815,7 +1869,7 @@ function App() {
     }
 
     if (recommendationsLoading && recommendations.length === 0) {
-      return <StateCard title="Building your recommendations…" tone="loading" />;
+      return <FullWidthLoading label="Building your recommendations…" />;
     }
 
     if (recommendationState.status === 'error') {
@@ -1895,7 +1949,7 @@ function App() {
     }
 
     if (userRatingsLoading && userRatingsHistory.length === 0) {
-      return <StateCard title="Loading your ratings…" tone="loading" />;
+      return <FullWidthLoading label="Loading your ratings…" />;
     }
 
     if (userRatingsError) {
@@ -1912,17 +1966,20 @@ function App() {
       return <StateCard title="No ratings yet" message="Rate films to populate your scent trail, and they'll show up here." tone="neutral" />;
     }
 
-    // Sort: by rating recency (server order) or by the rating value itself.
+    // Sort: by rating recency (server order), the rating value, or title — each
+    // with its ascending and descending variant.
     const sorted = [...userRatingsHistory];
+    const rate = (m) => m.personal_rating ?? -99;
     if (historySort === 'rating-high') {
-      sorted.sort((a, b) => (b.personal_rating ?? -99) - (a.personal_rating ?? -99));
+      sorted.sort((a, b) => rate(b) - rate(a));
     } else if (historySort === 'rating-low') {
-      sorted.sort((a, b) => (a.personal_rating ?? -99) - (b.personal_rating ?? -99));
-    } else if (historySort === 'title') {
-      sorted.sort((a, b) => String(a.title ?? '').localeCompare(String(b.title ?? '')));
+      sorted.sort((a, b) => rate(a) - rate(b));
+    } else if (historySort === 'title' || historySort === 'title-za') {
+      const dir = historySort === 'title-za' ? -1 : 1;
+      sorted.sort((a, b) => dir * String(a.title ?? '').localeCompare(String(b.title ?? '')));
     }
 
-    // Filter by rating tone (Love / Like / Meh / Dislike / Hidden).
+    // Filter by rating tone: Love / Like / Meh / Dislike / Hidden (separate).
     const filtered =
       historyFilter === 'all'
         ? sorted
@@ -1931,7 +1988,8 @@ function App() {
             if (historyFilter === 'love') return v === 2;
             if (historyFilter === 'like') return v === 1;
             if (historyFilter === 'meh') return v === 0;
-            if (historyFilter === 'dislike') return v === -2 || v === -1;
+            if (historyFilter === 'dislike') return v === -2;
+            if (historyFilter === 'hidden') return v === -1;
             return true;
           });
 
@@ -1941,6 +1999,7 @@ function App() {
       { value: 'like', label: 'Like' },
       { value: 'meh', label: 'Meh' },
       { value: 'dislike', label: 'Dislike' },
+      { value: 'hidden', label: 'Hidden' },
     ];
 
     return (
@@ -1951,9 +2010,11 @@ function App() {
             <span>Sort</span>
             <select value={historySort} onChange={(e) => setHistorySort(e.target.value)}>
               <option value="recent">Most recent</option>
+              <option value="oldest">Oldest</option>
               <option value="rating-high">Rating: high → low</option>
               <option value="rating-low">Rating: low → high</option>
               <option value="title">Title (A–Z)</option>
+              <option value="title-za">Title (Z–A)</option>
             </select>
           </label>
           <div className="history-control" role="group" aria-label="Filter by rating">

@@ -58,6 +58,12 @@
 | A36 | Mobile nav pill (≤720px) was forced full-width and left-aligned, so the pill background spanned the row with tabs hugging one side. | ✅ — mobile nav stays shrink-wrapped and centered (fit-content + centered) |
 | A37 | Long section-header actions (e.g. the "Switch to Spotlight" pill) could crowd/overflow next to the title on narrow screens. | ✅ — header row wraps gracefully (flex-wrap) so the title and action stack on small widths |
 | A38 | A filter that matched nothing rendered an empty grid with a state card after it (odd). | ✅ — when a filter yields nothing, show only the friendly empty state (no empty grid) |
+| A39 | History "Dislike" filter also included "Hidden" (don't-recommend) — two distinct meanings lumped together. | ✅ — Dislike (=-2) and Hidden (=-1) are now separate filters |
+| A40 | History sort lacked descending / Oldest options. | ✅ — added Oldest, and Title (Z–A) alongside Title (A-Z) |
+| A41 | A few recommendation cards could stretch across the whole row into oversized artworks (no max). | ✅ — grid columns now cap at a finite `--card-max` so a few cards stay bounded |
+| A42 | Loading states for search / recommendations / history were boxes (StateCard); user wants full-width loaders. | ✅ — replaced with a full-width labeled shimmer band (FullWidthLoading) |
+| A43 | The recommendation loading "vignette" read as a static row of cards and could visually "end"; wanted a continuous, movie-poster carousel surface. | ✅ — now a continuous 3D wheel of real poster thumbnails orbiting a radar core (seamless, endless) |
+| A44 | After the bottom-right anchor change, Love sat on the right; user want it back on the left. | ✅ — rack order restored (Love left → Don't-recommend right) while anchored bottom-right |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
@@ -266,3 +272,11 @@
 - **Round 29 (R29):** When a history filter matched nothing, the page rendered
   an empty grid plus an empty-state card below; it now shows only the friendly
   empty state (no stray empty grid) (A38). ESLint clean.
+- **Round 30 (R30, user feedback):** History "Dislike" now excludes "Hidden";
+  added a separate Hidden filter plus Oldest / Title (Z–A) sort options (A39,
+  A40). Cards are bounded by a finite `--card-max` so a few results never
+  balloon (A41). Search / recommendations / history loading states are now
+  full-width shimmer bands, not boxes (A42). The recommendation loading
+  vignette is a continuous 3D wheel of real poster thumbnails orbiting a radar
+  core — seamless and endless — instead of a static flat line (A43). The
+  open rating rack restored Love to the left (A44). ESLint clean.
