@@ -474,12 +474,13 @@ function MovieCard({
  * Loading skeleton for the home page — placeholder hero + shimmering
  * poster cards shown while data streams in. Presentational only.
  */
-function HomeSkeleton() {
+function HomeSkeleton({ columns = 6, rows = 2 } = {}) {
+  const count = Math.max(1, Math.round(columns)) * Math.max(1, Math.round(rows));
   return (
     <div className="home-skeleton" aria-hidden="true">
       <div className="home-skeleton__hero" />
       <div className="home-skeleton__grid">
-        {Array.from({ length: 10 }).map((_, i) => (
+        {Array.from({ length: count }).map((_, i) => (
           <div key={i} className="home-skeleton__card" />
         ))}
       </div>
@@ -1582,7 +1583,7 @@ function App() {
 
   const renderHomeBody = () => {
     if (homeDataLoading && !homeData) {
-      return <HomeSkeleton />;
+      return <HomeSkeleton columns={homeColumns} rows={homeRows} />;
     }
 
     if (homeError && !homeData) {

@@ -53,6 +53,7 @@
 | A31 | The solid `.btn-primary` button used the accent-colored global focus outline, which is nearly invisible against its accent fill. | ✅ — `.btn-primary:focus-visible` now uses the high-contrast `--accent-ink` outline |
 | A32 | Spotlight card broken by an aggressive stretch: forcing the body `height:100%` + stretching the grid distorted the poster (broke its 2:3 aspect) and the card looked clearly wrong. | ✅ — poster is `align-self:start` (keeps its aspect); body relies on grid stretch + `margin-top:auto` for the bottom-pinned rating; no explicit height |
 | A33 | The spotlight action buttons were inconsistent (one filled `btn-primary`, one outline `btn-soft`, with mismatched heights). | ✅ — both now use the same soft pill style with equal `min-height` so the row is even and on-brand |
+| A34 | The home loading skeleton always rendered 10 cards regardless of the column count, producing a non-integer (e.g. 1.4) row. | ✅ — skeleton now renders exactly `columns × rows` cards (homeColumns × 2), always full rows |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
@@ -244,3 +245,7 @@
   to the bottom (A32). The two action buttons were inconsistent (filled
   `btn-primary` vs outline `btn-soft`, unequal height) — both now use the same
   soft pill style with equal `min-height` (A33). ESLint clean.
+- **Round 25 (R25, user feedback):** The home loading skeleton always rendered
+  10 cards regardless of columns, producing a partial (1.4) row. It now renders
+  exactly `columns × 2` cards (homeColumns × homeRows) so it's always full rows
+  (A34). ESLint clean.
