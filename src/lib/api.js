@@ -93,11 +93,12 @@ export async function syncProfile(payload) {
   });
 }
 
-export async function fetchRecommendations(token, offset, limit, mode) {
+export async function fetchRecommendations(token, offset, limit, mode, exclude) {
   const params = new URLSearchParams();
   if (offset != null) params.set('offset', String(offset));
   if (limit != null) params.set('limit', String(limit));
   if (mode) params.set('mode', mode);
+  if (exclude && exclude.length > 0) params.set('exclude', exclude.join(','));
   const suffix = params.toString() ? `?${params.toString()}` : '';
   return requestJson(`/api/recommendations${suffix}`, { token });
 }

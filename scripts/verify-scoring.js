@@ -94,22 +94,21 @@ const manyResults = scoreContentBasedRecommendations({
 check('many-ratings match stays below 100', manyResults[0].score < 100, true);
 
 console.log('weightedRandomPick');
-// Default exponent = 3: weights are score^3 + 1 => a=1001, b=126, c=2 (total 1129).
+// Rank-based geometric decay: weight = decay^rank (rank 1 = best match).
+// With decay=0.5 and 3 items: a=0.5, b=0.25, c=0.125 (total 0.875).
 const items = [{ id: 'a', score: 10 }, { id: 'b', score: 5 }, { id: 'c', score: 1 }];
 check('returns null for empty', weightedRandomPick([]), null);
 check('returns single item', weightedRandomPick([items[0]]).id, 'a');
 check('rng=0 picks first', weightedRandomPick(items, () => 0).id, 'a');
-// "a" (score 10) now owns ~89% of the distribution (vs ~58% when linear)
-check('rng=0.5 still picks first (heavy weight)', weightedRandomPick(items, () => 0.5).id, 'a');
-check('rng=0.89 picks second', weightedRandomPick(items, () => 0.89).id, 'b');
-check('rng=0.999 picks third', weightedRandomPick(items, () => 0.999).id, 'c');
-// Linear mode (exponent=1) matches the old score+1 behavior
-check('linear rng=0.58 picks second', weightedRandomPick(items, () => 0.58, 1).id, 'b');
-check('linear rng=0.9 picks third', weightedRandomPick(items, () => 0.9, 1).id, 'c');
-// Zero-score items still get a +1 floor (equal weights)
-const zeroItems = [{ id: 'x', score: 0 }, { id: 'y', score: 0 }];
-check('zero-score rng=0 picks first', weightedRandomPick(zeroItems, () => 0).id, 'x');
-check('zero-score rng=0.6 picks second', weightedRandomPick(zeroItems, () => 0.6).id, 'y');
+// 'a' (rank 1) owns 0.5/0.875 ≈ 57% of the distribution
+check('rng=0.57 picks first', weightedRandomPick(items, () => 0.57).id, 'a');
+check('rng=0.58 picks second', weightedRandomPick(items, () => 0.58).id, 'b');
+check('rng=0.86 picks third', weightedRandomPick(items, () => 0.86).id, 'c');
+// A gentler decay (0.8) spreads picks further down the ranking
+check('decay=0.8 rng=0.5 picks second', weightedRandomPick(items, () => 0.5, 0.8).id, 'b');
+// Rank, not score magnitude: same order, different magnitudes, same pick odds
+const altItems = [{ id: 'a', score: 99 }, { id: 'b', score: 1 }, { id: 'c', score: 0 }];
+check('rank-based ignores score magnitude', weightedRandomPick(altItems, () => 0.58).id, 'b');
 // Deterministic: same seed always returns same item
 let seed = 0.42;
 const pick1 = weightedRandomPick(items, () => seed).id;

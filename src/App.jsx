@@ -945,6 +945,7 @@ function App() {
   const homeSequence = useRef(0);
   const searchInputRef = useRef(null);
   const recsOffsetRef = useRef(0);
+  const recentPickIdsRef = useRef([]);
   const recsSentinelRef = useRef(null);
   const mainElRef = useRef(null);
 
@@ -1262,9 +1263,16 @@ function App() {
       })
       .catch(() => {});
     try {
-      const data = await fetchRecommendations(authToken, undefined, undefined, 'weighted');
+      // Exclude the recently-shown picks so "Show me another" never repeats.
+      const data = await fetchRecommendations(authToken, undefined, undefined, 'weighted', recentPickIdsRef.current);
       const picked = data.results && data.results.length > 0 ? data.results[0] : null;
       setSpotlightPick(picked);
+      if (picked) {
+        const key = getMovieKey(picked);
+        if (key) {
+          recentPickIdsRef.current = [key, ...recentPickIdsRef.current.filter((id) => id !== key)].slice(0, 10);
+        }
+      }
       setRecsTotalAvailable(data.totalAvailable ?? (picked ? 1 : 0));
       setRecommendationState({ status: picked ? 'ready' : 'empty', message: '', error: '', debug: data.debug ?? null });
     } catch (error) {
@@ -1323,6 +1331,15 @@ function App() {
       }
     }
   }, [activeTab, recsViewMode, authToken]);
+
+  // The "recently shown" memory is ephemeral: clear it when leaving the
+  // Recommendations tab so it doesn't linger across navigation. (It also
+  // resets on every page refresh, since it's only held in a ref.)
+  useEffect(() => {
+    if (activeTab !== 'discover') {
+      recentPickIdsRef.current = [];
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab === 'history') {
@@ -1589,6 +1606,7 @@ function App() {
     setRecommendations([]);
     setRecommendationState({ status: 'idle', message: '', error: '', debug: null });
     setExpandedRatingMovieId(null);
+    recentPickIdsRef.current = [];
     setAnnouncement('Signed out.');
   };
 
