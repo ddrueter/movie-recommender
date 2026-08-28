@@ -37,6 +37,7 @@
 | A8 | Mid-width header (≈700–1080px) with search open risks overflow/wrap jitter: search input is a fixed 280px. Needs a mid-breakpoint cap. | ✅ |
 | A9 | Double-fetch on Discover and refetch-on- resize: the fetcher callbacks change identity with the measured column count (page size), re-running the data effect. | ✅ |
 | A17 | Home page prefetched recommendations even though home never renders the recs grid — a wasted network call plus a spurious "Loaded N recommendations." announcement on a page that shows none. | ✅ — home/trending/popular/topRated only load home data; recommendations are fetched only when the Discover tab (browse or spotlight) is shown |
+| A18 | Landing directly on `/search` with an empty query rendered a blank content area (`renderSearchBody` returned null). | ✅ — empty-query shows a friendly "Search the whole catalog" prompt instead of a blank page |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
@@ -187,3 +188,6 @@
   was a wasted fetch plus a spurious "Loaded N recommendations." announcement
   on a page showing none (A17). Recommendations load only when the Discover tab
   is shown. ESLint clean.
+- **Round 17 (R17):** Landing directly on `/search` with an empty query was a
+  blank content area. It now shows a friendly "Search the whole catalog" prompt
+  instead (A18). ESLint clean.

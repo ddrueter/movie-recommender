@@ -1438,7 +1438,13 @@ function App() {
     }
 
     if (!query.trim()) {
-      return null;
+      return (
+        <StateCard
+          title="Search the whole catalog"
+          message="Type a title, actor, or director above and CineHound will sniff out matching films from the entire TMDB universe."
+          tone="neutral"
+        />
+      );
     }
 
     if (!hasSearchResults) {
