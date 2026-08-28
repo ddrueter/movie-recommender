@@ -1444,7 +1444,7 @@ function App() {
     return (
       <>
         <SectionHeader title={`Results for “${query.trim()}”`} />
-        <div className={`results-grid results-grid--search${searchResults.length <= 1 ? ' results-grid--single' : ''}`} aria-label="Search results">
+        <div className={`results-grid results-grid--search${searchResults.length <= 1 ? ' results-grid--single' : ''}`} id="search-results" aria-label="Search results" aria-live="polite">
           {searchResults.map((movie) => {
             const movieKey = getMovieKey(movie);
             const currentRating = movieKey ? draftRatings[movieKey] ?? movie.personal_rating ?? null : movie.personal_rating ?? null;
@@ -2082,6 +2082,8 @@ function App() {
                   onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Search movies…"
                   aria-label="Search movies"
+                  aria-controls="search-results"
+                  aria-expanded={hasSearchResults ? 'true' : 'false'}
                   autoComplete="off"
                   enterKeyHint="search"
                 />

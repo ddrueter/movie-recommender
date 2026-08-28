@@ -61,7 +61,7 @@
 | # | Issue | Status |
 |---|-------|--------|
 | C1 | `MovieCard` is `role="link"` opening a new tab — validate SR announcement "opens in new tab" is implied by the unlock message/context. | ✅ — both MovieCard & SpotlightCard aria-labels now say "(opens in a new tab)" (R2) |
-| C2 | `.header-search__field` input lacks `aria-controls`/result association; results grid has `aria-label="Search results"` — acceptable, review live-region announcements. | 🎯 |
+| C2 | `.header-search__field` input lacks `aria-controls`/result association; results grid has `aria-label="Search results"` — acceptable, review live-region announcements. | ✅ — input now has `aria-controls="search-results"` + `aria-expanded`; the results grid is a `aria-live="polite"` region so result announcements are screen-reader friendly |
 | C3 | Theme toggle announces mode change only via `aria-label` swap — no live region; confirm acceptable. | ✅ |
 | C4 | Reduced-motion global override kills stagger/fade animations (`0.01ms`) — confirm no `forwards`-fill flicker (state end is fine). | ✅ reviewed |
 | C5 | No "skip to content" affordance — keyboard users must tab through the sticky header + nav before reaching content. | ✅ |
@@ -177,3 +177,7 @@
   `radioGroupKeyDown` helper and applied it to the SpotlightCard rating row too,
   so both rating radiogroups (poster compact + spotlight featured) offer
   identical arrow-key / Home / End keyboard support. ESLint clean.
+- **Round 15 (R15):** Search a11y (C2) — the header search input now points
+  `aria-controls="search-results"` (with `aria-expanded`), and the results grid
+  is an `aria-live="polite"` region, so screen readers announce result updates.
+  ESLint clean.
