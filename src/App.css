@@ -1333,17 +1333,33 @@
   padding: 0.55rem 2rem 0.55rem 0.9rem;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: var(--surface-glass);
+  /* Solid (opaque) themed background so the native option list renders dark in
+     dark mode instead of the browser's default white popup with light text. */
+  background-color: var(--surface-solid);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2366748a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
-  /* Cohesive with the site's pill controls (nav-tab, account trigger, etc.). */
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2366748a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 0.7rem center;
-  transition: border-color var(--dur-micro) var(--ease-snap), background var(--dur-micro) var(--ease-snap);
+  transition: border-color var(--dur-micro) var(--ease-snap), background-color var(--dur-micro) var(--ease-snap);
+}
+
+/* Theme the native option list itself so it stays coherent with the app (dark
+   background + readable light text in dark mode). Not all browsers style the
+   <option> popup, but this is the supported knob where available. */
+.history-control select option {
+  background-color: var(--surface-solid);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.history-control select option:checked,
+.history-control select option:hover {
+  background-color: var(--accent-soft-strong);
+  color: var(--accent-text);
 }
 
 .history-control select:hover,

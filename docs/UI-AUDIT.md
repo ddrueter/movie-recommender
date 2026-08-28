@@ -76,6 +76,7 @@
 | A55 | Cold-reload posters still didn't show: home data was awaited only after the engine fetch, so it never hit state during the load. | ✅ — `loadSpotlightPick` now sets home data the moment it resolves (fire-and-forget in parallel), so the carousel gains real posters as soon as they arrive |
 | A56 | The carousel cards turned around blank/see-through on the far side; asked for a solid backing (ideally the brand mark). | ✅ — each card now has a solid back face showing the CineHound radar mark, shown via 3D backface flip as the card turns away |
 | A57 | Cold-reload carousel still had no posters; the shared home-data state was a fragile source. | ✅ — the carousel now fetches **Trending directly** into its own `vignettePosters` state the instant the spotlight begins loading, so it always has a reliable poster set independent of the home tab |
+| A58 | The history sort `select`'s native dropdown menu rendered as a white popup with light text in dark mode (incoherent). | ✅ — added `color-scheme: dark/light` to the theme roots; made the select background solid and themed its `<option>` list (dark bg + light text) |
 | A44 | After the bottom-right anchor change, Love sat on the right; user want it back on the left. | ✅ — rack order restored (Love left → Don't-recommend right) while anchored bottom-right |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
@@ -350,6 +351,10 @@
   reliable source — it fetches **Trending directly** into its own
   `vignettePosters` state as soon as the spotlight starts loading, rather than
   depending on the shared home-tab state (A57). ESLint clean.
+- **Round 43 (R43, user feedback):** Fixed the history sort `select` dropdown
+  popup rendering as a white menu with light text in dark mode — added
+  `color-scheme` (dark/light) to the theme roots and themed the `<option>` list
+  with a solid dark background and readable text (A58). ESLint clean.
 - **Round 33 (R33, user feedback):** The recommendations 3D loading wheel was
   showing blank faces and looked uncanny. Removed the stage `overflow:hidden`
   that was flattening the wheel's `preserve-3d` (which hid the poster faces),

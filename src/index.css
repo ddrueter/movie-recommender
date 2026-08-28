@@ -96,6 +96,9 @@
 
   color: var(--text-body);
   background-color: var(--color-canvas);
+  /* Native form controls (select popups, etc.) should follow the dark theme
+     rather than rendering the browser's default white. */
+  color-scheme: dark;
   font-family: var(--font-body);
   font-weight: 400;
   font-synthesis: none;
@@ -163,6 +166,7 @@
 
   color: var(--text-body);
   background-color: var(--color-canvas);
+  color-scheme: light;
 }
 
 /* --- Ambient Background Gradient --- */
