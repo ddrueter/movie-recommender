@@ -654,32 +654,38 @@
 .home-hero__ring--2 { width: 160px; height: 160px; }
 .home-hero__ring--3 { width: 160px; height: 160px; }
 
-/* Rotating radar scan: a sweeping wedge + leading line pivots around the ring
-   centre, like an active radar — continuous, on-brand rotation. */
+/* Rotating radar scan: a spoke (thin line) from the ring centre to the edge,
+   ending in a bright blip — mirrors the line-and-dot radar icons used across
+   the site, rotating continuously about the centre. */
 .home-hero__sweep {
   position: absolute;
   top: 50%;
   left: 88%;
-  width: 170px;
-  height: 170px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    transparent 348deg,
-    var(--accent-secondary-border) 356deg,
-    transparent 360deg
-  );
-  -webkit-mask: radial-gradient(circle, transparent 0 38%, #000 39% 100%);
-  mask: radial-gradient(circle, transparent 0 38%, #000 39% 100%);
+  width: 76px;
+  height: 2px;
+  /* Inner end sits at the ring centre and pivots there. */
+  transform-origin: left center;
+  background: linear-gradient(90deg, transparent, var(--accent-secondary-border) 55%, var(--accent-text) 100%);
   animation: radar-sweep-rotate 3.6s linear infinite;
-  mix-blend-mode: screen;
+}
+
+/* Blip at the spoke tip */
+.home-hero__sweep::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -3px;
+  width: 7px;
+  height: 7px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--accent-text);
+  box-shadow: 0 0 10px var(--accent-glow);
 }
 
 @keyframes radar-sweep-rotate {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to   { transform: translate(-50%, -50%) rotate(360deg); }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 .home-hero__cross {

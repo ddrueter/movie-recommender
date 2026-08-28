@@ -82,7 +82,7 @@
 | A61 | The single recommendation card felt too small on a 1440p monitor. | ✅ — scaled the whole spotlight group (card max-width 720→900px, larger poster column, bigger title/overview/rating + action buttons) while keeping the buttons formatted |
 | A62 | The carousel's radar "ping" looked out of place after the center icon was removed. | ✅ — removed the sweep/ping-ring animation entirely |
 | A63 | The history loading screen sat at the top; should be vertically centered like the spotlight page. | ✅ — history loading now uses a vertically centered `FullWidthLoading--centered` variant |
-| A64 | The home hero radar "pinged" empty rings; wanted a rotating radar-scan sweep like the brand's radar motif used elsewhere. | ✅ — replaced the ping with a continuously rotating conic radar sweep wedge around the ring centre (with a quiet leading line) |
+| A64 | The home hero radar "pinged" empty rings; wanted a rotating radar-scan sweep like the brand's radar motif used elsewhere. | ✅ — replaced the static ping with a rotating spoke + tip blip sweeping around the ring centre, matching the line-and-dot radar icons used across the site |
 | A44 | After the bottom-right anchor change, Love sat on the right; user want it back on the left. | ✅ — rack order restored (Love left → Don't-recommend right) while anchored bottom-right |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
@@ -379,6 +379,10 @@
   rotating conic radar-scan sweep (wedge + leading line) around the ring centre
   instead of the empty "ping" rings, tying it into the brand's radar motif used
   elsewhere (A64). ESLint clean.
+- **Round 48 (R48, user feedback):** Replaced the hero's conic wedge (which
+  didn't match site radar icons) with a clean rotating spoke + tip blip pivoting
+  around the ring centre — consistent with the line-and-dot radar icons used in
+  the section headers and brand mark (A64). ESLint clean.
 - **Round 33 (R33, user feedback):** The recommendations 3D loading wheel was
   showing blank faces and looked uncanny. Removed the stage `overflow:hidden`
   that was flattening the wheel's `preserve-3d` (which hid the poster faces),
