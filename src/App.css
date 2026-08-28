@@ -149,7 +149,8 @@
   transition: transform var(--dur-fast) var(--ease-snap);
 }
 
-.nav-browse[aria-expanded="true"] .nav-caret {
+/* aria-expanded lives on the Home nav button, not the wrapper div */
+.nav-browse .nav-tab[aria-expanded="true"] .nav-caret {
   transform: rotate(180deg);
 }
 
@@ -240,6 +241,11 @@
   background: var(--accent-soft);
 }
 
+.header-search__toggle svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
 .theme-toggle {
   display: inline-grid;
   place-items: center;
@@ -313,9 +319,15 @@
   padding: 0.35rem 0.5rem;
   cursor: pointer;
   line-height: 1;
-  font-size: 1.1rem;
   border-radius: var(--radius-sm);
   transition: color var(--dur-micro) var(--ease-snap), background var(--dur-micro) var(--ease-snap);
+}
+
+.header-search__close svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+  flex: none;
 }
 
 .header-search__close:hover {
@@ -412,7 +424,6 @@
   height: 30px;
   border-radius: 10px;
   border: 1px solid var(--accent-border);
-  background: var(--accent-soft);
   color: var(--accent-text);
   flex-shrink: 0;
   box-shadow: 0 0 12px var(--accent-glow);
@@ -1496,12 +1507,14 @@
   place-items: center;
 }
 
-/* Film-reel: a row of stylized poster slides that scroll past */
+/* Film-reel: a row of stylized poster slides that scroll past.
+   20 slides (two identical copies) translate -50% for a seamless loop;
+   the per-slide margin keeps every stride identical so the seam is invisible. */
 .rec-vignette__reel {
   position: absolute;
   inset: 0;
   display: flex;
-  gap: 14px;
+  gap: 0;
   align-items: center;
   padding: 0 24px;
   animation: reel-scroll 3.4s linear infinite;
@@ -1510,13 +1523,17 @@
 
 @keyframes reel-scroll {
   0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  /* Strip = 24px left padding + 2 identical sets (each 10 × (74px + 14px
+     margin) = 880px). −50% of the (padded) width overshoots one set by the
+     24px left padding, so back off exactly that for a seamless loop. */
+  100% { transform: translateX(calc(-50% + 24px)); }
 }
 
 .rec-vignette__slide {
   flex: 0 0 auto;
   width: 74px;
   height: 112px;
+  margin-right: 14px;
   border-radius: var(--radius-md);
   background: linear-gradient(160deg,
       hsl(calc(150 + var(--i, 0) * 18) 70% 22%),
@@ -1645,6 +1662,12 @@
 
   .header-auth {
     justify-content: flex-end;
+  }
+
+  /* Mid-size screens: keep the open search field from crowding the brand
+     row out (nav demotes below the header here, so space is tight). */
+  .header-search__field input {
+    width: min(200px, 36vw);
   }
 }
 

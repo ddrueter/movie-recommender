@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import {
@@ -23,6 +23,13 @@ import {
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
 const SEARCH_INITIAL_RESULT_COUNT = 24;
+
+// Touch/tablet pointers have no hover to reveal the poster rating controls —
+// the first tap on the poster must reveal them instead of navigating away.
+const COARSE_POINTER =
+  typeof window !== 'undefined' && window.matchMedia
+    ? window.matchMedia('(hover: none) and (pointer: coarse)').matches
+    : false;
 
 function RatingIcon({ kind }) {
   switch (kind) {
@@ -271,6 +278,10 @@ function MovieCard({
   const handleCardClick = (event) => {
     // Don't navigate if the click was on a rating button or its children
     if (event.target.closest('.poster-rating__option')) return;
+    // On touch devices the rating controls appear only after the card takes
+    // focus, so a tap on the poster must reveal them — not open TMDB. The
+    // poster is the rating surface; the title row below still opens TMDB.
+    if (COARSE_POINTER && event.target.closest('.poster')) return;
     if (tmdbUrl) {
       window.open(tmdbUrl, '_blank', 'noopener,noreferrer');
     }
@@ -569,8 +580,9 @@ function RecommendationVignette() {
     <div className="rec-vignette" role="status" aria-live="polite" aria-label="Generating your recommendation">
       <div className="rec-vignette__stage" aria-hidden="true">
         <div className="rec-vignette__reel">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <span key={i} className="rec-vignette__slide" style={{ ['--i']: i }} />
+          {/* Two identical copies so the -50% scroll loop is seamless. */}
+          {Array.from({ length: 20 }).map((_, i) => (
+            <span key={i} className="rec-vignette__slide" style={{ ['--i']: i % 10 }} />
           ))}
         </div>
         <div className="rec-vignette__sweep" />
@@ -594,16 +606,38 @@ function RecommendationVignette() {
  */
 function useGridColumns(containerRef, selector = '.results-grid--home') {
   const [columns, setColumns] = useState(6);
+  const [gridObserved, setGridObserved] = useState(false);
+
+  const readColumns = useCallback(() => {
+    const grid = document.querySelector(selector);
+    if (!grid) return null;
+    const style = getComputedStyle(grid);
+    const cols = style.gridTemplateColumns.split(' ').filter(Boolean).length;
+    return cols > 0 ? cols : null;
+  }, [selector]);
+
+  // Measure before paint so the very first frame already slices the right
+  // number of movies per section instead of guessing 6, then correcting.
+  // Once a grid is observed the layout pass bails out immediately and the
+  // Resize/Mutation observers below keep the count in sync.
+  useLayoutEffect(() => {
+    if (gridObserved) return;
+    const cols = readColumns();
+    if (cols != null) {
+      setColumns(cols);
+      setGridObserved(true);
+    }
+  }, [gridObserved, readColumns]);
 
   useEffect(() => {
     let frame = 0;
 
     const measure = () => {
-      const grid = document.querySelector(selector);
-      if (!grid) return;
-      const style = getComputedStyle(grid);
-      const cols = style.gridTemplateColumns.split(' ').filter(Boolean).length;
-      if (cols > 0) setColumns(cols);
+      const cols = readColumns();
+      if (cols != null) {
+        setColumns(cols);
+        setGridObserved(true);
+      }
     };
 
     // Coalesce bursts of DOM/resize events into one measurement per frame.
@@ -626,7 +660,7 @@ function useGridColumns(containerRef, selector = '.results-grid--home') {
       resizeObserver?.disconnect();
       mutationObserver?.disconnect();
     };
-  }, [containerRef, selector]);
+  }, [containerRef, readColumns]);
 
   return columns;
 }
@@ -938,7 +972,15 @@ function App() {
     }
   }, [authToken]);
 
+  // Latest-ref pattern: the data effects below must re-run only when the
+  // tab / view mode / session changes. Keying them on the loader callbacks
+  // directly made every column-count change (page size) retrigger fetches —
+  // an extra fetch on first load and on each window resize.
+  const dataLoaderRef = useRef({ loadHomeData, loadRecommendations, loadSpotlightPick });
+  dataLoaderRef.current = { loadHomeData, loadRecommendations, loadSpotlightPick };
+
   useEffect(() => {
+    const { loadHomeData, loadRecommendations, loadSpotlightPick } = dataLoaderRef.current;
     if (activeTab === 'home' || activeTab === 'trending-full' || activeTab === 'popular-full' || activeTab === 'topRated-full') {
       void loadHomeData();
       void loadRecommendations();
@@ -949,7 +991,7 @@ function App() {
         void loadRecommendations();
       }
     }
-  }, [activeTab, loadHomeData, loadRecommendations, loadSpotlightPick, recsViewMode]);
+  }, [activeTab, recsViewMode, authToken]);
 
   useEffect(() => {
     if (activeTab === 'history') {
@@ -1200,8 +1242,10 @@ function App() {
   };
 
   const toggleHeaderSearch = () => {
+    const willOpen = !searchIsOpen;
     setSearchIsOpen((prev) => !prev);
-    if (!searchIsOpen) {
+    if (willOpen) {
+      // Focus the input once the field is mounted (next frame).
       setTimeout(() => searchInputRef.current?.focus(), 50);
     }
   };
@@ -1628,7 +1672,8 @@ function App() {
           tone="neutral"
         >
           <div className="state-card__actions">
-            <button type="button" onClick={handleDemoLogin} disabled={authLoading}>Try Demo</button>
+            <button type="button" className="btn-primary" onClick={handleFirebaseLogin} disabled={authLoading}>Sign in with Google</button>
+            <button type="button" className="subtle-button" onClick={handleDemoLogin} disabled={authLoading}>Try Demo</button>
           </div>
         </StateCard>
       );
@@ -1816,7 +1861,12 @@ function App() {
         <div className="header-auth" aria-label="Identity and session controls">
           <div className="header-search">
             {searchIsOpen ? (
-              <div className="header-search__field">
+              <div
+                className="header-search__field"
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') closeHeaderSearch();
+                }}
+              >
                 <svg className="header-search__icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="7.5" />
                   <line x1="21" y1="21" x2="16.5" y2="16.5" />
@@ -1835,11 +1885,15 @@ function App() {
                   onClick={closeHeaderSearch}
                   aria-label="Close search"
                 >
-                  ✕
+                  <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
                 </button>
               </div>
             ) : (
               <button type="button" className="header-search__toggle" onClick={toggleHeaderSearch}>
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="7.5" />
+                  <line x1="21" y1="21" x2="16.5" y2="16.5" />
+                </svg>
                 Search
               </button>
             )}
