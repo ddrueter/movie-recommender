@@ -78,7 +78,8 @@
 | D4 | Very wide ≥2150px: max-width cap 1760 centers content; hero FX rings pinned near right edge (88%) may look detached on ultrawide. | ✅ reviewed — FX contained inside the capped hero container, not detached |
 | D5 | Back-to-top threshold fixed at 720px scroll — fine on all pages? Verify on short pages (search with few results). | ✅ reviewed — appears only after substantial scroll, never on short pages (correct) |
 | D6 | Grid left a dead half-column on the right when a row had fewer items than columns (e.g. 7 movies, 7.5 columns of space, always left-aligned). | ✅ — `auto-fit` tracks stretch to `1fr` so surviving columns fill the row on every window/screen |
-| D7 | Homepage vertical rhythm inconsistent: header rows hugged their grids (0.15rem gap) while sections were far apart; reveal spacing varied. | ✅ — uniform `.section-header-row` margin (0.5rem above, 1rem below) across all pages + links |
+| D7 | Homepage vertical rhythm inconsistent: header rows hugged their grids (0.15rem gap) while sections were far apart; the reveal spacing varied. | ✅ — uniform `.section-header-row` margin (0.5rem above, 1rem below) across all pages |
+| D8 | Home loading skeleton used fixed-size tracks while the real grid stretches (`auto-fit, minmax(card, 1fr)`); a layout shift spate when skeletons swapped for real cards. | ✅ — skeleton grid now matches the results grid exactly |
 
 ## E. Copy / labels
 
@@ -137,3 +138,6 @@
   leaves an awkward half-column of dead space (D6). Section headers get a uniform,
   comfortable gap above & below on every page, fixing erratic header↔section
   spacing on the homepage and elsewhere (D7).
+- **Round 8 (R8):** Home loading skeleton now uses the same `auto-fit,
+  minmax(card, 1fr)` grid as the real result grid, so there is no layout/shift
+  jump when the skeleton swaps for real movie cards (D8). ESLint clean.

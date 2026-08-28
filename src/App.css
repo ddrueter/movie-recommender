@@ -1105,7 +1105,9 @@
 .home-skeleton__grid {
   --card-size: clamp(158px, 13.5vw, 208px);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), var(--card-size)));
+  /* Match the real results grid exactly so content doesn't jump when the
+     skeleton swaps in the movies (auto-fit + 1fr fills the row). */
+  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), 1fr));
   gap: 1.1rem;
 }
 
