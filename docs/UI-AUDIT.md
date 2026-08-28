@@ -55,6 +55,7 @@
 | A33 | The spotlight action buttons were inconsistent (one filled `btn-primary`, one outline `btn-soft`, with mismatched heights). | ✅ — both now use the same soft pill style with equal `min-height` so the row is even and on-brand |
 | A34 | The home loading skeleton always rendered 10 cards regardless of the column count, producing a non-integer (e.g. 1.4) row. | ✅ — skeleton now renders exactly `columns × rows` cards (homeColumns × 2), always full rows |
 | A35 | Full-page section (Trending/Popular/Most Acclaimed) used a centered "Loading…" card while loading — inconsistent with the home page's grid skeleton. | ✅ — now renders a matching full-row card skeleton grid |
+| A36 | Mobile nav pill (≤720px) was forced full-width and left-aligned, so the pill background spanned the row with tabs hugging one side. | ✅ — mobile nav stays shrink-wrapped and centered (fit-content + centered) |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
@@ -254,3 +255,6 @@
   state used a centered "Loading…" card, inconsistent with the home page's grid
   skeleton; it now shows a matching full-row card skeleton grid (A35). ESLint
   clean.
+- **Round 27 (R27):** On mobile (≤720px) the nav pill was forced full-width and
+  left-aligned, so its background spanned the whole row. It now stays
+  shrink-wrapped and centered (A36). ESLint clean.

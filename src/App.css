@@ -1939,7 +1939,8 @@
   }
 
   .app-nav {
-    width: 100%;
+    justify-content: center;
+    width: fit-content;
     max-width: 100%;
   }
 
