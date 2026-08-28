@@ -548,6 +548,26 @@
   border-color: var(--accent-border);
 }
 
+/* Prominent pill action for header controls that must be more than a footnote
+   (e.g. the recommendations "Switch to Spotlight" toggle). */
+.view-more-link--pill {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 0.55rem 1.1rem;
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.view-more-link--pill:hover {
+  background: var(--accent-soft-strong);
+  color: var(--accent-text);
+  border-color: var(--accent-border);
+}
+
 /* ── Home Hero ── */
 .home-hero {
   position: relative;
@@ -1278,6 +1298,10 @@
   place-items: center;
   width: 46px;
   height: 46px;
+  /* Reset the global button padding (0.55rem 1.05rem) that otherwise pushes
+     the icon off-center inside the fixed-size circle. */
+  padding: 0;
+  line-height: 0;
   border-radius: 50%;
   border: 1px solid var(--accent-border);
   background: var(--surface-raised);
@@ -1290,6 +1314,13 @@
               transform var(--dur-fast) var(--ease-snap),
               visibility var(--dur-fast) var(--ease-snap),
               background var(--dur-fast) var(--ease-snap);
+}
+
+.back-top svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 0;
 }
 
 .back-top.is-visible {

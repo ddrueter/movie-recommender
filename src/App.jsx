@@ -497,7 +497,7 @@ function StateCard({ title, message, tone = 'neutral', children }) {
   );
 }
 
-function SectionHeader({ title, onViewMore, viewMoreLabel }) {
+function SectionHeader({ title, onViewMore, viewMoreLabel, viewMoreVariant = 'link' }) {
   return (
     <div className="section-header-row">
       <h2 className="section-header">
@@ -512,7 +512,15 @@ function SectionHeader({ title, onViewMore, viewMoreLabel }) {
         {title}
       </h2>
       {onViewMore ? (
-        <button type="button" className="view-more-link" onClick={onViewMore}>
+        <button
+          type="button"
+          className={
+            viewMoreVariant === 'pill'
+              ? 'section-header__action view-more-link view-more-link--pill'
+              : 'view-more-link'
+          }
+          onClick={onViewMore}
+        >
           {viewMoreLabel || 'View all →'}
         </button>
       ) : null}
@@ -1820,7 +1828,12 @@ function App() {
 
     return (
       <>
-        <SectionHeader title="Target Lock" onViewMore={() => setRecsViewMode('spotlight')} viewMoreLabel="One at a time" />
+        <SectionHeader
+          title="Target Lock"
+          onViewMore={() => setRecsViewMode('spotlight')}
+          viewMoreLabel="Switch to Spotlight"
+          viewMoreVariant="pill"
+        />
         <div className="results-grid results-grid--discover" aria-label="Recommendation results">
           {recommendations.map((movie) => {
             const movieKey = getMovieKey(movie);

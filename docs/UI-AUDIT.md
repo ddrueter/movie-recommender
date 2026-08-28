@@ -44,6 +44,8 @@
 | A22 | Recommendation loading vignette was a fixed 520px bordered card box. | ✅ — vignette is now a full-width, borderless ambient band that spans the content column |
 | A23 | `.btn-primary` / `.btn-soft` / `.subtle-button` were three identical flat pills with no visual hierarchy. | ✅ — primary is now a solid accent fill + dark ink; soft/subtle stay outline pills (clear primary vs. secondary) |
 | A24 | Single recommendation card had dead empty space at its bottom because the body didn't fill the card height. | ✅ — card `align-items: stretch` + body `height:100%`, so the rating row pins to the bottom |
+| A25 | Back-to-top arrow was not centered in its fixed 46px circle — the global button padding pushed it off-center. | ✅ — `padding:0` + `line-height:0` on the bubble centers the arrow icon |
+| A26 | "One at a time" label for switching the recommendations grid back to the spotlight was unclear and only rendered as a tiny subtitle-style header link, easy to miss. | ✅ — renamed to a prominent "Switch to Spotlight" pill button in the section header |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
@@ -211,3 +213,8 @@
   inside (A24). The recommendation loading vignette is now a full-width,
   borderless ambient band instead of a fixed 520px card (A22). ESLint
   clean.
+- **Round 20 (R20, user feedback):** Fixed the back-to-top arrow being off-center
+  in its circle (was the global button padding; now `padding:0`, A25).
+  Renamed the unclear "One at a time" switch label to a prominent **"Switch to
+  Spotlight"** pill button so it reads as a real control, not a footnote
+  (A26). ESLint clean.
