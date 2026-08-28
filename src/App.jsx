@@ -895,7 +895,14 @@ function App() {
     }
   }, [browseOpen]);
 
-  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  const toggleTheme = () => {
+    setTheme((t) => {
+      const next = t === 'dark' ? 'light' : 'dark';
+      // Announce the change so screen-reader users aren't left guessing.
+      setAnnouncement(`${next === 'dark' ? 'Dark' : 'Light'} mode enabled.`);
+      return next;
+    });
+  };
 
   const loadHomeData = useCallback(async () => {
     const requestId = ++homeSequence.current;
@@ -1316,7 +1323,7 @@ function App() {
 
   const renderSearchBody = () => {
     if (searchLoading && searchResults.length === 0) {
-      return <StateCard title="Loading" tone="loading" />;
+      return <StateCard title="Searching…" tone="loading" />;
     }
 
     if (searchError && searchResults.length === 0) {
@@ -1465,7 +1472,7 @@ function App() {
             viewMoreLabel="← Back"
           />
           {expandedSectionLoading && movies.length === 0 ? (
-            <StateCard title="Loading" tone="loading" />
+            <StateCard title="Loading…" tone="loading" />
           ) : (
             <>
               <div className="results-grid results-grid--home" aria-label={activeSection.title}>
@@ -1658,7 +1665,7 @@ function App() {
     }
 
     if (recommendationsLoading && recommendations.length === 0) {
-      return <StateCard title="Loading" tone="loading" />;
+      return <StateCard title="Building your recommendations…" tone="loading" />;
     }
 
     if (recommendationState.status === 'error') {
@@ -1733,7 +1740,7 @@ function App() {
     }
 
     if (userRatingsLoading && userRatingsHistory.length === 0) {
-      return <StateCard title="Loading" tone="loading" />;
+      return <StateCard title="Loading your ratings…" tone="loading" />;
     }
 
     if (userRatingsError) {
@@ -1840,7 +1847,7 @@ function App() {
                 <stop offset="100%" stopColor="#ff9a3d" />
               </linearGradient>
             </defs>
-            <rect width="64" height="64" rx="15" fill="#0c0f16" />
+            <rect width="64" height="64" rx="15" fill="var(--surface-raised)" />
             <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="14.25" fill="none" stroke="#ffffff" strokeOpacity="0.06" strokeWidth="1.5" />
             <circle cx="32" cy="32" r="19.5" fill="none" stroke="url(#chRadarMark)" strokeWidth="2.2" opacity="0.9" />
             <circle cx="32" cy="32" r="13" fill="none" stroke="url(#chRadarMark)" strokeWidth="1.8" opacity="0.55" />

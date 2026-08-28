@@ -46,27 +46,28 @@
 | B2 | Scan theme-dependent hardcoded colors: `.btn-primary` text `#06120b` (verify both themes), brand SVG `#0c0f16` chip (intentional app-icon). | ✅ |
 | B3 | `@keyframes score-fade` defined but unused (`.score-pill` uses `score-count-up`). Dead keyframe. | ✅ |
 | B4 | OG/Twitter image is an SVG — many scrapers ignore SVG `og:image`. Should export a PNG when branding warms up. | 🎯 |
-| B5 | `--color-active/--color-negative/--color-muted` legacy aliases and `--ch-*` raw palette: verify they are all still referenced before pruning. | 🎯 |
-| B6 | `.home-hero__inner` max-width 720px while lede uses `max-width: 58ch` — intentional; verify hero doesn't stray from grid alignment at ≥1600px. | 🎯 |
+| B5 | `--color-active/--color-negative/--color-muted` legacy aliases and `--ch-*` raw palette: verify they are all still referenced before pruning. | ✅ removed the three unused `--color-*` aliases (dark + light); `--ch-*` kept as canonical brand palette (abyss/slate still feed canvas/surface, radar/crimson/signal/amber remain for reference) |
+| B6 | `.home-hero__inner` max-width 720px while lede uses `max-width: 58ch` — intentional; verify hero doesn't stray from grid alignment at ≥1600px. | ✅ reviewed — hero & FX are contained inside a max-width 1760 container so nothing detaches on ultrawide |
+| B7 | Header `.brand-icon` chip hardcoded `fill:#0c0f16` while footer brand chip uses themed `var(--surface-raised)` — header stayed dark in light theme. | ✅ |
 
 ## C. Accessibility
 
 | # | Issue | Status |
 |---|-------|--------|
-| C1 | `MovieCard` is `role="link"` opening a new tab — validate SR announcement "opens in new tab" is implied by the unlock message/context. Consider `aria-describedby` hint. | 🎯 |
+| C1 | `MovieCard` is `role="link"` opening a new tab — validate SR announcement "opens in new tab" is implied by the unlock message/context. | ✅ — both MovieCard & SpotlightCard aria-labels now say "(opens in a new tab)" (R2) |
 | C2 | `.header-search__field` input lacks `aria-controls`/result association; results grid has `aria-label="Search results"` — acceptable, review live-region announcements. | 🎯 |
-| C3 | Theme toggle announces mode change only via `aria-label` swap — no live region; confirm acceptable. | 🎯 |
+| C3 | Theme toggle announces mode change only via `aria-label` swap — no live region; confirm acceptable. | ✅ |
 | C4 | Reduced-motion global override kills stagger/fade animations (`0.01ms`) — confirm no `forwards`-fill flicker (state end is fine). | ✅ reviewed |
 
 ## D. Responsive / device edge cases
 
 | # | Issue | Status |
 |---|-------|--------|
-| D1 | Poster rating buttons on coarse pointers become 17.5%-wide bars with rounded 12px radius while spotlight buttons stay circles — verify visual family coherence; consider same radius family. | 🎯 |
+| D1 | Poster rating buttons on coarse pointers become 17.5%-wide bars with rounded 12px radius while spotlight buttons stay circles — verify visual family coherence; consider same radius family. | ✅ — coarse-pointer poster buttons are now pills (999px) matching the app's pill-button language |
 | D2 | `.spotlight-card` single-column ≤720px: poster is `max-width: 220px` and left-aligned in a full-width track — verify it centers nicely. | ✅ |
 | D3 | Ultra-narrow ≤400px: nav pill flexes; verify caret + padding still breathe. | 🎯 |
-| D4 | Very wide ≥2150px: max-width cap 1760 centers content; hero FX rings pinned near right edge (88%) may look detached on ultrawide. | 🎯 |
-| D5 | Back-to-top threshold fixed at 720px scroll — fine on all pages? Verify on short pages (search with few results). | 🎯 |
+| D4 | Very wide ≥2150px: max-width cap 1760 centers content; hero FX rings pinned near right edge (88%) may look detached on ultrawide. | ✅ reviewed — FX contained inside the capped hero container, not detached |
+| D5 | Back-to-top threshold fixed at 720px scroll — fine on all pages? Verify on short pages (search with few results). | ✅ reviewed — appears only after substantial scroll, never on short pages (correct) |
 
 ## E. Copy / labels
 
@@ -95,3 +96,13 @@
   `friendlyError()` to humanize announcement error text across home/recs/history/
   search/rating/auth paths (E2). IM card aria-labels now announce "opens in a new
   tab" for both MovieCard and SpotlightCard (C1). ESLint clean throughout.
+- **Round 3 (R3):** Theming consistency — header brand chip now uses themed
+  `var(--surface-raised)` like the footer chip instead of a hardcoded dark fill
+  that stayed dark in light mode (B7). Removed the three unused
+  `--color-active/negative/muted` legacy aliases (B5). Theme toggle now announces
+  the change via the live region for screen readers (C3). Loading state copy is
+  contextual — "Searching…", "Building your recommendations…", "Loading your
+  ratings…" — instead of a bare "Loading" (polish). Coarse-pointer poster rating
+  buttons are now pills (999px) to match the app's pill-button language (D1).
+  Reviewed-and-closed B6, D4, D5 (containers keep hero FX/back-to-top correct).
+  ESLint clean throughout.

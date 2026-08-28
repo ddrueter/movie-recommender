@@ -1760,7 +1760,9 @@
     height: 2.3rem;
     right: auto;
     bottom: 0.45rem;
-    border-radius: 12px;
+    /* Pill to match the app's pill-button language (nav-tab, subtle-button,
+       session-chip). Keeps the enlarged touch targets visually coherent. */
+    border-radius: 999px;
   }
 
   .poster-rating__option .rating-icon,
