@@ -1341,13 +1341,13 @@
 }
 
 /* ── Primary accent pill button ──
-   Matches the site's soft pill language (subtle-button / btn-soft / nav-tab):
-   a tinted accent background with an accent border and text — no loud
-   multi-hue gradient, so it reads as part of the same family everywhere. */
+   A solid accent fill + dark ink marks this as the primary action, clearly
+   distinct from the outline soft pills (btn-soft / subtle-button) used for
+   secondary actions — a real hierarchy instead of three identical flat pills. */
 .btn-primary {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-  color: var(--accent-text);
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-ink);
   font-weight: 700;
   border-radius: 999px;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
@@ -1360,19 +1360,19 @@
 }
 
 .btn-primary:hover {
-  color: var(--accent-text);
-  background: var(--accent-soft-strong);
-  border-color: var(--accent-border);
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: transparent;
   box-shadow: 0 4px 16px var(--accent-glow);
   transform: translateY(-1px);
-  filter: none;
+  filter: brightness(1.05);
 }
 
 .btn-primary:active {
   transform: translateY(1px) scale(0.99);
 }
 
-/* ── Soft accent pill button (secondary CTAs) ── */
+/* ── Soft accent outline pill button (secondary CTAs) ── */
 .btn-soft {
   border-color: var(--accent-border);
   background: var(--accent-soft);
@@ -1399,7 +1399,7 @@
   padding: 1.25rem;
   max-width: 720px;
   margin-inline: auto;
-  align-items: start;
+  align-items: stretch;
   position: relative;
   overflow: hidden;
 }
@@ -1456,6 +1456,9 @@
   flex-direction: column;
   gap: 0.85rem;
   min-width: 0;
+  /* Fill the full card height so the rating row (margin-top:auto) pins to the
+     bottom — no dead empty band between content and the card's bottom edge. */
+  height: 100%;
 }
 
 .spotlight-card__header {
@@ -1644,12 +1647,14 @@
 
 .rec-vignette__stage {
   position: relative;
-  width: min(520px, 90vw);
+  width: 100%;
   height: 200px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: var(--surface-glass);
-  box-shadow: var(--shadow-md);
+  /* Full-bleed ambient band — not a bordered card, so it occupies the whole
+     content width instead of a fixed 520px box. */
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
   overflow: hidden;
   display: grid;
   place-items: center;

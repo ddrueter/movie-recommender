@@ -45,6 +45,8 @@
   --accent-soft-strong: rgba(0, 255, 119, 0.18);
   --accent-border: rgba(0, 255, 119, 0.45);
   --accent-glow: rgba(0, 255, 119, 0.28);
+  /* Readable dark ink placed on the solid primary (accent-filled) button */
+  --accent-ink: #06120b;
 
   /* Secondary accent (dark: orange) — pairs with the green primary */
   --accent-secondary: #ff9a3d;
@@ -127,6 +129,7 @@
   --accent-soft-strong: rgba(234, 138, 42, 0.17);
   --accent-border: rgba(234, 138, 42, 0.42);
   --accent-glow: rgba(234, 138, 42, 0.2);
+  --accent-ink: #1a0f04;
 
   /* Secondary accent (light: green) — primary flips to orange here */
   --accent-secondary: #0f9d5b;

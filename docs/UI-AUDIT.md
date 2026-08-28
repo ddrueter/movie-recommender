@@ -41,6 +41,9 @@
 | A19 | Recommendations browse used a "Load more" button adding a full page each click; wanted column-aware loading + auto-load as you reach the end. | ✅ — browse grid now uses infinite scroll via an IntersectionObserver sentinel that appends the next column-aware page (columns × 4) as you scroll |
 | A20 | Spotlight ("Your Next Pick") had a redundant section header above the single featured card, where the card itself is the focus. | ✅ — header removed; the card sits alone as the focal point |
 | A21 | Recommendation diagnostics rendered prominently on the discover page during normal (non-error) use. | ✅ — diagnostics now render only when the recommendation engine errors |
+| A22 | Recommendation loading vignette was a fixed 520px bordered card box. | ✅ — vignette is now a full-width, borderless ambient band that spans the content column |
+| A23 | `.btn-primary` / `.btn-soft` / `.subtle-button` were three identical flat pills with no visual hierarchy. | ✅ — primary is now a solid accent fill + dark ink; soft/subtle stay outline pills (clear primary vs. secondary) |
+| A24 | Single recommendation card had dead empty space at its bottom because the body didn't fill the card height. | ✅ — card `align-items: stretch` + body `height:100%`, so the rating row pins to the bottom |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
@@ -200,4 +203,11 @@
   requiring a "Load more" click (A19). Removed the redundant "Your Next Pick"
   header above the spotlight card (A20). Recommendation diagnostics are now
   hidden in normal use and appear only when the engine errors (A21). ESLint
+  clean.
+- **Round 19 (R19, user feedback):** Button hierarchy — `.btn-primary` is now a
+  solid accent fill + dark ink, clearly distinct from the outline `btn-soft` /
+  `subtle-button` secondary pills (A23). The single recommendation card fills
+  its own height so the rating row pins to the bottom — no dead empty pad
+  inside (A24). The recommendation loading vignette is now a full-width,
+  borderless ambient band instead of a fixed 520px card (A22). ESLint
   clean.
