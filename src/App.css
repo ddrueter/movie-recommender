@@ -719,20 +719,19 @@
 }
 
 /* ── Results grid ──
-   auto-fit + a capped max: columns shrink to the cell count when content is
-   light (so a few filtered movies never balloon across the row or leave large
-   empty trailing tracks), and stretch up to --card-max at most. Full content
-   tiles normally; light content stays modest with any leftover space pooling
-   at the end (before the footer) rather than between items. */
+   Fixed, modest card tracks: each card renders at a comfortable --card-size and
+   never stretches (no ballooning into huge cards). auto-fill tiles full rows
+   for normal content; when a filter leaves few movies, the few cards stay small
+   and centered — leftover space is even on the sides, not a dead gap between
+   items. */
 .results-grid {
-  --card-size: clamp(164px, 14.5vw, 216px);
-  --card-max: clamp(200px, 20vw, 300px);
+  --card-size: clamp(150px, 13vw, 200px);
   display: grid;
   gap: 1.1rem;
   grid-auto-flow: row;
-  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), var(--card-max)));
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-size), var(--card-size)));
   align-items: stretch;
-  justify-content: start;
+  justify-content: center;
 }
 
 .results-grid--single {
@@ -743,8 +742,7 @@
 .results-grid--home,
 .results-grid--history,
 .results-grid--discover {
-  --card-size: clamp(128px, 12vw, 180px);
-  --card-max: clamp(200px, 20vw, 300px);
+  --card-size: clamp(148px, 12vw, 190px);
 }
 
 .results-grid--search {
@@ -1194,12 +1192,12 @@
 }
 
 .home-skeleton__grid {
-  --card-size: clamp(128px, 12vw, 180px);
-  --card-max: clamp(200px, 20vw, 300px);
+  --card-size: clamp(148px, 12vw, 190px);
   display: grid;
-  /* Match the real results grid exactly (auto-fit + capped max) so the measured
+  /* Match the real results grid (fixed modest tracks, centered) so the measured
      column count — and thus the rendered full rows — match the loaded grid. */
-  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), var(--card-max)));
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-size), var(--card-size)));
+  justify-content: center;
   gap: 1.1rem;
 }
 
@@ -1316,6 +1314,34 @@
 
 .history-control select {
   min-width: 150px;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0.55rem 2rem 0.55rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-glass);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  /* Cohesive with the site's pill controls (nav-tab, account trigger, etc.). */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2366748a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  transition: border-color var(--dur-micro) var(--ease-snap), background var(--dur-micro) var(--ease-snap);
+}
+
+.history-control select:hover,
+.history-control select:focus-visible {
+  border-color: var(--accent-border);
+  background-color: var(--accent-soft);
+}
+
+.history-control select:hover,
+.history-control select:focus-visible {
+  border-color: var(--accent-border);
+  background-color: var(--accent-soft);
 }
 
 .history-filter {

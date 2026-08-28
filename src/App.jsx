@@ -1970,8 +1970,8 @@ function App() {
       return <StateCard title="No ratings yet" message="Rate films to populate your scent trail, and they'll show up here." tone="neutral" />;
     }
 
-    // Sort by a key (recency / rating / title / release year) plus an explicit
-    // direction (desc or asc). Defaults to desc (most recent first).
+    // Sort by a key (recency / rating / title / release year) with an explicit
+    // direction. dir=1 => descending (desc, the default): newest-highest first.
     const dir = historySortDir === 'asc' ? -1 : 1;
     const sorted = [...userRatingsHistory];
     const rate = (m) => m.personal_rating ?? -99;
@@ -1982,15 +1982,19 @@ function App() {
     };
 
     if (historySort === 'rating') {
+      // desc = high → low
       sorted.sort((a, b) => dir * (rate(b) - rate(a)));
     } else if (historySort === 'title') {
-      sorted.sort((a, b) => dir * String(a.title ?? '').localeCompare(String(b.title ?? '')));
+      // desc = Z → A ; asc = A → Z
+      sorted.sort((a, b) => dir * String(b.title ?? '').localeCompare(String(a.title ?? '')));
     } else if (historySort === 'year') {
+      // desc = newest release first
       sorted.sort((a, b) => dir * (yearOf(b) - yearOf(a)));
     } else {
-      // 'recent' — rating recency
-      sorted.sort((a, b) => dir * (when(a) - when(b)));
+      // 'recent' — desc = most recently rated first (fixes the inverted default)
+      sorted.sort((a, b) => dir * (when(b) - when(a)));
     }
+    // Note: sorted is a fresh copy each render, so mutation is safe.
 
     // Filter by rating tone: Love / Like / Meh / Dislike / Hidden (separate).
     const filtered =
@@ -2037,7 +2041,7 @@ function App() {
                 className={historySortDir === 'desc' ? 'is-active' : ''}
                 onClick={() => setHistorySortDir('desc')}
               >
-                Newest ↓
+                Descending ↓
               </button>
               <button
                 type="button"
@@ -2045,7 +2049,7 @@ function App() {
                 className={historySortDir === 'asc' ? 'is-active' : ''}
                 onClick={() => setHistorySortDir('asc')}
               >
-                Oldest ↑
+                Ascending ↑
               </button>
             </div>
           </div>

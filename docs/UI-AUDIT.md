@@ -59,9 +59,9 @@
 | A37 | Long section-header actions (e.g. the "Switch to Spotlight" pill) could crowd/overflow next to the title on narrow screens. | ✅ — header row wraps gracefully (flex-wrap) so the title and action stack on small widths |
 | A38 | A filter that matched nothing rendered an empty grid with a state card after it (odd). | ✅ — when a filter yields nothing, show only the friendly empty state (no empty grid) |
 | A39 | History "Dislike" filter also included "Hidden" (don't-recommend) — two distinct meanings lumped together. | ✅ — Dislike (=-2) and Hidden (=-1) are now separate filters |
-| A40 | History sort lacked descending / Oldest options; "Oldest" had no code path so it repeated "Most recent". | ✅ — split into sort **type** (Most recent / Rating / Title / Release year) + **order** toggle (Newest↓ / Oldest↑); release-year sort added |
-| A41 | A few recommendation cards could stretch across the whole row into oversized artworks, or auto-fill left empty trailing track space between items. | ✅ — grid uses auto-fit + a capped `--card-max`, so light content collapses to bounded cards with no dead gaps |
-| A45 | Sorting "Oldest" did nothing (it re-used server order / same as most recent). | ✅ — fixed via the sort-type + direction split (default desc = newest) |
+| A40 | History sort lacked descending / Oldest options; "Oldest" had no code path so it repeated "Most recent". | ✅ — split into sort **type** (Most recent / Rating / Title / Release year) + **order** toggle; release-year sort added |
+| A41 | A few recommendation cards could stretch across the whole row into oversized artworks, or auto-fill left empty trailing track space between items. | ✅ — grid uses fixed modest `--card-size` tracks (auto-fill, centered), so light content never balloons and full rows tile cleanly |
+| A45 | Sorting "Oldest" did nothing (it re-used server order / same as most recent). | ✅ — fixed via the sort-type + direction split; also fixed the inverted recency comparator so the default (desc) shows most recent first |
 | A42 | Loading states for search / recommendations / history were boxes (StateCard); user wants full-width loaders. | ✅ — replaced with a full-width labeled shimmer band (FullWidthLoading) |
 | A43 | The recommendation loading "vignette" read as a static row of cards and could visually "end"; wanted a continuous, movie-poster carousel surface. | ✅ — now a continuous 3D wheel of real poster thumbnails orbiting a radar core (seamless, endless) |
 | A46 | The rec-loading 3D wheel showed blank faces / no posters and felt uncanny against the page. | ✅ — removed the stage `overflow:hidden` that was flattening the `preserve-3d` (hiding faces), made poster imgs eager-load, and added a dark translucent backdrop so the spinning wheel reads as a carousel receding into darkness |
@@ -308,3 +308,10 @@
   inside the animated 3D element), and added a dark translucent ground plane so
   the spinning posters read as a carousel receding into darkness (A46). ESLint
   clean.
+- **Round 34 (R34, user feedback):** History sort direction buttons relabeled to
+  "Descending ↓" / "Ascending ↑" (no more context-specific "Newest/Oldest"); the
+  sort `select` is now styled as a pill like the site's other dropdowns. Fixed
+  the inverted recency comparator so the default (descending) actually shows
+  **most recent first** — it had silently shown oldest first. Cards are back to
+  fixed modest `--card-size` tracks (auto-fill, centered), so home/history rows
+  no longer balloon into huge cards (A40/A41/A45). ESLint clean.
