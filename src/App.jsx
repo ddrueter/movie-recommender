@@ -508,9 +508,13 @@ function StateCard({ title, message, tone = 'neutral', children }) {
  * this spans the whole content column and shows a labeled shimmer, matching
  * the loading language used elsewhere.
  */
-function FullWidthLoading({ label }) {
+function FullWidthLoading({ label, centered }) {
   return (
-    <div className="fullwidth-loading" role="status" aria-live="polite">
+    <div
+      className={['fullwidth-loading', centered ? 'fullwidth-loading--centered' : ''].filter(Boolean).join(' ')}
+      role="status"
+      aria-live="polite"
+    >
       <span className="fullwidth-loading__label">{label || 'Loading…'}</span>
       <div className="fullwidth-loading__track" aria-hidden="true">
         <span className="fullwidth-loading__rail" />
@@ -2050,7 +2054,7 @@ function App() {
     }
 
     if (userRatingsLoading && userRatingsHistory.length === 0) {
-      return <FullWidthLoading label="Loading your ratings…" />;
+      return <FullWidthLoading label="Loading your ratings…" centered />;
     }
 
     if (userRatingsError) {

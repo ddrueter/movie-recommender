@@ -81,6 +81,7 @@
 | A60 | The history sort dropdown was a plain native `<select>` (could look white/light in dark mode); wanted it cohesive like the Home/Account menus. | ✅ — replaced with a themed custom `SelectMenu` sharing the account-menu styling (trigger pill + dropdown, outside-click/Escape/arrow-key support) |
 | A61 | The single recommendation card felt too small on a 1440p monitor. | ✅ — scaled the whole spotlight group (card max-width 720→900px, larger poster column, bigger title/overview/rating + action buttons) while keeping the buttons formatted |
 | A62 | The carousel's radar "ping" looked out of place after the center icon was removed. | ✅ — removed the sweep/ping-ring animation entirely |
+| A63 | The history loading screen sat at the top; should be vertically centered like the spotlight page. | ✅ — history loading now uses a vertically centered `FullWidthLoading--centered` variant |
 | A44 | After the bottom-right anchor change, Love sat on the right; user want it back on the left. | ✅ — rack order restored (Love left → Don't-recommend right) while anchored bottom-right |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
@@ -370,6 +371,9 @@
   and action buttons) for larger monitors while keeping the buttons correctly
   formatted (A61). Removed the carousel's radar "ping" sweep, which looked out
   of place with no center icon (A62). ESLint clean.
+- **Round 46 (R46, user feedback):** Vertically centered the history loading
+  screen via a new `FullWidthLoading--centered` variant so it matches the
+  spotlight page's centered loading (A63). ESLint clean.
 - **Round 33 (R33, user feedback):** The recommendations 3D loading wheel was
   showing blank faces and looked uncanny. Removed the stage `overflow:hidden`
   that was flattening the wheel's `preserve-3d` (which hid the poster faces),

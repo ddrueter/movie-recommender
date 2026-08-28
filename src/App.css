@@ -1270,6 +1270,15 @@
   padding: clamp(2.5rem, 8vh, 4.5rem) 1rem;
   width: 100%;
   text-align: center;
+  align-content: start;
+}
+
+/* Vertically centered variant (e.g. the history loading screen): fill the
+   available height and center the loader, matching the spotlight page. */
+.fullwidth-loading--centered {
+  flex: 1;
+  align-content: center;
+  min-height: calc(100vh - 16rem);
 }
 
 .fullwidth-loading__label {
