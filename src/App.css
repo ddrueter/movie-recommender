@@ -1805,16 +1805,30 @@
 .rec-vignette__stage {
   position: relative;
   width: 100%;
-  height: 260px;
+  height: 300px;
   border: none;
-  background: transparent;
-  box-shadow: none;
   border-radius: 0;
-  overflow: hidden;
+  /* NOT overflow:hidden — that would force a flat 3D group and break the
+     wheel's preserve-3d, hiding the poster faces. Letting it escape lets the
+     poster wheel actually render in depth. */
+  overflow: visible;
   display: grid;
   place-items: center;
   /* Gives the wheel's translateZ depth so faces recede into the distance. */
-  perspective: 900px;
+  perspective: 1000px;
+}
+
+/* Dark, translucent ground plane behind the wheel so the rotating posters
+   read as a carousel receding into darkness, not floating on the page. */
+.rec-vignette__stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 60% at 50% 50%, transparent 40%, var(--color-canvas) 100%),
+    radial-gradient(55% 85% at 50% 55%, var(--surface-glass) 0%, transparent 70%);
+  z-index: 0;
 }
 
 .rec-vignette__wheel {
@@ -1844,7 +1858,7 @@
   border-radius: var(--radius-sm);
   overflow: hidden;
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   background: var(--surface-solid);
   /* Each face is fixed at its angular slot around a 190px radius. */
   transform: rotateY(calc(var(--i) * (360deg / var(--n, 6)))) translateZ(190px);
@@ -1864,15 +1878,18 @@
   height: 100%;
   color: var(--accent-text);
   font-family: var(--font-data);
-  font-size: 0.8rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  background: linear-gradient(160deg, var(--accent-soft-strong), var(--surface-solid));
+  background:
+    radial-gradient(120% 90% at 30% 20%, var(--accent-soft-strong), transparent 60%),
+    linear-gradient(160deg, var(--surface-raised), var(--surface-solid));
 }
 
 /* Expanding radar ping behind the core */
 .rec-vignette__sweep {
   position: absolute;
   inset: 0;
+  z-index: 1;
   display: grid;
   place-items: center;
 }

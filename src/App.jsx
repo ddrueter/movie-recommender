@@ -674,8 +674,11 @@ function RecommendationVignette({ movies }) {
                 <img
                   src={movie.poster_url || makePosterUrl(movie.poster_path)}
                   alt=""
-                  loading="lazy"
+                  /* Eager: lazy-loading inside an animated 3D element can defer
+                     (or skip) decoding, leaving blank poster faces. */
+                  loading="eager"
                   decoding="async"
+                  referrerPolicy="no-referrer"
                 />
               ) : (
                 <span className="rec-vignette__poster-fallback" aria-hidden="true">{movie.title?.[0] ?? '?'}</span>

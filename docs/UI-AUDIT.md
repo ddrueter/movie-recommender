@@ -64,6 +64,7 @@
 | A45 | Sorting "Oldest" did nothing (it re-used server order / same as most recent). | ✅ — fixed via the sort-type + direction split (default desc = newest) |
 | A42 | Loading states for search / recommendations / history were boxes (StateCard); user wants full-width loaders. | ✅ — replaced with a full-width labeled shimmer band (FullWidthLoading) |
 | A43 | The recommendation loading "vignette" read as a static row of cards and could visually "end"; wanted a continuous, movie-poster carousel surface. | ✅ — now a continuous 3D wheel of real poster thumbnails orbiting a radar core (seamless, endless) |
+| A46 | The rec-loading 3D wheel showed blank faces / no posters and felt uncanny against the page. | ✅ — removed the stage `overflow:hidden` that was flattening the `preserve-3d` (hiding faces), made poster imgs eager-load, and added a dark translucent backdrop so the spinning wheel reads as a carousel receding into darkness |
 | A44 | After the bottom-right anchor change, Love sat on the right; user want it back on the left. | ✅ — rack order restored (Love left → Don't-recommend right) while anchored bottom-right |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
@@ -300,3 +301,10 @@
   The results grid now uses `auto-fit` + a capped `--card-max`, so when a filter
   leaves few movies the cards collapse to bounded tracks with no ballooning and
   no empty trailing-track dead space between items (A41). ESLint clean.
+- **Round 33 (R33, user feedback):** The recommendations 3D loading wheel was
+  showing blank faces and looked uncanny. Removed the stage `overflow:hidden`
+  that was flattening the wheel's `preserve-3d` (which hid the poster faces),
+  made the carousel poster images eager-load instead of lazy (so they decode
+  inside the animated 3D element), and added a dark translucent ground plane so
+  the spinning posters read as a carousel receding into darkness (A46). ESLint
+  clean.
