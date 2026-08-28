@@ -65,6 +65,7 @@
 | C6 | The `aria-live` region only announced when the text actually changed — setting the same announcement back-to-back was silently skipped by SRs. | ✅ |
 | C7 | Tab navigation left screen-reader focus unchanged; no announcement of the destination section or focus move into content. | ✅ |
 | C8 | Route-change focus-move regression (from R4): typing in search navigates to `/search`, and the focus-move-to-main effect yanked focus out of the search input mid-typing. | ✅ |
+| C9 | `document.title` never updated per route — stayed the generic homepage title on every tab; no help for bookmarks or SR users. | ✅ — route-aware titles (Home / Search / Recommendations / Your Ratings / Trending / Popular / Most Acclaimed) |
 | A11 | Dead `plus`/`minus` rating-icon branches in `RatingIcon` — never referenced (rating options are thumb-up/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` for semantics + mobile `Go`/`Search` keyboard, suppressing the native clear button we duplicate. | ✅ |
 
@@ -141,3 +142,6 @@
 - **Round 8 (R8):** Home loading skeleton now uses the same `auto-fit,
   minmax(card, 1fr)` grid as the real result grid, so there is no layout/shift
   jump when the skeleton swaps for real movie cards (D8). ESLint clean.
+- **Round 9 (R9):** The document `<title>` is now route-aware (updates to
+  "Recommendations — CineHound", "Your Ratings — CineHound", etc. on each tab)
+  instead of staying static on every route (C9). ESLint clean.

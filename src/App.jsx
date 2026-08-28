@@ -904,9 +904,21 @@ function App() {
     const name = sectionNames[activeTab];
     if (!name) return;
     setAnnouncement(name);
-    // Don't highjack focus on the search route: typing pushes the path to
-    // /search on the first keystroke, and stealing focus to <main> would
-    // interrupt continued typing. The search input manages its own focus.
+    // Keep the browser tab / window title in sync with the current section —
+    // useful for bookmarking, and for SR users in an unlabelled tab.
+    const titles = {
+      home: 'CineHound — Sniff out your next favorite film',
+      search: 'Search — CineHound',
+      discover: 'Recommendations — CineHound',
+      history: 'Your Ratings — CineHound',
+      'trending-full': 'Trending — CineHound',
+      'popular-full': 'Popular — CineHound',
+      'topRated-full': 'Most Acclaimed — CineHound',
+    };
+    document.title = titles[activeTab] || titles.home;
+    // Don't hijack focus on the search route: typing pushed the path to /search
+    // on the first keystroke, and stealing focus to <main> would interrupt
+    // continued typing. The search input manages its own focus.
     if (activeTab === 'search') return;
     requestAnimationFrame(() => mainElRef.current?.focus({ preventScroll: true }));
   }, [activeTab, setAnnouncement]);
