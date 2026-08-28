@@ -1773,16 +1773,17 @@
   margin-top: 0.25rem;
 }
 
-/* Keep the two action buttons identical in height and width irrespective of
-   label length, so the row never looks lopsided. */
-.spotlight__actions .btn-primary,
+/* The two recommendation action buttons are a plain, compact horizontal pill
+   pair (both outline). Force an explicit short height and horizontal padding so
+   nothing can stretch them into tall/vertical pills. */
 .spotlight__actions .btn-soft {
-  min-height: 2.85rem;
-  padding-inline: 1.35rem;
+  height: 2.5rem;
+  padding: 0 1.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   white-space: nowrap;
+  border-radius: 999px;
 }
 
 /* ── Recommendation loading vignette ── */

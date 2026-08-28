@@ -1856,7 +1856,7 @@ function App() {
             onRate={handleQuickRate}
           />
           <div className="spotlight__actions">
-            <button type="button" className="btn-primary" onClick={loadSpotlightPick} disabled={spotlightLoading}>
+            <button type="button" className="btn-soft" onClick={loadSpotlightPick} disabled={spotlightLoading}>
               {spotlightLoading ? 'Picking…' : 'Show me another'}
             </button>
             {recsTotalAvailable > 1 ? (
