@@ -67,6 +67,8 @@
 | A46 | The rec-loading 3D wheel showed blank faces / no posters and felt uncanny against the page. | ✅ — removed the stage `overflow:hidden` that was flattening the `preserve-3d` (hiding faces), made poster imgs eager-load, and added a dark translucent backdrop so the spinning wheel reads as a carousel receding into darkness |
 | A47 | On a fresh reload to Recommendations the carousel had no posters (only placeholders), because home/history data wasn't loaded yet. | ✅ — the spotlight branch now also preloads the home catalogs so the carousel has real posters even on a cold load |
 | A48 | Poster faces receding to the back of the 3D wheel looked the same brightness as the front — weak depth cue. | ✅ — added a foreground "spotlight" overlay so only the face at front-center is lit and receding faces fall into shadow |
+| A49 | With a short filtered history, vertical space stretched between the tab/menu bar, the page title, and the filters (instead of pooling at the bottom). | ✅ — `.app-main` is now `align-content: start` so leftover space pools only at the bottom before the footer |
+| A50 | Movie cards stretched to equal row height, leaving excessive blank space inside shorter cards while the cards felt under-width. | ✅ — grid uses `align-items: start` so each card takes its natural height with no internal whitespace; card width left modest & fixed |
 | A44 | After the bottom-right anchor change, Love sat on the right; user want it back on the left. | ✅ — rack order restored (Love left → Don't-recommend right) while anchored bottom-right |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
@@ -309,6 +311,14 @@
   foreground "spotlight-lighting" overlay over the 3D wheel so the face passing
   front-center is lit and the receding back faces fall darker — a much stronger
   depth cue (A48). ESLint clean.
+- **Round 36 (R36):** Cleanup — removed a leftover unused `--card-max` on the
+  search grid. ESLint clean.
+- **Round 37 (R37, user feedback):** Short pages (e.g. filtered history with few
+  movies) were stretching vertical space between the header, title, and filters;
+  `.app-main` is now `align-content: start` so leftover space pools at the
+  bottom before the footer (A49). Movie cards no longer stretch to equal row
+  height (`align-items: start`), removing the blank space inside shorter cards
+  (A50). The formatted action buttons below were left untouched. ESLint clean.
 - **Round 33 (R33, user feedback):** The recommendations 3D loading wheel was
   showing blank faces and looked uncanny. Removed the stage `overflow:hidden`
   that was flattening the wheel's `preserve-3d` (which hid the poster faces),
