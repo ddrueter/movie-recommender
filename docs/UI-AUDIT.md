@@ -52,7 +52,7 @@
 | A30 | Error state-cards (home, search, recommendations, history) showed raw server error text, while the live-region announcements used friendly messages — inconsistent. | ✅ — all four error cards now render the friendly, humanized message too |
 | A31 | The solid `.btn-primary` button used the accent-colored global focus outline, which is nearly invisible against its accent fill. | ✅ — `.btn-primary:focus-visible` now uses the high-contrast `--accent-ink` outline |
 | A32 | Spotlight card broken by an aggressive stretch: forcing the body `height:100%` + stretching the grid distorted the poster (broke its 2:3 aspect) and the card looked clearly wrong. | ✅ — poster is `align-self:start` (keeps its aspect); body relies on grid stretch + `margin-top:auto` for the bottom-pinned rating; no explicit height |
-| A33 | The spotlight action buttons were inconsistent (one filled `btn-primary`, one outline `btn-soft`, with mismatched heights). | ✅ — both now use the same soft pill style with equal `min-height` so the row is even and on-brand |
+| A33 | The spotlight action buttons were inconsistent (one filled `btn-primary`, one outline `btn-soft`, with mismatched heights) and could render as tall/vertical pills. | ✅ — both action buttons are now the same outline `btn-soft` style with an explicit `height: 2.5rem` + horizontal-only padding, so they're a short, matched, horizontal pill pair |
 | A34 | The home loading skeleton always rendered 10 cards regardless of the column count, producing a non-integer (e.g. 1.4) row. | ✅ — skeleton now renders exactly `columns × rows` cards (homeColumns × 2), always full rows |
 | A35 | Full-page section (Trending/Popular/Most Acclaimed) used a centered "Loading…" card while loading — inconsistent with the home page's grid skeleton. | ✅ — now renders a matching full-row card skeleton grid |
 | A36 | Mobile nav pill (≤720px) was forced full-width and left-aligned, so the pill background spanned the row with tabs hugging one side. | ✅ — mobile nav stays shrink-wrapped and centered (fit-content + centered) |
@@ -280,3 +280,10 @@
   vignette is a continuous 3D wheel of real poster thumbnails orbiting a radar
   core — seamless and endless — instead of a static flat line (A43). The
   open rating rack restored Love to the left (A44). ESLint clean.
+- **Round 31 (R31):** Fixed a card grid regression that the prior `auto-fit` /
+  `min(1fr, card)` formula caused — every row collapsed to one oversized card.
+  Replaced with `auto-fill, minmax(card-size, 1fr)` so full rows show several
+  normal equal cards without ballooning; the home skeleton matches. The
+  spotlight action buttons ("Show me another" / "View all recommendations") are
+  now a matched pair of compact outline pills — both `btn-soft` with an explicit
+  `height: 2.5rem` + horizontal-only padding (A33). ESLint clean.
