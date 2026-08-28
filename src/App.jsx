@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import {
@@ -23,6 +23,38 @@ import {
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
 const SEARCH_INITIAL_RESULT_COUNT = 24;
+
+// User-facing fallbacks for common API failures. Raw server error text can be
+// long and technical; announcements should stay short and actionable.
+const ERROR_HINTS = {
+  'too many requests': 'The server is busy right now. Please try again in a moment.',
+  timeout: 'The request timed out. Please check your connection and try again.',
+  'failed to fetch': 'Network error — please check your connection.',
+  network: 'Network error — please check your connection and try again.',
+  'not signed in': 'Please sign in to continue.',
+  unauthorized: 'Your session expired. Please sign back in.',
+  401: 'Your session expired. Please sign back in.',
+  403: "You don't have permission to do that.",
+  404: "That wasn't found — it may have moved.",
+  429: 'Too many requests. Please wait a moment and try again.',
+  500: 'The server hit an error. Please try again shortly.',
+};
+
+function friendlyError(raw) {
+  const text = String(raw ?? '').trim();
+  if (!text) return 'Something went wrong. Please try again.';
+  const lower = text.toLowerCase();
+  const numbered = lower.match(/\b(4\d\d|5\d\d)\b/)?.[1];
+  const key = numbered || Object.keys(ERROR_HINTS).find((k) => lower.includes(k));
+  return ERROR_HINTS[key] || text;
+}
+
+// Touch/tablet pointers have no hover to reveal the poster rating controls —
+// the first tap on the poster must reveal them instead of navigating away.
+const COARSE_POINTER =
+  typeof window !== 'undefined' && window.matchMedia
+    ? window.matchMedia('(hover: none) and (pointer: coarse)').matches
+    : false;
 
 function RatingIcon({ kind }) {
   switch (kind) {
@@ -53,19 +85,6 @@ function RatingIcon({ kind }) {
           <circle cx="8.9" cy="10.6" r="1" fill="currentColor" stroke="none" />
           <circle cx="15.1" cy="10.6" r="1" fill="currentColor" stroke="none" />
           <path d="M9.2 15.2h5.6" />
-        </svg>
-      );
-    case 'plus':
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
-          <path d="M12 3.8a8.2 8.2 0 1 0 8.2 8.2A8.21 8.21 0 0 0 12 3.8zm0 14.7a6.5 6.5 0 1 1 6.5-6.5 6.51 6.51 0 0 1-6.5 6.5zm-.9-9.5h1.8V12h2.8v1.8h-2.8v2.8h-1.8v-2.8H8.3V12h2.8z" />
-        </svg>
-      );
-    case 'minus':
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
-          <path d="M12 21a9 9 0 1 1 9-9 9 9 0 0 1-9 9zm0-16.2A7.2 7.2 0 1 0 19.2 12 7.2 7.2 0 0 0 12 4.8z" />
-          <path d="M6.5 6.5l11 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     case 'hide':
@@ -142,6 +161,35 @@ function PosterFallback({ title }) {
       <span>No poster</span>
     </div>
   );
+}
+
+/**
+ * Radiogroup keyboard support shared by the poster and spotlight rating rows.
+ * Arrow keys rove focus between options, Home/End jump, and the currently
+ * focused option is where Enter/Space/click commits. Options are queried within
+ * the same radiogroup as the focused radio.
+ */
+function radioGroupKeyDown(event) {
+  const radios = Array.from(
+    event.currentTarget.parentElement.querySelectorAll('[role="radio"]:not([disabled])'),
+  );
+  if (radios.length === 0) return;
+
+  let nextIndex = -1;
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    nextIndex = (radios.indexOf(event.currentTarget) - 1 + radios.length) % radios.length;
+  } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+    nextIndex = (radios.indexOf(event.currentTarget) + 1) % radios.length;
+  } else if (event.key === 'Home') {
+    nextIndex = 0;
+  } else if (event.key === 'End') {
+    nextIndex = radios.length - 1;
+  }
+
+  if (nextIndex >= 0) {
+    event.preventDefault();
+    radios[nextIndex].focus();
+  }
 }
 
 function normalizeText(value) {
@@ -262,18 +310,30 @@ function MovieCard({
   // card (or one of its children) has focus — keeps the tab order tidy.
   const [panelFocused, setPanelFocused] = useState(false);
 
-  // 5 buttons evenly spaced across the poster bottom: Don't Recommend + 4 rating options
-  // Each button is 15% of poster width. Left positions: 4%, 23%, 42%, 61%, 80%
-  const ratingButtonPositions = [4, 23, 42, 61, 80];
-
   const tmdbUrl = movie.tmdb_id ? `https://www.themoviedb.org/movie/${movie.tmdb_id}` : null;
 
   const handleCardClick = (event) => {
     // Don't navigate if the click was on a rating button or its children
     if (event.target.closest('.poster-rating__option')) return;
+    // On touch devices the rating controls appear only after the card takes
+    // focus, so a tap on the poster must reveal them — not open TMDB. The
+    // poster is the rating surface; the title row below still opens TMDB.
+    if (COARSE_POINTER && event.target.closest('.poster')) return;
     if (tmdbUrl) {
       window.open(tmdbUrl, '_blank', 'noopener,noreferrer');
     }
+  };
+
+  // Radiogroup keyboard support: roving arrow keys plus Escape to close the rack
+  // and return focus to the card. (Shared roving logic lives in radioGroupKeyDown.)
+  const handleRatingKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onCloseRating(movieKey);
+      event.currentTarget.closest('.movie-card')?.focus();
+      return;
+    }
+    radioGroupKeyDown(event);
   };
 
   return (
@@ -289,7 +349,7 @@ function MovieCard({
         .join(' ')}
       role="link"
       tabIndex={0}
-      aria-label={`View ${movie.title} on TMDB`}
+      aria-label={`View ${movie.title} on TMDB (opens in a new tab)`}
       onClick={handleCardClick}
       onFocus={() => setPanelFocused(true)}
       onBlur={(event) => {
@@ -327,11 +387,6 @@ function MovieCard({
                 onCloseRating(movieKey);
               }
             }}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') {
-                onCloseRating(movieKey);
-              }
-            }}
           >
             <div className="poster-rating__menu" id={ratingPanelId} role="radiogroup" aria-orientation="horizontal" aria-label={`Rate ${movie.title}`}>
               {/* Rating options: Love → Like → Meh → Dislike left to right */}
@@ -346,10 +401,7 @@ function MovieCard({
                     ratingValue === option.value ? 'active' : '',
                     `poster-rating__option--${option.label.toLowerCase()}`,
                   ].filter(Boolean).join(' ')}
-                  style={{
-                    left: `${ratingButtonPositions[index]}%`,
-                    width: '15%',
-                  }}
+                  style={{ ['--i']: index }}
                   aria-checked={ratingValue === option.value}
                   aria-label={option.label}
                   disabled={savingRating}
@@ -364,6 +416,7 @@ function MovieCard({
                       onRate(movie, option.value);
                     }
                   }}
+                  onKeyDown={handleRatingKeyDown}
                 >
                   <RatingIcon kind={option.icon} />
                   <span className="sr-only">{option.label}</span>
@@ -379,10 +432,7 @@ function MovieCard({
                   'poster-rating__option--hide',
                   ratingValue === -1 ? 'active' : '',
                 ].filter(Boolean).join(' ')}
-                style={{
-                  left: `${ratingButtonPositions[4]}%`,
-                  width: '15%',
-                }}
+                style={{ ['--i']: 4 }}
                 aria-label={`Don't recommend ${movie.title}`}
                 aria-checked={ratingValue === -1}
                 disabled={savingRating}
@@ -397,6 +447,7 @@ function MovieCard({
                   }
                   onCloseRating(movieKey);
                 }}
+                onKeyDown={handleRatingKeyDown}
               >
                 <RatingIcon kind="hide" />
                 <span className="sr-only">Don't recommend</span>
@@ -424,11 +475,17 @@ function MovieCard({
  * poster cards shown while data streams in. Presentational only.
  */
 function HomeSkeleton() {
+  const skeletonRef = useRef(null);
+  // Measure the loaded skeleton's own grid so the placeholder renders exactly
+  // full rows for the live column count (never a fractional row).
+  const columns = useGridColumns(skeletonRef, '.home-skeleton__grid');
+  const rows = 2;
+
   return (
     <div className="home-skeleton" aria-hidden="true">
       <div className="home-skeleton__hero" />
-      <div className="home-skeleton__grid">
-        {Array.from({ length: 10 }).map((_, i) => (
+      <div className="home-skeleton__grid" ref={skeletonRef}>
+        {Array.from({ length: Math.max(1, columns) * rows }).map((_, i) => (
           <div key={i} className="home-skeleton__card" />
         ))}
       </div>
@@ -446,7 +503,99 @@ function StateCard({ title, message, tone = 'neutral', children }) {
   );
 }
 
-function SectionHeader({ title, onViewMore, viewMoreLabel }) {
+/**
+ * Full-width, non-card loading band. Unlike a StateCard (a fixed-width box),
+ * this spans the whole content column and shows a labeled shimmer, matching
+ * the loading language used elsewhere.
+ */
+function FullWidthLoading({ label, centered }) {
+  return (
+    <div
+      className={['fullwidth-loading', centered ? 'fullwidth-loading--centered' : ''].filter(Boolean).join(' ')}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="fullwidth-loading__label">{label || 'Loading…'}</span>
+      <div className="fullwidth-loading__track" aria-hidden="true">
+        <span className="fullwidth-loading__rail" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Themed dropdown select, styled to match the site's other menus (Home/Account
+ * dropdowns) instead of a bare native <select>. Supports outside-click close,
+ * Escape, and arrow-key roving; exposes the chosen value via onChange.
+ */
+function SelectMenu({ label, value, options, onChange, ariaLabel }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const itemRefs = useRef([]);
+  const current = options.find((o) => o.value === value) || options[0];
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDoc = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const onKeyDown = (e) => {
+    const items = itemRefs.current;
+    const idx = items.indexOf(document.activeElement);
+    let next = -1;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = (idx + 1) % items.length;
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = (idx - 1 + items.length) % items.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = items.length - 1;
+    if (next >= 0) { e.preventDefault(); items[next]?.focus(); }
+  };
+
+  return (
+    <div className="select-menu" ref={ref} onKeyDown={onKeyDown}>
+      <button
+        type="button"
+        className={['select-menu__trigger', open ? 'is-open' : ''].filter(Boolean).join(' ')}
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel || label}
+      >
+        <span className="select-menu__label">{label}:</span>
+        <span className="select-menu__value">{current?.label}</span>
+        <svg className="nav-caret" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+      </button>
+      {open ? (
+        <div className="select-menu__dropdown" role="listbox" aria-label={ariaLabel || label}>
+          {options.map((opt, i) => (
+            <button
+              key={opt.value}
+              type="button"
+              role="option"
+              aria-selected={opt.value === value}
+              className={['select-menu__item', opt.value === value ? 'is-active' : ''].filter(Boolean).join(' ')}
+              ref={(el) => { itemRefs.current[i] = el; }}
+              onMouseDown={() => { onChange(opt.value); }}
+              onClick={() => { setOpen(false); onChange(opt.value); }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SectionHeader({ title, onViewMore, viewMoreLabel, viewMoreVariant = 'link' }) {
   return (
     <div className="section-header-row">
       <h2 className="section-header">
@@ -461,7 +610,15 @@ function SectionHeader({ title, onViewMore, viewMoreLabel }) {
         {title}
       </h2>
       {onViewMore ? (
-        <button type="button" className="view-more-link" onClick={onViewMore}>
+        <button
+          type="button"
+          className={
+            viewMoreVariant === 'pill'
+              ? 'section-header__action view-more-link view-more-link--pill'
+              : 'view-more-link'
+          }
+          onClick={onViewMore}
+        >
           {viewMoreLabel || 'View all →'}
         </button>
       ) : null}
@@ -492,7 +649,7 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
         href={tmdbUrl || undefined}
         target={tmdbUrl ? '_blank' : undefined}
         rel={tmdbUrl ? 'noopener noreferrer' : undefined}
-        aria-label={'View ' + movie.title + ' on TMDB'}
+        aria-label={'View ' + movie.title + ' on TMDB (opens in a new tab)'}
       >
         {posterUrl ? (
           <img src={posterUrl} alt={movie.title + ' poster'} loading="lazy" decoding="async" />
@@ -530,6 +687,7 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
                 aria-checked={ratingValue === option.value}
                 aria-label={option.label}
                 disabled={savingRating}
+                onKeyDown={radioGroupKeyDown}
                 onClick={() => onRate(movie, ratingValue === option.value ? null : option.value)}
               >
                 <RatingIcon kind={option.icon} />
@@ -547,6 +705,7 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
               aria-label={"Don't recommend " + movie.title}
               aria-checked={ratingValue === -1}
               disabled={savingRating}
+              onKeyDown={radioGroupKeyDown}
               onClick={() => onRate(movie, ratingValue === -1 ? null : -1)}
             >
               <RatingIcon kind="hide" />
@@ -561,26 +720,59 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
 
 /**
  * Animated loading vignette shown while the engine picks your next film.
- * Purely presentational — a film-reel of stylized poster slides scrolls past
- * a sweeping radar ping so wait time feels intentional.
+ * A continuous 3D "wheel" of real poster thumbnails rotates about its central
+ * axis (we see the perimeter surface), with a radar ping in the centre. The
+ * rotation loops seamlessly — it never visibly "ends" — until a pick arrives.
  */
-function RecommendationVignette() {
+function RecommendationVignette({ movies }) {
+  const posters = (movies || []).filter((m) => m.poster_url || m.poster_path);
+  // Build a wheel of ~10 faces from the real posters we have; pad with
+  // stylized placeholders only if there aren't enough to fill the wheel.
+  const items = (
+    posters.length >= 10
+      ? posters
+      : [...posters, ...Array.from({ length: 10 - posters.length }, (_, i) => ({ poster_path: null, title: `Slide ${i + 1}` }))]
+  ).slice(0, 10);
+
+  const n = Math.max(3, items.length);
+
   return (
     <div className="rec-vignette" role="status" aria-live="polite" aria-label="Generating your recommendation">
       <div className="rec-vignette__stage" aria-hidden="true">
-        <div className="rec-vignette__reel">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <span key={i} className="rec-vignette__slide" style={{ ['--i']: i }} />
+        <div className="rec-vignette__wheel">
+          {items.map((movie, i) => (
+            <figure
+              key={i}
+              className="rec-vignette__poster"
+              style={{ ['--i']: i, ['--n']: n }}
+            >
+              {/* Poster face (front) */}
+              {movie.poster_url || movie.poster_path ? (
+                <img
+                  className="rec-vignette__poster-front"
+                  src={movie.poster_url || makePosterUrl(movie.poster_path)}
+                  alt=""
+                  /* Eager: lazy-loading inside an animated 3D element can defer
+                     (or skip) decoding, leaving blank poster faces. */
+                  loading="eager"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span className="rec-vignette__poster-fallback" aria-hidden="true">{movie.title?.[0] ?? '?'}</span>
+              )}
+              {/* Solid back face: the brand mark, visible when the card turns away */}
+              <span className="rec-vignette__poster-back" aria-hidden="true">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <rect width="64" height="64" rx="15" fill="none" />
+                  <circle cx="32" cy="32" r="19" fill="none" stroke="currentColor" strokeWidth="2.4" opacity="0.85" />
+                  <circle cx="32" cy="32" r="13" fill="none" stroke="currentColor" strokeWidth="1.8" opacity="0.5" />
+                  <line x1="32" y1="32" x2="32" y2="13" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+                  <circle cx="32" cy="13" r="2.4" fill="currentColor" />
+                </svg>
+              </span>
+            </figure>
           ))}
-        </div>
-        <div className="rec-vignette__sweep" />
-        <div className="rec-vignette__core">
-          <svg viewBox="0 0 64 64" width="36" height="36">
-            <circle cx="32" cy="32" r="21" fill="none" stroke="currentColor" strokeWidth="3" opacity="0.7" />
-            <circle cx="32" cy="32" r="12" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.45" />
-            <line x1="32" y1="32" x2="32" y2="11" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            <circle cx="32" cy="11" r="3" fill="currentColor" />
-          </svg>
         </div>
       </div>
       <p className="rec-vignette__label">Sniffing out your next film…</p>
@@ -594,16 +786,38 @@ function RecommendationVignette() {
  */
 function useGridColumns(containerRef, selector = '.results-grid--home') {
   const [columns, setColumns] = useState(6);
+  const [gridObserved, setGridObserved] = useState(false);
+
+  const readColumns = useCallback(() => {
+    const grid = document.querySelector(selector);
+    if (!grid) return null;
+    const style = getComputedStyle(grid);
+    const cols = style.gridTemplateColumns.split(' ').filter(Boolean).length;
+    return cols > 0 ? cols : null;
+  }, [selector]);
+
+  // Measure before paint so the very first frame already slices the right
+  // number of movies per section instead of guessing 6, then correcting.
+  // Once a grid is observed the layout pass bails out immediately and the
+  // Resize/Mutation observers below keep the count in sync.
+  useLayoutEffect(() => {
+    if (gridObserved) return;
+    const cols = readColumns();
+    if (cols != null) {
+      setColumns(cols);
+      setGridObserved(true);
+    }
+  }, [gridObserved, readColumns]);
 
   useEffect(() => {
     let frame = 0;
 
     const measure = () => {
-      const grid = document.querySelector(selector);
-      if (!grid) return;
-      const style = getComputedStyle(grid);
-      const cols = style.gridTemplateColumns.split(' ').filter(Boolean).length;
-      if (cols > 0) setColumns(cols);
+      const cols = readColumns();
+      if (cols != null) {
+        setColumns(cols);
+        setGridObserved(true);
+      }
     };
 
     // Coalesce bursts of DOM/resize events into one measurement per frame.
@@ -626,7 +840,7 @@ function useGridColumns(containerRef, selector = '.results-grid--home') {
       resizeObserver?.disconnect();
       mutationObserver?.disconnect();
     };
-  }, [containerRef, selector]);
+  }, [containerRef, readColumns]);
 
   return columns;
 }
@@ -693,29 +907,46 @@ function App() {
   const [homeData, setHomeData] = useState(null);
   const [homeDataLoading, setHomeDataLoading] = useState(false);
   const [homeError, setHomeError] = useState('');
+  const [vignettePosters, setVignettePosters] = useState([]);
   const [userRatingsHistory, setUserRatingsHistory] = useState([]);
   const [userRatingsLoading, setUserRatingsLoading] = useState(false);
   const [userRatingsError, setUserRatingsError] = useState('');
+  const [historySort, setHistorySort] = useState('recent');
+  const [historySortDir, setHistorySortDir] = useState('desc');
+  const [historyFilter, setHistoryFilter] = useState('all');
   const [savingRatingMovieId, setSavingRatingMovieId] = useState(null);
   const [expandedRatingMovieId, setExpandedRatingMovieId] = useState(null);
   const [expandedSectionData, setExpandedSectionData] = useState(null);
   const [expandedSectionLoading, setExpandedSectionLoading] = useState(false);
   const [expandedHasMore, setExpandedHasMore] = useState(true);
-  const [announcement, setAnnouncement] = useState('');
+  const [announcement, setAnnouncementRaw] = useState({ text: '', seq: 0 });
+  const announceSeq = useRef(0);
+  // Wrap the setter so the live region re-announces even when the same text
+  // is set back-to-back (identical text alone wouldn't remount the node).
+  const setAnnouncement = useCallback((text) => {
+    announceSeq.current += 1;
+    setAnnouncementRaw({ text, seq: announceSeq.current });
+  }, []);
   const [showBackTop, setShowBackTop] = useState(false);
   const [heroVisible, setHeroVisible] = useState(() => {
     try { return localStorage.getItem('cinehound-hero-hidden') !== '1'; } catch { return true; }
   });
   const [browseOpen, setBrowseOpen] = useState(false);
   const browseRef = useRef(null);
+  const browseMenuItemsRef = useRef([]);
   const browseCloseTimer = useRef(null);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef(null);
+  const accountMenuItemsRef = useRef([]);
   const searchTimer = useRef(null);
   const searchSequence = useRef(0);
   const recommendationsSequence = useRef(0);
+  const recsInflightRef = useRef(false);
   const homeSequence = useRef(0);
   const searchInputRef = useRef(null);
   const recsOffsetRef = useRef(0);
   const recentPickIdsRef = useRef([]);
+  const recsSentinelRef = useRef(null);
   const mainElRef = useRef(null);
 
   // Measured grid column counts. Declared before the callbacks that use them.
@@ -792,7 +1023,10 @@ function App() {
 
   // Close the Browse menu on outside click or Escape
   useEffect(() => {
-    if (!browseOpen) return undefined;
+    if (!browseOpen) {
+      browseMenuItemsRef.current = [];
+      return undefined;
+    }
     const onDoc = (event) => {
       if (browseRef.current && !browseRef.current.contains(event.target)) {
         if (browseCloseTimer.current) clearTimeout(browseCloseTimer.current);
@@ -809,7 +1043,114 @@ function App() {
     };
   }, [browseOpen]);
 
-  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  // When opened via keyboard, focus the first menu item so arrow keys work
+  // immediately (pointer users can just click the item they want).
+  useEffect(() => {
+    if (!browseOpen) return;
+    const wasKeyboard = browseRef.current?.matches(':focus-within');
+    const first = browseMenuItemsRef.current[0];
+    if (wasKeyboard && first) {
+      const handle = requestAnimationFrame(() => first.focus());
+      return () => cancelAnimationFrame(handle);
+    }
+  }, [browseOpen]);
+
+  // Account / profile dropdown: close on outside click or Escape.
+  useEffect(() => {
+    if (!accountOpen) {
+      accountMenuItemsRef.current = [];
+      return undefined;
+    }
+    const onDoc = (event) => {
+      if (accountRef.current && !accountRef.current.contains(event.target)) {
+        setAccountOpen(false);
+      }
+    };
+    const onKey = (event) => {
+      if (event.key === 'Escape') setAccountOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [accountOpen]);
+
+  // Account menu keyboard nav: arrow keys cycle, Home/End jump. Only auto-focus
+  // the first item when opened via keyboard so pointer users keep their focus;
+  // the container onKeyDown is shared by the trigger and the items.
+  useEffect(() => {
+    if (!accountOpen) return;
+    const wasKeyboard = accountRef.current?.matches(':focus-within');
+    if (wasKeyboard) {
+      const handle = requestAnimationFrame(() => {
+        accountMenuItemsRef.current[0]?.focus();
+      });
+      return () => cancelAnimationFrame(handle);
+    }
+  }, [accountOpen]);
+
+  const handleAccountKeyDown = (event) => {
+    const items = accountMenuItemsRef.current;
+    if (items.length === 0) return;
+    const currentIndex = items.indexOf(document.activeElement);
+    let nextIndex = -1;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+      nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+      nextIndex = currentIndex < 0 ? items.length - 1 : (currentIndex - 1 + items.length) % items.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = items.length - 1;
+    }
+    if (nextIndex >= 0) {
+      event.preventDefault();
+      items[nextIndex].focus();
+    }
+  };
+
+  // On tab navigation, move keyboard focus to the content area and announce
+  // the destination so screen-reader users aren't left where they were.
+  useEffect(() => {
+    const sectionNames = {
+      home: 'Home',
+      search: 'Search',
+      discover: 'Recommendations',
+      history: 'History',
+      'trending-full': 'Trending',
+      'popular-full': 'Popular',
+      'topRated-full': 'Most Acclaimed',
+    };
+    const name = sectionNames[activeTab];
+    if (!name) return;
+    setAnnouncement(name);
+    // Keep the browser tab / window title in sync with the current section —
+    // useful for bookmarking, and for SR users in an unlabelled tab.
+    const titles = {
+      home: 'CineHound — Sniff out your next favorite film',
+      search: 'Search — CineHound',
+      discover: 'Recommendations — CineHound',
+      history: 'Your Ratings — CineHound',
+      'trending-full': 'Trending — CineHound',
+      'popular-full': 'Popular — CineHound',
+      'topRated-full': 'Most Acclaimed — CineHound',
+    };
+    document.title = titles[activeTab] || titles.home;
+    // Don't hijack focus on the search route: typing pushed the path to /search
+    // on the first keystroke, and stealing focus to <main> would interrupt
+    // continued typing. The search input manages its own focus.
+    if (activeTab === 'search') return;
+    requestAnimationFrame(() => mainElRef.current?.focus({ preventScroll: true }));
+  }, [activeTab, setAnnouncement]);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    // Announce the change so screen-reader users aren't left guessing.
+    setAnnouncement(`${next === 'dark' ? 'Dark' : 'Light'} mode enabled.`);
+  };
 
   const loadHomeData = useCallback(async () => {
     const requestId = ++homeSequence.current;
@@ -824,14 +1165,14 @@ function App() {
     } catch (error) {
       if (homeSequence.current === requestId) {
         setHomeError(error.message);
-        setAnnouncement(`Home data failed. ${error.message}`);
+        setAnnouncement(`Home data failed. ${friendlyError(error.message)}`);
       }
     } finally {
       if (homeSequence.current === requestId) {
         setHomeDataLoading(false);
       }
     }
-  }, [authToken]);
+  }, [authToken, setAnnouncement]);
 
   const loadRecommendations = useCallback(async (append = false) => {
     if (!authToken) {
@@ -847,6 +1188,7 @@ function App() {
     const requestId = ++recommendationsSequence.current;
     const offset = append ? recsOffsetRef.current : 0;
 
+    recsInflightRef.current = true;
     setRecommendationsLoading(true);
     if (!append) {
       setRecommendationState({ status: 'loading', message: '', error: '', debug: null });
@@ -888,14 +1230,15 @@ function App() {
       if (!append) {
         setRecommendations([]);
         setRecommendationState({ status: 'error', message: '', error: error.message, debug: null });
-        setAnnouncement(`Recommendations failed. ${error.message}`);
+        setAnnouncement(`Recommendations failed. ${friendlyError(error.message)}`);
       }
     } finally {
+      recsInflightRef.current = false;
       if (recommendationsSequence.current === requestId) {
         setRecommendationsLoading(false);
       }
     }
-  }, [authToken, recsPageSize]);
+  }, [authToken, recsPageSize, setAnnouncement]);
 
   const loadSpotlightPick = useCallback(async () => {
     if (!authToken) {
@@ -905,6 +1248,20 @@ function App() {
     }
 
     setSpotlightLoading(true);
+    // Pull a reliable poster set (Trending) directly for the loading carousel,
+    // independent of the home tab's state — so it always has real posters even
+    // on a cold reload. Also warm home data for the home tab.
+    fetchHomeData(authToken, 'trending')
+      .then((data) => {
+        const posters = (data?.results || []).filter((m) => m.poster_url || m.poster_path);
+        if (posters.length) setVignettePosters(posters);
+      })
+      .catch(() => {});
+    fetchHomeData(authToken)
+      .then((home) => {
+        if (home) setHomeData(home);
+      })
+      .catch(() => {});
     try {
       // Exclude the recently-shown picks so "Show me another" never repeats.
       const data = await fetchRecommendations(authToken, undefined, undefined, 'weighted', recentPickIdsRef.current);
@@ -940,24 +1297,60 @@ function App() {
       setUserRatingsHistory(data.results ?? []);
     } catch (error) {
       setUserRatingsError(error.message);
-      setAnnouncement(`Could not load ratings history. ${error.message}`);
+      setAnnouncement(`Could not load ratings history. ${friendlyError(error.message)}`);
     } finally {
       setUserRatingsLoading(false);
     }
-  }, [authToken]);
+  }, [authToken, setAnnouncement]);
+
+  // Latest-ref pattern: the data effects below must re-run only when the
+  // tab / view mode / session changes. Keying them on the loader callbacks
+  // directly made every column-count change (page size) retrigger fetches —
+  // an extra fetch on first load and on each window resize.
+  const dataLoaderRef = useRef({ loadHomeData, loadRecommendations, loadSpotlightPick });
+  dataLoaderRef.current = { loadHomeData, loadRecommendations, loadSpotlightPick };
 
   useEffect(() => {
+    const { loadHomeData, loadRecommendations, loadSpotlightPick } = dataLoaderRef.current;
     if (activeTab === 'home' || activeTab === 'trending-full' || activeTab === 'popular-full' || activeTab === 'topRated-full') {
+      // The home page never renders the recommendations grid, so fetching
+      // them here would be a wasted network call that also fires a spurious
+      // "Loaded N recommendations." announcement visible nowhere on the page.
+      // Recommendations (browse or spotlight) load only when the Discover tab
+      // is actually shown.
       void loadHomeData();
-      void loadRecommendations();
     } else if (activeTab === 'discover') {
       if (recsViewMode === 'spotlight') {
         void loadSpotlightPick();
+        // Preload the browsable home catalogs too, so the loading carousel can
+        // show real movie posters even on a fresh page reload (when history and
+        // prior recs aren't in state yet).
+        void loadHomeData();
       } else {
         void loadRecommendations();
       }
     }
-  }, [activeTab, loadHomeData, loadRecommendations, loadSpotlightPick, recsViewMode]);
+  }, [activeTab, recsViewMode, authToken]);
+
+  // The "recently shown" memory is ephemeral: clear it when leaving the
+  // Recommendations tab so it doesn't linger across navigation. (It also
+  // resets on every page refresh, since it's only held in a ref.)
+  useEffect(() => {
+    if (activeTab !== 'discover') {
+      recentPickIdsRef.current = [];
+    }
+  }, [activeTab]);
+
+  // Auto-hide the hero after the first home visit: mark it "seen" the moment
+  // it first appears so it never reappears on reload, and hide it in-session
+  // once the user navigates away from Home.
+  useEffect(() => {
+    if (!heroVisible) return;
+    try { localStorage.setItem('cinehound-hero-hidden', '1'); } catch { /* ignore */ }
+    if (activeTab !== 'home') {
+      setHeroVisible(false);
+    }
+  }, [activeTab, heroVisible]);
 
   // The "recently shown" memory is ephemeral: clear it when leaving the
   // Recommendations tab so it doesn't linger across navigation. (It also
@@ -973,6 +1366,30 @@ function App() {
       void loadUserRatings();
     }
   }, [activeTab, loadUserRatings]);
+
+  // Infinite scroll for the recommendations browse grid: when the sentinel
+  // comes into view (and there is more to load and we aren't already loading),
+  // fetch the next page instead of requiring a click.
+  useEffect(() => {
+    if (!(activeTab === 'discover' && recsViewMode === 'browse' && recsHasMore)) {
+      return undefined;
+    }
+    const loadNext = () => {
+      if (!recommendationsLoading && !recsInflightRef.current) {
+        void loadRecommendations(true);
+      }
+    };
+    const el = recsSentinelRef.current;
+    if (!el || !('IntersectionObserver' in window)) return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) loadNext();
+      },
+      { rootMargin: '400px 0px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [activeTab, recsViewMode, recsHasMore, recommendationsLoading, loadRecommendations]);
 
   const handleSearchChange = (value) => {
     setQuery(value);
@@ -1028,7 +1445,7 @@ function App() {
       } catch (error) {
         if (searchSequence.current === requestId) {
           setSearchError(error.message);
-          setAnnouncement(`Search failed. ${error.message}`);
+          setAnnouncement(`Search failed. ${friendlyError(error.message)}`);
         }
       } finally {
         if (searchSequence.current === requestId) {
@@ -1063,7 +1480,7 @@ function App() {
     } catch (error) {
       if (searchSequence.current === requestId) {
         setSearchError(error.message);
-        setAnnouncement(`Search failed. ${error.message}`);
+        setAnnouncement(`Search failed. ${friendlyError(error.message)}`);
       }
     } finally {
       if (searchSequence.current === requestId) {
@@ -1111,7 +1528,7 @@ function App() {
         setUserRatingsHistory((current) => current.filter((r) => getMovieKey(r) !== movieKey));
         setAnnouncement(`Removed rating for ${movie.title}.`);
       } catch (error) {
-        setAnnouncement(`Could not remove rating. ${error.message}`);
+        setAnnouncement(`Could not remove rating. ${friendlyError(error.message)}`);
       } finally {
         setSavingRatingMovieId(null);
       }
@@ -1162,7 +1579,7 @@ function App() {
         }
       }
     } catch (error) {
-      setAnnouncement(`Could not save rating. ${error.message}`);
+      setAnnouncement(`Could not save rating. ${friendlyError(error.message)}`);
     } finally {
       setSavingRatingMovieId(null);
     }
@@ -1175,7 +1592,7 @@ function App() {
       setAuthSession(session);
       setAnnouncement(`Signed in as ${session.label}.`);
     } catch (error) {
-      setAnnouncement(`Demo auth failed. ${error.message}`);
+      setAnnouncement(`Demo auth failed. ${friendlyError(error.message)}`);
     } finally {
       setAuthLoading(false);
     }
@@ -1188,7 +1605,7 @@ function App() {
       setAuthSession(session);
       setAnnouncement(`Signed in as ${session.label}.`);
     } catch (error) {
-      setAnnouncement(`Firebase login failed. ${error.message}`);
+      setAnnouncement(`Firebase login failed. ${friendlyError(error.message)}`);
     } finally {
       setAuthLoading(false);
     }
@@ -1199,7 +1616,7 @@ function App() {
       setAuthLoading(true);
       await signOutFirebase();
     } catch (error) {
-      setAnnouncement(`Sign out failed. ${error.message}`);
+      setAnnouncement(`Sign out failed. ${friendlyError(error.message)}`);
       return;
     } finally {
       setAuthLoading(false);
@@ -1213,13 +1630,11 @@ function App() {
     setAnnouncement('Signed out.');
   };
 
-  const handleLoadMoreRecs = () => {
-    void loadRecommendations(true);
-  };
-
   const toggleHeaderSearch = () => {
+    const willOpen = !searchIsOpen;
     setSearchIsOpen((prev) => !prev);
-    if (!searchIsOpen) {
+    if (willOpen) {
+      // Focus the input once the field is mounted (next frame).
       setTimeout(() => searchInputRef.current?.focus(), 50);
     }
   };
@@ -1237,15 +1652,21 @@ function App() {
 
   const renderSearchBody = () => {
     if (searchLoading && searchResults.length === 0) {
-      return <StateCard title="Loading" tone="loading" />;
+      return <FullWidthLoading label="Searching…" />;
     }
 
     if (searchError && searchResults.length === 0) {
-      return <StateCard title="Search error" message={searchError} tone="error" />;
+      return <StateCard title="Search error" message={friendlyError(searchError)} tone="error" />;
     }
 
     if (!query.trim()) {
-      return null;
+      return (
+        <StateCard
+          title="Search the whole catalog"
+          message="Type a title, actor, or director above and CineHound will sniff out matching films from the entire TMDB universe."
+          tone="neutral"
+        />
+      );
     }
 
     if (!hasSearchResults) {
@@ -1255,7 +1676,7 @@ function App() {
     return (
       <>
         <SectionHeader title={`Results for “${query.trim()}”`} />
-        <div className={`results-grid results-grid--search${searchResults.length <= 1 ? ' results-grid--single' : ''}`} aria-label="Search results">
+        <div className={`results-grid results-grid--search${searchResults.length <= 1 ? ' results-grid--single' : ''}`} id="search-results" aria-label="Search results" aria-live="polite">
           {searchResults.map((movie) => {
             const movieKey = getMovieKey(movie);
             const currentRating = movieKey ? draftRatings[movieKey] ?? movie.personal_rating ?? null : movie.personal_rating ?? null;
@@ -1284,7 +1705,7 @@ function App() {
         <div className="results-footer">
           {searchHasMore ? (
             <button type="button" className="subtle-button" onClick={handleLoadMoreSearch} disabled={searchLoading}>
-              {searchLoading ? 'Processing…' : 'Load more'}
+              {searchLoading ? 'Loading…' : 'Load more'}
             </button>
           ) : null}
         </div>
@@ -1354,7 +1775,7 @@ function App() {
 
     if (homeError && !homeData) {
       return (
-        <StateCard title="Couldn't load home" message={homeError} tone="error">
+        <StateCard title="Couldn't load home" message={friendlyError(homeError)} tone="error">
           <div className="state-card__actions">
             <button type="button" onClick={loadHomeData}>Retry</button>
           </div>
@@ -1386,7 +1807,11 @@ function App() {
             viewMoreLabel="← Back"
           />
           {expandedSectionLoading && movies.length === 0 ? (
-            <StateCard title="Loading" tone="loading" />
+            <div className="results-grid results-grid--home" aria-hidden="true">
+              {Array.from({ length: Math.max(1, Math.round(homeColumns)) * 2 }).map((_, i) => (
+                <div key={i} className="home-skeleton__card" />
+              ))}
+            </div>
           ) : (
             <>
               <div className="results-grid results-grid--home" aria-label={activeSection.title}>
@@ -1487,6 +1912,7 @@ function App() {
             <span className="home-hero__ring home-hero__ring--3" />
             <span className="home-hero__cross home-hero__cross--h" />
             <span className="home-hero__cross home-hero__cross--v" />
+            <span className="home-hero__sweep" />
           </div>
           <div className="home-hero__inner">
             <div className="home-hero__mark" aria-hidden="true">
@@ -1534,12 +1960,22 @@ function App() {
 
     if (recsViewMode === 'spotlight') {
       if (spotlightLoading && !spotlightPick) {
-        return <RecommendationVignette />;
+        // Prefer the dedicated trending poster set fetched directly for the
+        // carousel; fill in with whatever's already in state as extras.
+        const vignetteMovies = [
+          ...vignettePosters,
+          ...(homeData?.trending || []),
+          ...(homeData?.popular || []),
+          ...(homeData?.topRated || []),
+          ...recommendations,
+          ...userRatingsHistory,
+        ];
+        return <RecommendationVignette movies={vignetteMovies} />;
       }
 
       if (recommendationState.status === 'error' && !spotlightPick) {
         return (
-          <StateCard title="Recommendations unavailable" message={recommendationState.error || 'Something went wrong while generating your recommendations.'} tone="error">
+          <StateCard title="Recommendations unavailable" message={recommendationState.error ? friendlyError(recommendationState.error) : 'Something went wrong while generating your recommendations.'} tone="error">
             <div className="state-card__actions">
               <button type="button" onClick={loadSpotlightPick} disabled={spotlightLoading}>Retry</button>
             </div>
@@ -1556,7 +1992,6 @@ function App() {
 
       return (
         <>
-          <SectionHeader title="Your Next Pick" />
           <SpotlightCard
             movie={spotlightPick}
             ratingValue={pickRating}
@@ -1565,26 +2000,25 @@ function App() {
             onRate={handleQuickRate}
           />
           <div className="spotlight__actions">
-            <button type="button" className="btn-primary" onClick={loadSpotlightPick} disabled={spotlightLoading}>
+            <button type="button" className="btn-soft" onClick={loadSpotlightPick} disabled={spotlightLoading}>
               {spotlightLoading ? 'Picking…' : 'Show me another'}
             </button>
             {recsTotalAvailable > 1 ? (
               <button type="button" className="btn-soft" onClick={() => setRecsViewMode('browse')}>
-                Browse all {recsTotalAvailable} matches
-              </button>
-            ) : null}
+                View all recommendations
+              </button>) : null}
           </div>
         </>
       );
     }
 
     if (recommendationsLoading && recommendations.length === 0) {
-      return <StateCard title="Loading" tone="loading" />;
+      return <FullWidthLoading label="Building your recommendations…" />;
     }
 
     if (recommendationState.status === 'error') {
       return (
-        <StateCard title="Recommendations unavailable" message={recommendationState.error || 'Something went wrong while generating your recommendations.'} tone="error">
+        <StateCard title="Recommendations unavailable" message={recommendationState.error ? friendlyError(recommendationState.error) : 'Something went wrong while generating your recommendations.'} tone="error">
           <div className="state-card__actions">
             <button type="button" onClick={() => loadRecommendations()} disabled={recommendationsLoading}>Retry</button>
           </div>
@@ -1598,7 +2032,12 @@ function App() {
 
     return (
       <>
-        <SectionHeader title="Target Lock" onViewMore={() => setRecsViewMode('spotlight')} viewMoreLabel="One at a time" />
+        <SectionHeader
+          title="Target Lock"
+          onViewMore={() => setRecsViewMode('spotlight')}
+          viewMoreLabel="Switch to Spotlight"
+          viewMoreVariant="pill"
+        />
         <div className="results-grid results-grid--discover" aria-label="Recommendation results">
           {recommendations.map((movie) => {
             const movieKey = getMovieKey(movie);
@@ -1625,14 +2064,14 @@ function App() {
           })}
         </div>
 
-        <div className="results-footer">
-          {recsHasMore ? (
-            <button type="button" className="btn-soft" onClick={handleLoadMoreRecs} disabled={recommendationsLoading}>
-              {recommendationsLoading ? 'Processing…' : 'Load more recommendations'}
-            </button>
-          ) : null}
+        <div
+          ref={recsSentinelRef}
+          className="results-footer results-footer--sentinel"
+          aria-hidden="true"
+        >
+          {recommendationsLoading ? <span className="results-footer__loading">Loading…</span> : <span className="results-footer__spacer" />}
         </div>
-        {recommendationState.debug ? renderRecommendationDiagnostics() : null}
+        {recommendationState.status === 'error' ? renderRecommendationDiagnostics() : null}
       </>
     );
   };
@@ -1646,19 +2085,20 @@ function App() {
           tone="neutral"
         >
           <div className="state-card__actions">
-            <button type="button" onClick={handleDemoLogin} disabled={authLoading}>Try Demo</button>
+            <button type="button" className="btn-primary" onClick={handleFirebaseLogin} disabled={authLoading}>Sign in with Google</button>
+            <button type="button" className="subtle-button" onClick={handleDemoLogin} disabled={authLoading}>Try Demo</button>
           </div>
         </StateCard>
       );
     }
 
     if (userRatingsLoading && userRatingsHistory.length === 0) {
-      return <StateCard title="Loading" tone="loading" />;
+      return <FullWidthLoading label="Loading your ratings…" centered />;
     }
 
     if (userRatingsError) {
       return (
-        <StateCard title="Couldn't load your ratings" message={userRatingsError} tone="error">
+        <StateCard title="Couldn't load your ratings" message={friendlyError(userRatingsError)} tone="error">
           <div className="state-card__actions">
             <button type="button" onClick={loadUserRatings}>Retry</button>
           </div>
@@ -1670,37 +2110,144 @@ function App() {
       return <StateCard title="No ratings yet" message="Rate films to populate your scent trail, and they'll show up here." tone="neutral" />;
     }
 
+    // Sort by a key (recency / rating / title / release year) with an explicit
+    // direction. dir=1 => descending (desc, the default): newest-highest first.
+    const dir = historySortDir === 'asc' ? -1 : 1;
+    const sorted = [...userRatingsHistory];
+    const rate = (m) => m.personal_rating ?? -99;
+    const when = (m) => (m.rated_at ? new Date(m.rated_at).getTime() : 0);
+    const yearOf = (m) => {
+      const n = Number(String(m.release_date || m.year || '').slice(0, 4));
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    if (historySort === 'rating') {
+      // desc = high → low
+      sorted.sort((a, b) => dir * (rate(b) - rate(a)));
+    } else if (historySort === 'title') {
+      // desc = Z → A ; asc = A → Z
+      sorted.sort((a, b) => dir * String(b.title ?? '').localeCompare(String(a.title ?? '')));
+    } else if (historySort === 'year') {
+      // desc = newest release first
+      sorted.sort((a, b) => dir * (yearOf(b) - yearOf(a)));
+    } else {
+      // 'recent' — desc = most recently rated first (fixes the inverted default)
+      sorted.sort((a, b) => dir * (when(b) - when(a)));
+    }
+    // Note: sorted is a fresh copy each render, so mutation is safe.
+
+    // Filter by rating tone: Love / Like / Meh / Dislike / Hidden (separate).
+    const filtered =
+      historyFilter === 'all'
+        ? sorted
+        : sorted.filter((movie) => {
+            const v = movie.personal_rating;
+            if (historyFilter === 'love') return v === 2;
+            if (historyFilter === 'like') return v === 1;
+            if (historyFilter === 'meh') return v === 0;
+            if (historyFilter === 'dislike') return v === -2;
+            if (historyFilter === 'hidden') return v === -1;
+            return true;
+          });
+
+    const filterOptions = [
+      { value: 'all', label: 'All' },
+      { value: 'love', label: 'Love' },
+      { value: 'like', label: 'Like' },
+      { value: 'meh', label: 'Meh' },
+      { value: 'dislike', label: 'Dislike' },
+      { value: 'hidden', label: 'Hidden' },
+    ];
+
     return (
       <>
-        <SectionHeader title={`Your Ratings (${userRatingsHistory.length})`} />
-        <div className="results-grid results-grid--history" aria-label="Your rated movies">
-          {userRatingsHistory.map((movie) => {
-            const movieKey = getMovieKey(movie);
-            const currentRating = movie.personal_rating ?? null;
-            const isSelected = selectedMovieId === movieKey;
-            const communityTone = getCommunityTone(movie.vote_average, movie.vote_count);
-            // Show community rating badge
-            const badgeText = communityTone.label;
-            const badgeTone = communityTone.tone;
-
-            return (
-              <MovieCard
-                key={movieKey ?? movie.title}
-                movie={movie}
-                mode="history"
-                selected={isSelected}
-                badgeText={badgeText}
-                badgeTone={badgeTone}
-                ratingValue={currentRating}
-                authEnabled={authEnabled}
-                savingRating={savingRatingMovieId === movieKey}
-                expandedRatingMovieId={expandedRatingMovieId}
-                onRate={handleQuickRate}
-                onCloseRating={(key) => setExpandedRatingMovieId((current) => (current === key ? null : current))}
-              />
-            );
-          })}
+        <SectionHeader title={`Your Ratings (${filtered.length}/${userRatingsHistory.length})`} />
+        <div className="history-controls" aria-label="Sort and filter your ratings">
+          <div className="history-control">
+            <span>Sort by</span>
+            <SelectMenu
+              label="Sort"
+              value={historySort}
+              ariaLabel="Sort by"
+              options={[
+                { value: 'recent', label: 'Most recent' },
+                { value: 'rating', label: 'Rating' },
+                { value: 'title', label: 'Title' },
+                { value: 'year', label: 'Release year' },
+              ]}
+              onChange={setHistorySort}
+            />
+          </div>
+          <div className="history-control" role="group" aria-label="Sort direction">
+            <span>Order</span>
+            <div className="history-filter">
+              <button
+                type="button"
+                aria-pressed={historySortDir === 'desc'}
+                className={historySortDir === 'desc' ? 'is-active' : ''}
+                onClick={() => setHistorySortDir('desc')}
+              >
+                Descending ↓
+              </button>
+              <button
+                type="button"
+                aria-pressed={historySortDir === 'asc'}
+                className={historySortDir === 'asc' ? 'is-active' : ''}
+                onClick={() => setHistorySortDir('asc')}
+              >
+                Ascending ↑
+              </button>
+            </div>
+          </div>
+          <div className="history-control" role="group" aria-label="Filter by rating">
+            <span>Filter</span>
+            <div className="history-filter">
+              {filterOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  aria-pressed={historyFilter === opt.value}
+                  className={historyFilter === opt.value ? 'is-active' : ''}
+                  onClick={() => setHistoryFilter(opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
+        {filtered.length === 0 ? (
+          <StateCard title="Nothing here yet" message="Try a different filter or sort." tone="neutral" />
+        ) : (
+          <div className="results-grid results-grid--history" aria-label="Your rated movies">
+            {filtered.map((movie) => {
+              const movieKey = getMovieKey(movie);
+              const currentRating = movie.personal_rating ?? null;
+              const isSelected = selectedMovieId === movieKey;
+              const communityTone = getCommunityTone(movie.vote_average, movie.vote_count);
+              // Show community rating badge
+              const badgeText = communityTone.label;
+              const badgeTone = communityTone.tone;
+
+              return (
+                <MovieCard
+                  key={movieKey ?? movie.title}
+                  movie={movie}
+                  mode="history"
+                  selected={isSelected}
+                  badgeText={badgeText}
+                  badgeTone={badgeTone}
+                  ratingValue={currentRating}
+                  authEnabled={authEnabled}
+                  savingRating={savingRatingMovieId === movieKey}
+                  expandedRatingMovieId={expandedRatingMovieId}
+                  onRate={handleQuickRate}
+                  onCloseRating={(key) => setExpandedRatingMovieId((current) => (current === key ? null : current))}
+                />
+              );
+            })}
+          </div>
+        )}
       </>
     );
   };
@@ -1721,7 +2268,7 @@ function App() {
     ];
 
     return (
-      <details className="debug-panel" open={recommendationState.status === 'error'}>
+      <details className="debug-panel" open>
         <summary>Recommendation diagnostics</summary>
         <dl className="debug-panel__grid">
           {rows.map(([label, value]) => (
@@ -1745,10 +2292,12 @@ function App() {
         </dl>
       </details>
     );
-  }, [recommendationState.debug, recommendationState.status, authSession?.uid]);
+  }, [recommendationState.debug, authSession?.uid]);
 
   return (
     <div className="app-shell">
+      {/* Keyboard users can jump past the sticky header + nav straight to content. */}
+      <a className="skip-link" href="#main-content">Skip to content</a>
       <header className="app-header">
         <div className="brand-block">
           <button type="button" className="brand-block__link" onClick={() => setActiveTab('home')} aria-label="CineHound home">
@@ -1760,7 +2309,7 @@ function App() {
                 <stop offset="100%" stopColor="#ff9a3d" />
               </linearGradient>
             </defs>
-            <rect width="64" height="64" rx="15" fill="#0c0f16" />
+            <rect width="64" height="64" rx="15" fill="var(--surface-raised)" />
             <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="14.25" fill="none" stroke="#ffffff" strokeOpacity="0.06" strokeWidth="1.5" />
             <circle cx="32" cy="32" r="19.5" fill="none" stroke="url(#chRadarMark)" strokeWidth="2.2" opacity="0.9" />
             <circle cx="32" cy="32" r="13" fill="none" stroke="url(#chRadarMark)" strokeWidth="1.8" opacity="0.55" />
@@ -1790,6 +2339,38 @@ function App() {
               if (browseCloseTimer.current) clearTimeout(browseCloseTimer.current);
               browseCloseTimer.current = setTimeout(() => setBrowseOpen(false), 160);
             }}
+            onKeyDown={(event) => {
+              // If the menu isn't open yet and we're on the trigger, ArrowDown
+              // opens it and drops focus onto the first item.
+              if (!browseOpen && (event.key === 'ArrowDown' || event.key === 'ArrowRight')) {
+                event.preventDefault();
+                setBrowseOpen(true);
+                return;
+              }
+              const items = browseMenuItemsRef.current;
+              if (items.length === 0) return;
+              const currentIndex = items.indexOf(document.activeElement);
+
+              let nextIndex = -1;
+              if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+                nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+              } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+                nextIndex = currentIndex < 0 ? items.length - 1 : (currentIndex - 1 + items.length) % items.length;
+              } else if (event.key === 'Home') {
+                nextIndex = 0;
+              } else if (event.key === 'End') {
+                nextIndex = items.length - 1;
+              } else if (event.key === 'Escape') {
+                setBrowseOpen(false);
+                browseRef.current?.querySelector('.nav-tab')?.focus();
+                return;
+              }
+
+              if (nextIndex >= 0) {
+                event.preventDefault();
+                items[nextIndex].focus();
+              }
+            }}
           >
             <button
               type="button"
@@ -1803,15 +2384,22 @@ function App() {
             </button>
             {browseOpen ? (
               <div className="nav-browse__menu" role="menu">
-                <button type="button" role="menuitem" className="nav-browse__item" onClick={() => { setBrowseOpen(false); setActiveTab('trending-full'); }}>
-                  Trending Now
-                </button>
-                <button type="button" role="menuitem" className="nav-browse__item" onClick={() => { setBrowseOpen(false); setActiveTab('popular-full'); }}>
-                  Popular
-                </button>
-                <button type="button" role="menuitem" className="nav-browse__item" onClick={() => { setBrowseOpen(false); setActiveTab('topRated-full'); }}>
-                  Most Acclaimed
-                </button>
+                {[
+                  { label: 'Trending Now', go: () => setActiveTab('trending-full') },
+                  { label: 'Popular', go: () => setActiveTab('popular-full') },
+                  { label: 'Most Acclaimed', go: () => setActiveTab('topRated-full') },
+                ].map((item, index) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    role="menuitem"
+                    className="nav-browse__item"
+                    ref={(el) => { browseMenuItemsRef.current[index] = el; }}
+                    onClick={() => { setBrowseOpen(false); item.go(); }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
             ) : null}
           </div>
@@ -1834,18 +2422,27 @@ function App() {
         <div className="header-auth" aria-label="Identity and session controls">
           <div className="header-search">
             {searchIsOpen ? (
-              <div className="header-search__field">
+              <div
+                className="header-search__field"
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') closeHeaderSearch();
+                }}
+              >
                 <svg className="header-search__icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="7.5" />
                   <line x1="21" y1="21" x2="16.5" y2="16.5" />
                 </svg>
                 <input
                   ref={searchInputRef}
+                  type="search"
                   value={query}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Search movies…"
                   aria-label="Search movies"
+                  aria-controls="search-results"
+                  aria-expanded={hasSearchResults ? 'true' : 'false'}
                   autoComplete="off"
+                  enterKeyHint="search"
                 />
                 <button
                   type="button"
@@ -1853,63 +2450,116 @@ function App() {
                   onClick={closeHeaderSearch}
                   aria-label="Close search"
                 >
-                  ✕
+                  <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
                 </button>
               </div>
             ) : (
               <button type="button" className="header-search__toggle" onClick={toggleHeaderSearch}>
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="7.5" />
+                  <line x1="21" y1="21" x2="16.5" y2="16.5" />
+                </svg>
                 Search
               </button>
             )}
           </div>
 
-          <button
-            type="button"
-            className="theme-toggle"
-            onClick={toggleTheme}
-            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          <div
+            className="account-menu"
+            ref={accountRef}
+            onKeyDown={handleAccountKeyDown}
           >
-            {theme === 'dark' ? (
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="4.2" />
-                <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20.4 14.2A8.2 8.2 0 0 1 9.8 3.6 8.5 8.5 0 1 0 20.4 14.2Z" />
-              </svg>
-            )}
-          </button>
+            <button
+              type="button"
+              className={['account-menu__trigger', accountOpen ? 'is-open' : ''].filter(Boolean).join(' ')}
+              onClick={() => setAccountOpen((o) => !o)}
+              aria-haspopup="menu"
+              aria-expanded={accountOpen}
+              aria-label="Account and settings menu"
+            >
+              {authSession ? (
+                <span className="account-menu__label" title={authLabel}>{authLabel}</span>
+              ) : (
+                <span className="account-menu__label">Account</span>
+              )}
+              <svg className="nav-caret" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            {accountOpen ? (
+              <div className="account-menu__dropdown" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="account-menu__item"
+                  ref={(el) => { accountMenuItemsRef.current[0] = el; }}
+                  onClick={() => { toggleTheme(); }}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    {theme === 'dark' ? (
+                      <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" />
+                    ) : (
+                      <path d="M20.4 14.2A8.2 8.2 0 0 1 9.8 3.6 8.5 8.5 0 1 0 20.4 14.2Z" />
+                    )}
+                  </svg>
+                  <span>Theme: {theme === 'dark' ? 'Dark' : 'Light'}</span>
+                </button>
 
-          {authSession ? (
-            <div className="session-chip">
-              <span className="session-chip__label" title={authLabel}>
-                {authLabel}
-              </span>
-              <button
-                type="button"
-                className="subtle-button session-chip__action"
-                onClick={handleSignOut}
-                disabled={authLoading}
-              >
-                Sign out
-              </button>
-            </div>
-          ) : (
-            <div className="auth-actions">
-              <button type="button" onClick={handleFirebaseLogin} disabled={authLoading}>
-                Sign in
-              </button>
-              <button type="button" className="subtle-button" onClick={handleDemoLogin} disabled={authLoading}>
-                Demo
-              </button>
-            </div>
-          )}
+                {authSession ? (
+                  <>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="account-menu__item"
+                      ref={(el) => { accountMenuItemsRef.current[1] = el; }}
+                      onClick={() => { setAccountOpen(false); setActiveTab('history'); }}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4l2.5 2.5" /><circle cx="12" cy="12" r="8.5" /></svg>
+                      <span>Your Ratings</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="account-menu__item account-menu__item--danger"
+                      ref={(el) => { accountMenuItemsRef.current[2] = el; }}
+                      onClick={() => { setAccountOpen(false); void handleSignOut(); }}
+                      disabled={authLoading}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
+                      <span>Sign out</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="account-menu__item"
+                      ref={(el) => { accountMenuItemsRef.current[1] = el; }}
+                      onClick={() => { setAccountOpen(false); void handleFirebaseLogin(); }}
+                      disabled={authLoading}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
+                      <span>Sign in</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="account-menu__item"
+                      ref={(el) => { accountMenuItemsRef.current[2] = el; }}
+                      onClick={() => { setAccountOpen(false); void handleDemoLogin(); }}
+                      disabled={authLoading}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
+                      <span>Try Demo</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
 
-      <main className="app-main" ref={mainElRef}>
+      <main className="app-main" ref={mainElRef} id="main-content" tabIndex={-1}>
         {(activeTab === 'home' || activeTab === 'trending-full' || activeTab === 'popular-full' || activeTab === 'topRated-full') ? (
           <section className="content-section" aria-label="Home">
             {renderHomeBody()}
@@ -1923,7 +2573,10 @@ function App() {
         ) : null}
 
         {activeTab === 'discover' ? (
-          <section className="content-section" aria-label="Recommendations">
+          <section
+            className={['content-section', recsViewMode === 'spotlight' ? 'content-section--centered' : ''].filter(Boolean).join(' ')}
+            aria-label="Recommendations"
+          >
             {renderRecommendationsBody()}
           </section>
         ) : null}
@@ -1935,7 +2588,7 @@ function App() {
         ) : null}
 
         <div className="sr-only" aria-live="polite" aria-atomic="true">
-          {announcement}
+          <span key={announcement.seq}>{announcement.text}</span>
         </div>
       </main>
 

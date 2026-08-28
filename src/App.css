@@ -4,6 +4,36 @@
    ============================================================ */
 
 /* ── App Shell ── */
+.skip-link {
+  position: fixed;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 100;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  border: 1px solid var(--accent-border);
+  color: var(--accent-text);
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: var(--shadow-lg);
+  /* Off-screen until focused so it doesn't add visual noise. */
+  transform: translateY(-160%);
+  opacity: 0;
+  transition: transform var(--dur-fast) var(--ease-snap), opacity var(--dur-fast) var(--ease-snap);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Main is focused by the skip link and on tab navigation; keep the focus
+   ring from painting a big outline around the whole content column. */
+#main-content:focus-visible {
+  outline: none;
+}
+
 .app-shell {
   min-height: 100vh;
   display: flex;
@@ -121,6 +151,8 @@
   gap: 0.35rem;
   align-items: center;
   justify-content: center;
+  justify-self: center;
+  width: fit-content;
   padding: 0.25rem;
   background: var(--surface-glass);
   border: 1px solid var(--border-subtle);
@@ -149,7 +181,8 @@
   transition: transform var(--dur-fast) var(--ease-snap);
 }
 
-.nav-browse[aria-expanded="true"] .nav-caret {
+/* aria-expanded lives on the Home nav button, not the wrapper div */
+.nav-browse .nav-tab[aria-expanded="true"] .nav-caret {
   transform: rotate(180deg);
 }
 
@@ -240,26 +273,108 @@
   background: var(--accent-soft);
 }
 
-.theme-toggle {
-  display: inline-grid;
-  place-items: center;
+.header-search__toggle svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ── Account / profile dropdown menu ── */
+.account-menu {
+  position: relative;
+}
+
+.account-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   background: var(--surface-glass);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 0.5rem;
-  min-width: 2.2rem;
-  height: 2.2rem;
   color: var(--text-muted);
+  padding: 0.45rem 0.8rem 0.45rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
-  line-height: 1;
+  line-height: 1.2;
+  max-width: 12rem;
   transition: all var(--dur-micro) var(--ease-snap);
 }
 
-.theme-toggle:hover {
+.account-menu__trigger:hover,
+.account-menu__trigger.is-open {
   border-color: var(--accent-border);
   background: var(--accent-soft);
   color: var(--text-primary);
-  transform: rotate(14deg);
+}
+
+.account-menu__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu__trigger .nav-caret {
+  opacity: 0.6;
+  flex-shrink: 0;
+  transition: transform var(--dur-fast) var(--ease-snap);
+}
+
+.account-menu__trigger.is-open .nav-caret {
+  transform: rotate(180deg);
+}
+
+.account-menu__dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 70;
+  min-width: 220px;
+  padding: 0.4rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  gap: 0.15rem;
+  animation: fade-in-up var(--dur-fast) var(--ease-snap);
+}
+
+.account-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text-body);
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.86rem;
+  font-weight: 500;
+  width: 100%;
+}
+
+.account-menu__item svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.account-menu__item:hover {
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+
+.account-menu__item--danger {
+  color: var(--danger-text);
+}
+
+.account-menu__item--danger svg {
+  color: var(--danger-text);
+}
+
+.account-menu__item--danger:hover {
+  color: var(--danger-text);
+  background: var(--danger-soft);
 }
 
 .header-search__field {
@@ -306,6 +421,17 @@
   color: var(--text-muted);
 }
 
+/* We ship our own close button, so suppress the native type=search clear. */
+.header-search__field input::-webkit-search-cancel-button,
+.header-search__field input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.header-search__field input::-ms-clear {
+  display: none;
+}
+
 .header-search__close {
   background: none;
   border: none;
@@ -313,48 +439,20 @@
   padding: 0.35rem 0.5rem;
   cursor: pointer;
   line-height: 1;
-  font-size: 1.1rem;
   border-radius: var(--radius-sm);
   transition: color var(--dur-micro) var(--ease-snap), background var(--dur-micro) var(--ease-snap);
+}
+
+.header-search__close svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+  flex: none;
 }
 
 .header-search__close:hover {
   color: var(--text-primary);
   background: var(--accent-soft);
-}
-
-/* Auth actions & session chip */
-.auth-actions,
-.session-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.session-chip {
-  min-height: 2.55rem;
-  padding: 0.22rem 0.25rem 0.22rem 0.9rem;
-  border-radius: 999px;
-  border: 1px solid var(--accent-border);
-  background: var(--accent-soft);
-}
-
-.session-chip__label {
-  color: var(--text-primary);
-  max-width: 14rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.86rem;
-  font-weight: 600;
-}
-
-.session-chip__action {
-  min-height: 2rem;
-  padding-inline: 0.7rem;
-  font-size: 0.8rem;
-  border-radius: 999px;
 }
 
 .subtle-button {
@@ -377,6 +475,11 @@
   gap: 1.75rem;
   padding-bottom: 2.5rem;
   flex: 1;
+  /* Keep content top-aligned: when a page is short (e.g. a filtered history
+     with few movies) the leftover viewport space pools at the bottom (before
+     the footer) instead of being stretched/spread between the title, filters,
+     and grid. */
+  align-content: start;
 }
 
 .content-section {
@@ -385,13 +488,26 @@
   animation: fade-in var(--dur-structural) var(--ease-snap);
 }
 
+/* Spotlight (single recommendation) view: fill the available height and
+   vertically center the card + its action buttons, instead of leaving a large
+   empty band below them. */
+.content-section--centered {
+  align-content: center;
+  min-height: calc(100vh - 16rem);
+}
+
 /* ── Section headers ── */
 .section-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  margin: 0.25rem 0 0.15rem;
+  gap: 0.75rem 1rem;
+  flex-wrap: wrap;
+  /* Uniform vertical rhythm: a little air above each section title (so it
+     reads as part of the previous context) and a clear, consistent gap below
+     it before its content — used on every page (home / discover / search /
+     history / expanded) so headings never hug or float oddly. */
+  margin: 0.5rem 0 1rem;
 }
 
 .section-header {
@@ -412,7 +528,6 @@
   height: 30px;
   border-radius: 10px;
   border: 1px solid var(--accent-border);
-  background: var(--accent-soft);
   color: var(--accent-text);
   flex-shrink: 0;
   box-shadow: 0 0 12px var(--accent-glow);
@@ -444,6 +559,26 @@
 .view-more-link:hover {
   color: var(--accent);
   background: var(--accent-soft);
+  border-color: var(--accent-border);
+}
+
+/* Prominent pill action for header controls that must be more than a footnote
+   (e.g. the recommendations "Switch to Spotlight" toggle). */
+.view-more-link--pill {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 0.55rem 1.1rem;
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.view-more-link--pill:hover {
+  background: var(--accent-soft-strong);
+  color: var(--accent-text);
   border-color: var(--accent-border);
 }
 
@@ -512,17 +647,45 @@
   transform: translate(-50%, -50%);
   border-radius: 50%;
   border: 1px solid var(--accent-border);
-  transform-origin: center;
-  animation: radar-ping 4.5s var(--ease-snap) infinite;
+  opacity: 0.55;
 }
 
 .home-hero__ring--1 { width: 160px; height: 160px; }
-.home-hero__ring--2 { width: 160px; height: 160px; animation-delay: 1.5s; }
-.home-hero__ring--3 { width: 160px; height: 160px; animation-delay: 3s; }
+.home-hero__ring--2 { width: 160px; height: 160px; }
+.home-hero__ring--3 { width: 160px; height: 160px; }
 
-@keyframes radar-ping {
-  0% { transform: translate(-50%, -50%) scale(0.35); opacity: 0.9; }
-  100% { transform: translate(-50%, -50%) scale(1.9); opacity: 0; }
+/* Rotating radar scan: a spoke (thin line) from the ring centre to the edge,
+   ending in a bright blip — mirrors the line-and-dot radar icons used across
+   the site, rotating continuously about the centre. */
+.home-hero__sweep {
+  position: absolute;
+  top: 50%;
+  left: 88%;
+  width: 76px;
+  height: 2px;
+  /* Inner end sits at the ring centre and pivots there. */
+  transform-origin: left center;
+  background: linear-gradient(90deg, transparent, var(--accent-secondary-border) 55%, var(--accent-text) 100%);
+  animation: radar-sweep-rotate 3.6s linear infinite;
+}
+
+/* Blip at the spoke tip */
+.home-hero__sweep::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -3px;
+  width: 7px;
+  height: 7px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--accent-text);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+@keyframes radar-sweep-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 .home-hero__cross {
@@ -596,15 +759,22 @@
   gap: clamp(1.5rem, 3vw, 2.5rem);
 }
 
-/* ── Results grid ── */
+/* ── Results grid ──
+   Fixed, modest card tracks: each card renders at a comfortable --card-size and
+   never stretches (no ballooning into huge cards). auto-fill tiles full rows
+   for normal content; when a filter leaves few movies, the few cards stay small
+   and centered — leftover space is even on the sides, not a dead gap between
+   items. */
 .results-grid {
-  --card-size: clamp(164px, 14.5vw, 216px);
+  --card-size: clamp(150px, 13vw, 200px);
   display: grid;
   gap: 1.1rem;
   grid-auto-flow: row;
-  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), var(--card-size)));
-  align-items: stretch;
-  justify-content: start;
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-size), var(--card-size)));
+  /* Start-align so each card takes its natural height — no card stretches to
+     the row max, which caused blank space inside shorter cards. */
+  align-items: start;
+  justify-content: center;
 }
 
 .results-grid--single {
@@ -615,11 +785,11 @@
 .results-grid--home,
 .results-grid--history,
 .results-grid--discover {
-  --card-size: clamp(158px, 13.5vw, 208px);
+  --card-size: clamp(148px, 12vw, 190px);
 }
 
 .results-grid--search {
-  --card-size: clamp(170px, 15vw, 224px);
+  --card-size: clamp(150px, 14vw, 200px);
 }
 
 /* ── Movie & state cards ── */
@@ -640,10 +810,13 @@
   width: 100%;
   align-content: start;
   cursor: pointer;
-  transition: transform var(--dur-fast) var(--ease-snap),
-              border-color var(--dur-fast) var(--ease-snap),
-              background var(--dur-fast) var(--ease-snap),
-              box-shadow var(--dur-fast) var(--ease-snap);
+  /* Fast, GPU-cheap hover: transform + border/background only. Avoid slow
+     durations and per-frame filters so fast cursor moves stay responsive. */
+  transition: transform 120ms var(--ease-snap),
+              border-color 120ms var(--ease-snap),
+              background 120ms var(--ease-snap),
+              box-shadow 120ms var(--ease-snap);
+  will-change: transform;
 }
 
 .movie-card:hover,
@@ -701,13 +874,13 @@
 .poster img {
   object-fit: cover;
   display: block;
-  transition: transform var(--dur-structural) var(--ease-snap),
-              filter var(--dur-structural) var(--ease-snap);
+  /* Fast hover: transform-only, no filter — smooth even under rapid cursor
+     movement. */
+  transition: transform 140ms var(--ease-snap);
 }
 
 .movie-card:hover .poster img {
   transform: scale(1.05);
-  filter: brightness(1.06);
 }
 
 .poster-fallback {
@@ -767,29 +940,59 @@
 .poster-rating__option {
   position: absolute;
   bottom: 0.5rem;
+  width: 15%;
   display: inline-grid;
   place-items: center;
   border-radius: 50%;
   border: 1px solid var(--border-strong);
   background: var(--surface-solid);
   color: var(--text-body);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
   aspect-ratio: 1;
   padding: 0;
   opacity: 0;
-  transform: scale(0.5) translateY(4px);
-  transition: transform var(--dur-micro) var(--ease-snap),
-              opacity var(--dur-micro) var(--ease-snap),
-              background var(--dur-micro) var(--ease-snap),
-              border-color var(--dur-micro) var(--ease-snap),
-              box-shadow var(--dur-micro) var(--ease-snap);
+  /* Collapsed: every control stacks at the bottom-right corner; a rated choice
+     sits there alone until the rack opens. */
+  left: 82%;
+  transform: scale(0.4) translateY(4px);
+  transition:
+    left var(--dur-micro) var(--ease-snap),
+    transform 60ms var(--ease-snap),
+    opacity 60ms var(--ease-snap),
+    background var(--dur-micro) var(--ease-snap),
+    border-color var(--dur-micro) var(--ease-snap),
+    box-shadow var(--dur-micro) var(--ease-snap);
+  /* Close folds leftmost-first back toward the corner; tight stagger keeps it
+     snappy (no frosted blur + clear transition delays that cause lag). */
+  transition-delay: calc(var(--i, 0) * 12ms);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
 }
 
+/* Slot targets: where each control lands when the rack opens. DOM order is the
+   visually left→right order: Love, Like, Meh, Dislike, then Don't-recommend
+   (far right). */
+.poster-rating__option:nth-child(1) { --slot: 4%; }   /* Love */
+.poster-rating__option:nth-child(2) { --slot: 23%; }  /* Like */
+.poster-rating__option:nth-child(3) { --slot: 42%; }  /* Meh */
+.poster-rating__option:nth-child(4) { --slot: 61%; }  /* Dislike */
+.poster-rating__option:nth-child(5) { --slot: 80%; }  /* Don't recommend */
+
+/* Open: every control fans out from the bottom-right corner toward the rack.
+   Each control drops into its slot and is "left behind" as the sweep moves
+   leftward; the active choice is carried into its lane. */
 .poster:hover .poster-rating__option,
 .poster:focus-within .poster-rating__option,
-.poster-rating.is-open .poster-rating__option {
+.poster-rating.is-open .poster-rating__option,
+.movie-card:focus-within .poster-rating__option {
+  left: var(--slot, 45%);
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1) translateY(0);
+  transition-delay: calc((4 - var(--i, 0)) * 12ms);
+}
+
+/* A chosen rating stays visible (and interactive) in the corner without hover —
+   the user should see what they rated at a glance. */
+.poster-rating__menu .poster-rating__option.active {
   opacity: 1;
   pointer-events: auto;
   transform: scale(1) translateY(0);
@@ -861,9 +1064,6 @@
   overflow: hidden;
   font-weight: 600;
   letter-spacing: -0.01em;
-  /* Reserve two title lines so cards in the same grid stay equal-height
-     regardless of how short the title runs. */
-  min-height: calc(2 * 1.15em);
 }
 
 .movie-title-row p {
@@ -928,11 +1128,6 @@
   border-color: var(--border);
   background: var(--border);
   color: var(--text-muted);
-}
-
-@keyframes score-fade {
-  0% { opacity: 0; transform: scale(0.6); }
-  100% { opacity: 1; transform: scale(1); }
 }
 
 /* ── State cards ── */
@@ -1039,9 +1234,12 @@
 }
 
 .home-skeleton__grid {
-  --card-size: clamp(158px, 13.5vw, 208px);
+  --card-size: clamp(148px, 12vw, 190px);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--card-size), var(--card-size)));
+  /* Match the real results grid (fixed modest tracks, centered) so the measured
+     column count — and thus the rendered full rows — match the loaded grid. */
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-size), var(--card-size)));
+  justify-content: center;
   gap: 1.1rem;
 }
 
@@ -1065,6 +1263,210 @@
   display: flex;
   justify-content: flex-start;
   padding-top: 0.25rem;
+}
+
+/* Infinite-scroll sentinel: a slim, invisible bottom anchor that the
+   IntersectionObserver watches; shows a subtle loader while a page streams in. */
+.results-footer--sentinel {
+  min-height: 3rem;
+  justify-content: center;
+  align-items: center;
+  padding-top: 0;
+}
+
+.results-footer__loading {
+  color: var(--text-muted);
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+.results-footer__spacer {
+  display: block;
+  min-height: 1px;
+}
+
+/* ── Full-width loading band ──
+   A non-card loading state that spans the whole content column (not a fixed
+   box): a labeled rail shimmer. Used for search / recommendations / history. */
+.fullwidth-loading {
+  display: grid;
+  gap: 1.2rem;
+  justify-items: center;
+  padding: clamp(2.5rem, 8vh, 4.5rem) 1rem;
+  width: 100%;
+  text-align: center;
+  align-content: start;
+}
+
+/* Vertically centered variant (e.g. the history loading screen): fill the
+   available height and center the loader, matching the spotlight page. */
+.fullwidth-loading--centered {
+  flex: 1;
+  align-content: center;
+  min-height: calc(100vh - 16rem);
+}
+
+.fullwidth-loading__label {
+  color: var(--text-secondary);
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fullwidth-loading__track {
+  position: relative;
+  width: min(420px, 80vw);
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.fullwidth-loading__rail {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: loading-rail 1.2s ease-in-out infinite;
+}
+
+@keyframes loading-rail {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
+
+/* ── History sort & filter controls ── */
+.history-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 1.5rem;
+  padding: 0.4rem 0.25rem 0.6rem;
+}
+
+.history-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.history-control > span {
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Cohesive themed dropdown (matches the Home/Account menus), replacing the
+   native <select> popup for the history sort. */
+.select-menu {
+  position: relative;
+}
+
+.select-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 200px;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-glass);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--dur-micro) var(--ease-snap), background var(--dur-micro) var(--ease-snap);
+}
+
+.select-menu__trigger:hover,
+.select-menu__trigger.is-open {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.select-menu__label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.select-menu__value {
+  color: var(--text-primary);
+}
+
+.select-menu__trigger .nav-caret {
+  margin-left: auto;
+  opacity: 0.6;
+  transition: transform var(--dur-fast) var(--ease-snap);
+}
+
+.select-menu__trigger.is-open .nav-caret {
+  transform: rotate(180deg);
+}
+
+.select-menu__dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 70;
+  min-width: 100%;
+  padding: 0.4rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  gap: 0.15rem;
+  animation: fade-in-up var(--dur-fast) var(--ease-snap);
+}
+
+.select-menu__item {
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text-body);
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.86rem;
+  font-weight: 500;
+  width: 100%;
+}
+
+.select-menu__item:hover,
+.select-menu__item:focus-visible {
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+
+.select-menu__item.is-active {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
+
+.history-filter {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.history-filter button {
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+.history-filter button.is-active {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
 }
 
 /* ── App footer ── */
@@ -1126,6 +1528,10 @@
   place-items: center;
   width: 46px;
   height: 46px;
+  /* Reset the global button padding (0.55rem 1.05rem) that otherwise pushes
+     the icon off-center inside the fixed-size circle. */
+  padding: 0;
+  line-height: 0;
   border-radius: 50%;
   border: 1px solid var(--accent-border);
   background: var(--surface-raised);
@@ -1138,6 +1544,13 @@
               transform var(--dur-fast) var(--ease-snap),
               visibility var(--dur-fast) var(--ease-snap),
               background var(--dur-fast) var(--ease-snap);
+}
+
+.back-top svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 0;
 }
 
 .back-top.is-visible {
@@ -1188,32 +1601,46 @@
   100% { transform: scale(1); }
 }
 
-/* ── Primary accent button ── */
+/* ── Primary accent pill button ──
+   A solid accent fill + dark ink marks this as the primary action, clearly
+   distinct from the outline soft pills (btn-soft / subtle-button) used for
+   secondary actions — a real hierarchy instead of three identical flat pills. */
 .btn-primary {
   border-color: transparent;
-  background: linear-gradient(120deg, var(--accent) 0%, var(--accent-secondary) 100%);
-  color: #06120b;
+  background: var(--accent);
+  color: var(--accent-ink);
   font-weight: 700;
   border-radius: 999px;
-  box-shadow: 0 4px 16px var(--accent-glow);
-  transition: transform var(--dur-micro) var(--ease-snap),
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+  transition: background var(--dur-micro) var(--ease-snap),
+              border-color var(--dur-micro) var(--ease-snap),
               box-shadow var(--dur-micro) var(--ease-snap),
-              filter var(--dur-micro) var(--ease-snap),
-              border-color var(--dur-micro) var(--ease-snap);
+              transform var(--dur-micro) var(--ease-snap),
+              color var(--dur-micro) var(--ease-snap),
+              filter var(--dur-micro) var(--ease-snap);
 }
 
 .btn-primary:hover {
-  color: #06120b;
-  filter: brightness(1.06);
-  box-shadow: 0 6px 24px var(--accent-glow);
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: transparent;
+  box-shadow: 0 4px 16px var(--accent-glow);
   transform: translateY(-1px);
+  filter: brightness(1.05);
 }
 
 .btn-primary:active {
   transform: translateY(1px) scale(0.99);
 }
 
-/* ── Soft accent pill button (secondary CTAs) ── */
+/* Focus ring must contrast against the solid accent fill (the accent-colored
+   default outline would be nearly invisible on the accent background). */
+.btn-primary:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+/* ── Soft accent outline pill button (secondary CTAs) ── */
 .btn-soft {
   border-color: var(--accent-border);
   background: var(--accent-soft);
@@ -1231,16 +1658,19 @@
 /* ── Spotlight recommendation card ── */
 .spotlight-card {
   display: grid;
-  grid-template-columns: minmax(160px, 220px) 1fr;
-  gap: 1.25rem;
+  grid-template-columns: minmax(180px, 280px) 1fr;
+  gap: 1.5rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--surface-glass);
   box-shadow: var(--shadow-md);
-  padding: 1.25rem;
-  max-width: 720px;
+  padding: 1.5rem;
+  max-width: 900px;
   margin-inline: auto;
-  align-items: start;
+  /* Each cell keeps its own natural size (poster keeps its 2:3 aspect; the
+     body column stretches to match the row). The body's rating row uses
+     margin-top:auto to sit at the bottom of its column. */
+  align-items: stretch;
   position: relative;
   overflow: hidden;
 }
@@ -1275,6 +1705,10 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   aspect-ratio: 2 / 3;
+  /* Don't stretch to the row height — keep the natural 2:3 aspect. The grid
+     cell is column 1 (160–220px), and align-self:start pins it to the top so
+     it never gets oversized/distorted. */
+  align-self: start;
   background: var(--surface-solid);
   box-shadow: var(--shadow-lg);
   transition: transform var(--dur-fast) var(--ease-snap), box-shadow var(--dur-fast) var(--ease-snap);
@@ -1295,8 +1729,10 @@
 .spotlight-card__body {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1rem;
   min-width: 0;
+  /* The grid's align-items:stretch already fills the row height; the rating
+     row's margin-top:auto pins it to the bottom. No explicit height needed. */
 }
 
 .spotlight-card__header {
@@ -1309,8 +1745,8 @@
 /* ── Radar match gauge ── */
 .match-gauge {
   position: relative;
-  width: 54px;
-  height: 54px;
+  width: 62px;
+  height: 62px;
   flex-shrink: 0;
   color: var(--accent-text);
   filter: drop-shadow(0 2px 10px var(--accent-glow));
@@ -1372,24 +1808,25 @@
 
 .spotlight-card__title {
   margin: 0;
-  font-size: 1.65rem;
-  line-height: 1.12;
+  font-size: clamp(1.7rem, 2.4vw, 2.1rem);
+  line-height: 1.1;
   font-family: var(--font-heading);
   color: var(--text-primary);
   letter-spacing: -0.02em;
 }
 
 .spotlight-card__year {
-  margin: 0.3rem 0 0;
+  margin: 0.4rem 0 0;
   color: var(--text-muted);
   font-family: var(--font-data);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
 }
 
 .spotlight-card__overview {
   margin: 0;
   color: var(--text-body);
   line-height: 1.65;
+  font-size: 1.02rem;
 }
 
 .spotlight-card__meta,
@@ -1413,8 +1850,8 @@
 .spotlight-rating__option {
   display: inline-grid;
   place-items: center;
-  width: 2.6rem;
-  height: 2.6rem;
+  width: 3rem;
+  height: 3rem;
   border-radius: 50%;
   border: 1px solid var(--border-strong);
   background: var(--surface-raised);
@@ -1474,6 +1911,20 @@
   margin-top: 0.25rem;
 }
 
+/* The two recommendation action buttons are a plain, horizontal pill pair
+   (both outline). Force an explicit height and horizontal padding so nothing
+   can stretch them into tall/vertical pills, and scale them with the card. */
+.spotlight__actions .btn-soft {
+  height: 2.9rem;
+  padding: 0 1.7rem;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border-radius: 999px;
+}
+
 /* ── Recommendation loading vignette ── */
 .rec-vignette {
   display: grid;
@@ -1483,85 +1934,153 @@
   animation: fade-in var(--dur-structural) var(--ease-snap);
 }
 
+/* Continuous 3D "wheel": poster faces orbit a central radar core so it reads
+   as a spinning carousel's perimeter surface (not a flat line). The wheel
+   rotates freely on a radial loop, so there is no seam or end to reach. */
 .rec-vignette__stage {
   position: relative;
-  width: min(520px, 90vw);
-  height: 200px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: var(--surface-glass);
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
+  width: 100%;
+  height: 300px;
+  border: none;
+  border-radius: 0;
+  /* NOT overflow:hidden — that would force a flat 3D group and break the
+     wheel's preserve-3d, hiding the poster faces. Letting it escape lets the
+     poster wheel actually render in depth. */
+  overflow: visible;
   display: grid;
   place-items: center;
+  /* Gives the wheel's translateZ depth so faces recede into the distance. */
+  perspective: 1000px;
 }
 
-/* Film-reel: a row of stylized poster slides that scroll past */
-.rec-vignette__reel {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  padding: 0 24px;
-  animation: reel-scroll 3.4s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes reel-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.rec-vignette__slide {
-  flex: 0 0 auto;
-  width: 74px;
-  height: 112px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(160deg,
-      hsl(calc(150 + var(--i, 0) * 18) 70% 22%),
-      var(--surface-solid));
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border);
-  opacity: 0.85;
-}
-
-/* Expanding radar ping behind the core */
-.rec-vignette__sweep {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-}
-
-.rec-vignette__sweep::before,
-.rec-vignette__sweep::after {
+/* Dark, translucent ground plane behind the wheel so the rotating posters
+   read as a carousel receding into the canvas — subtle, not a heavy band. */
+.rec-vignette__stage::before {
   content: '';
   position: absolute;
-  border-radius: 50%;
-  border: 1.5px solid var(--accent-border);
-  animation: ping-ring 2.2s var(--ease-snap) infinite;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(70% 80% at 50% 50%, transparent 55%, var(--color-canvas) 100%);
+  z-index: 0;
 }
 
-.rec-vignette__sweep::after {
-  animation-delay: 1.1s;
+.rec-vignette__wheel {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  /* Slight top-down tilt so we see the wheel as a surface, not an edge-on line. */
+  transform: rotateX(-3deg);
+  /* The whole wheel revolves on the Y axis, turning each poster across the
+     front as a seamless, continuous carousel — no seam, no endpoint. */
+  animation: wheel-spin 16s linear infinite;
 }
 
-@keyframes ping-ring {
-  0% { width: 40px; height: 40px; opacity: 0.9; }
-  100% { width: 190px; height: 190px; opacity: 0; }
+@keyframes wheel-spin {
+  from { transform: rotateX(-3deg) rotateY(0deg); }
+  to   { transform: rotateX(-3deg) rotateY(360deg); }
 }
 
-.rec-vignette__core {
-  position: relative;
-  z-index: 2;
+.rec-vignette__poster {
+  position: absolute;
+  width: 84px;
+  height: 126px;
+  margin: 0;
+  border-radius: var(--radius-sm);
+  /* NOT overflow:hidden here — that would flatten preserve-3d and break the
+     backface flip. Clipping lives on each face instead. */
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  background: var(--surface-solid);
+  /* Keep children (front/back faces) in real 3D so the backface flip works. */
+  transform-style: preserve-3d;
+  /* Each face is fixed at its angular slot around the radius. */
+  transform: rotateY(calc(var(--i) * (360deg / var(--n, 6)))) translateZ(190px);
+}
+
+/* Poster front (artwork) and the solid brand-marked back. The back is rotated
+   180° so it shows only when the card turns away from the viewer — a solid
+   backing instead of a blank/see-through flip. */
+.rec-vignette__poster-front,
+.rec-vignette__poster-back {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.rec-vignette__poster-front {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.rec-vignette__poster-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(180deg);
+  display: grid;
+  place-items: center;
   color: var(--accent-text);
-  filter: drop-shadow(0 4px 18px var(--accent-glow));
-  animation: core-turn 4s linear infinite;
+  background:
+    radial-gradient(120% 90% at 30% 20%, var(--accent-soft-strong), transparent 60%),
+    linear-gradient(160deg, var(--surface-raised), var(--surface-solid));
 }
 
-@keyframes core-turn {
-  to { transform: rotate(360deg); }
+.rec-vignette__poster-back svg {
+  width: 52%;
+  height: 52%;
+  color: inherit;
+}
+
+/* On narrow screens shrink the wheel radius + poster size so the rotating
+   posters stay within the content width (no horizontal bleed/scroll). */
+@media (max-width: 560px) {
+  .rec-vignette__stage {
+    height: 220px;
+  }
+  .rec-vignette__poster {
+    width: 62px;
+    height: 93px;
+    transform: rotateY(calc(var(--i) * (360deg / var(--n, 6)))) translateZ(96px);
+  }
+}
+
+/* Per-face depth shading: the slot angle drives a subtle darkening so faces on
+   the far side of the wheel (opposite the viewer) are gently darker, giving a
+   cohesive depth read without a harsh global overlay. */
+.rec-vignette__poster::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: calc(0.15 * (1 - cos(var(--i) * (2 * pi) / var(--n, 6))));
+  background: radial-gradient(120% 120% at 50% 40%, transparent 30%, black 100%);
+}
+
+.rec-vignette__poster-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--accent-text);
+  font-family: var(--font-data);
+  font-size: 1.1rem;
+  font-weight: 700;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  background:
+    radial-gradient(120% 90% at 30% 20%, var(--accent-soft-strong), transparent 60%),
+    linear-gradient(160deg, var(--surface-raised), var(--surface-solid));
 }
 
 .rec-vignette__label {
@@ -1586,6 +2105,7 @@
 
   .spotlight-card__poster {
     max-width: 220px;
+    margin-inline: auto;
   }
 }
 
@@ -1646,6 +2166,12 @@
   .header-auth {
     justify-content: flex-end;
   }
+
+  /* Mid-size screens: keep the open search field from crowding the brand
+     row out (nav demotes below the header here, so space is tight). */
+  .header-search__field input {
+    width: min(200px, 36vw);
+  }
 }
 
 @media (max-width: 720px) {
@@ -1663,7 +2189,8 @@
   }
 
   .app-nav {
-    width: 100%;
+    justify-content: center;
+    width: fit-content;
     max-width: 100%;
   }
 
@@ -1677,7 +2204,7 @@
   }
 
   .results-grid--single {
-    grid-template-columns: minmax(0, min(260px, 88vw));
+    grid-template-columns: minmax(0, var(--card-size));
   }
 
   .results-grid--home,
@@ -1710,7 +2237,8 @@
     opacity: 0.4;
   }
 
-  .home-hero__ring {
+  .home-hero__ring,
+  .home-hero__sweep {
     left: 92%;
   }
 }
@@ -1721,6 +2249,14 @@
     flex: 1 1 0;
     padding: 0.5rem 0.4rem;
     font-size: 0.8rem;
+  }
+}
+
+/* On very narrow phones the nowrap tagline + brand + auth crowd the header
+   row; drop the decorative tagline so the brand stays compact with no overflow. */
+@media (max-width: 560px) {
+  .brand-tagline {
+    display: none;
   }
 }
 
@@ -1741,7 +2277,9 @@
     height: 2.3rem;
     right: auto;
     bottom: 0.45rem;
-    border-radius: 12px;
+    /* Pill to match the app's pill-button language (nav-tab, subtle-button,
+       session-chip). Keeps the enlarged touch targets visually coherent. */
+    border-radius: 999px;
   }
 
   .poster-rating__option .rating-icon,

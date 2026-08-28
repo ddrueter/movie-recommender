@@ -117,7 +117,17 @@ export default async function handler(request, response) {
   const trending = trendingRaw
     .map((tmdbMovie) => {
       const meta = trendingMetaById.get(String(tmdbMovie.id));
-      if (meta) return annotateWithPersonalRating(meta);
+      if (meta) {
+        // The cache may predate a recent release's votes (cached when
+        // vote_count was still 0). Prefer the fresh TMDB payload's rating
+        // when the cached one is missing/stale so it never shows "NR".
+        const staleVotes = meta.vote_average == null || Number(meta.vote_count) <= 0;
+        return annotateWithPersonalRating({
+          ...meta,
+          vote_average: staleVotes && tmdbMovie.vote_average != null ? tmdbMovie.vote_average : meta.vote_average,
+          vote_count: staleVotes && tmdbMovie.vote_count != null ? tmdbMovie.vote_count : meta.vote_count,
+        });
+      }
 
       return {
         tmdb_id: String(tmdbMovie.id),
@@ -154,10 +164,14 @@ export default async function handler(request, response) {
     .map(annotateWithPersonalRating)
     .slice(0, limit > 0 ? limit : 16);
 
+  // If TMDB was unreachable, fall back to the cached popular list so all
+  // three home sections still render.
+  const trendingFinal = trending.length > 0 ? trending : popular;
+
   if (section) {
-    const sectionData = { trending, popular, topRated };
+    const sectionData = { trending: trendingFinal, popular, topRated };
     return response.status(200).json({ results: sectionData[section] || [] });
   }
 
-  response.status(200).json({ trending, popular, topRated });
+  response.status(200).json({ trending: trendingFinal, popular, topRated });
 }
