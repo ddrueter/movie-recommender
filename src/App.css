@@ -2031,18 +2031,6 @@
   100% { width: 190px; height: 190px; opacity: 0; }
 }
 
-.rec-vignette__core {
-  position: relative;
-  z-index: 2;
-  color: var(--accent-text);
-  filter: drop-shadow(0 4px 18px var(--accent-glow));
-  animation: core-turn 4s linear infinite;
-}
-
-@keyframes core-turn {
-  to { transform: rotate(360deg); }
-}
-
 .rec-vignette__label {
   margin: 0;
   color: var(--text-secondary);

@@ -650,13 +650,13 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
  */
 function RecommendationVignette({ movies }) {
   const posters = (movies || []).filter((m) => m.poster_url || m.poster_path);
-  // Use the limited set we already have on screen; pad with stylized placeholders
-  // so the wheel always has enough faces. Keep it modest to stay cheap.
+  // Build a wheel of ~10 faces from the real posters we have; pad with
+  // stylized placeholders only if there aren't enough to fill the wheel.
   const items = (
-    posters.length >= 3
+    posters.length >= 10
       ? posters
-      : [...posters, ...Array.from({ length: 6 - posters.length }, (_, i) => ({ poster_path: null, title: `Slide ${i + 1}` }))]
-  ).slice(0, 8);
+      : [...posters, ...Array.from({ length: 10 - posters.length }, (_, i) => ({ poster_path: null, title: `Slide ${i + 1}` }))]
+  ).slice(0, 10);
 
   const n = Math.max(3, items.length);
 
@@ -699,14 +699,6 @@ function RecommendationVignette({ movies }) {
           ))}
         </div>
         <div className="rec-vignette__sweep" />
-        <div className="rec-vignette__core">
-          <svg viewBox="0 0 64 64" width="40" height="40">
-            <circle cx="32" cy="32" r="21" fill="none" stroke="currentColor" strokeWidth="3" opacity="0.7" />
-            <circle cx="32" cy="32" r="12" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.45" />
-            <line x1="32" y1="32" x2="32" y2="11" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            <circle cx="32" cy="11" r="3" fill="currentColor" />
-          </svg>
-        </div>
       </div>
       <p className="rec-vignette__label">Sniffing out your next film…</p>
     </div>
