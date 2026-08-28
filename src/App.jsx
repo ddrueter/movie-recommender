@@ -1341,6 +1341,17 @@ function App() {
     }
   }, [activeTab]);
 
+  // Auto-hide the hero after the first home visit: mark it "seen" the moment
+  // it first appears so it never reappears on reload, and hide it in-session
+  // once the user navigates away from Home.
+  useEffect(() => {
+    if (!heroVisible) return;
+    try { localStorage.setItem('cinehound-hero-hidden', '1'); } catch { /* ignore */ }
+    if (activeTab !== 'home') {
+      setHeroVisible(false);
+    }
+  }, [activeTab, heroVisible]);
+
   useEffect(() => {
     if (activeTab === 'history') {
       void loadUserRatings();
