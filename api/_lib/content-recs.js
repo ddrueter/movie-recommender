@@ -163,26 +163,26 @@ export function scoreContentBasedRecommendations({
 }
 
 /**
- * Pick a single item from a scored list using weighted random sampling.
- * Weight = score^exponent (plus a +1 floor so nothing is ever impossible).
+ * Pick a single item from a score-sorted list using weighted random sampling
+ * over RANK (not score magnitude). Weight = decay^rank, where rank 1 is the
+ * best match. This concentrates picks on the top matches even when the raw
+ * scores are tightly clustered:
  *
- * The exponent controls how heavily the pick favors high-match candidates:
- *   1 = linear (a 70% is only 1.2x more likely than a 60%)
- *   3 = default (a 70% is ~1.6x more likely than a 60%, and a 90% ~4.4x a 55%)
- *   higher = even more concentrated on the very best fits
+ *   decay = 0.5  ->  #1 ~50%, #2 ~25%, #3 ~12.5%  (top-3 ~87.5%)
+ *   decay = 0.8  ->  #1 ~20%, and the top 10 ranks get ~90% combined
  *
- * @param {Array<{score: number}>} scored - items with a numeric score
+ * Lower decay = more concentrated on the very best match.
+ *
+ * @param {Array<{score: number}>} scored - items sorted by score descending
  * @param {() => number} random - injectable RNG for deterministic testing
- * @param {number} [exponent=3] - steepness of the weighting
+ * @param {number} [decay=0.5] - geometric decay rate in (0, 1)
  * @returns the picked item, or null when the list is empty
  */
-export function weightedRandomPick(scored, random = Math.random, exponent = 3) {
+export function weightedRandomPick(scored, random = Math.random, decay = 0.5) {
   if (!Array.isArray(scored) || scored.length === 0) return null;
+  if (scored.length === 1) return scored[0];
 
-  const weights = scored.map((item) => {
-    const score = Math.max(0, Number(item.score) || 0);
-    return Math.pow(score, exponent) + 1;
-  });
+  const weights = scored.map((_, index) => Math.pow(decay, index + 1));
   const total = weights.reduce((sum, weight) => sum + weight, 0);
   if (total <= 0) return scored[0];
 
