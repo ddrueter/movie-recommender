@@ -151,6 +151,8 @@
   gap: 0.35rem;
   align-items: center;
   justify-content: center;
+  justify-self: center;
+  width: fit-content;
   padding: 0.25rem;
   background: var(--surface-glass);
   border: 1px solid var(--border-subtle);
@@ -276,26 +278,103 @@
   flex-shrink: 0;
 }
 
-.theme-toggle {
-  display: inline-grid;
-  place-items: center;
+/* ── Account / profile dropdown menu ── */
+.account-menu {
+  position: relative;
+}
+
+.account-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   background: var(--surface-glass);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 0.5rem;
-  min-width: 2.2rem;
-  height: 2.2rem;
   color: var(--text-muted);
+  padding: 0.45rem 0.8rem 0.45rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
-  line-height: 1;
+  line-height: 1.2;
+  max-width: 12rem;
   transition: all var(--dur-micro) var(--ease-snap);
 }
 
-.theme-toggle:hover {
+.account-menu__trigger:hover,
+.account-menu__trigger.is-open {
   border-color: var(--accent-border);
   background: var(--accent-soft);
   color: var(--text-primary);
-  transform: rotate(14deg);
+}
+
+.account-menu__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu__trigger .nav-caret {
+  opacity: 0.6;
+  flex-shrink: 0;
+  transition: transform var(--dur-fast) var(--ease-snap);
+}
+
+.account-menu__trigger.is-open .nav-caret {
+  transform: rotate(180deg);
+}
+
+.account-menu__dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 70;
+  min-width: 220px;
+  padding: 0.4rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  gap: 0.15rem;
+  animation: fade-in-up var(--dur-fast) var(--ease-snap);
+}
+
+.account-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text-body);
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.86rem;
+  font-weight: 500;
+  width: 100%;
+}
+
+.account-menu__item svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.account-menu__item:hover {
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+
+.account-menu__item--danger {
+  color: var(--danger-text);
+}
+
+.account-menu__item--danger svg {
+  color: var(--danger-text);
+}
+
+.account-menu__item--danger:hover {
+  color: var(--danger-text);
+  background: var(--danger-soft);
 }
 
 .header-search__field {
@@ -374,40 +453,6 @@
 .header-search__close:hover {
   color: var(--text-primary);
   background: var(--accent-soft);
-}
-
-/* Auth actions & session chip */
-.auth-actions,
-.session-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.session-chip {
-  min-height: 2.55rem;
-  padding: 0.22rem 0.25rem 0.22rem 0.9rem;
-  border-radius: 999px;
-  border: 1px solid var(--accent-border);
-  background: var(--accent-soft);
-}
-
-.session-chip__label {
-  color: var(--text-primary);
-  max-width: 14rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.86rem;
-  font-weight: 600;
-}
-
-.session-chip__action {
-  min-height: 2rem;
-  padding-inline: 0.7rem;
-  font-size: 0.8rem;
-  border-radius: 999px;
 }
 
 .subtle-button {
@@ -930,9 +975,6 @@
   overflow: hidden;
   font-weight: 600;
   letter-spacing: -0.01em;
-  /* Reserve two title lines so cards in the same grid stay equal-height
-     regardless of how short the title runs. */
-  min-height: calc(2 * 1.15em);
 }
 
 .movie-title-row p {
@@ -1254,25 +1296,32 @@
   100% { transform: scale(1); }
 }
 
-/* ── Primary accent button ── */
+/* ── Primary accent pill button ──
+   Matches the site's soft pill language (subtle-button / btn-soft / nav-tab):
+   a tinted accent background with an accent border and text — no loud
+   multi-hue gradient, so it reads as part of the same family everywhere. */
 .btn-primary {
-  border-color: transparent;
-  background: linear-gradient(120deg, var(--accent) 0%, var(--accent-secondary) 100%);
-  color: var(--accent-ink);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-text);
   font-weight: 700;
   border-radius: 999px;
-  box-shadow: 0 4px 16px var(--accent-glow);
-  transition: transform var(--dur-micro) var(--ease-snap),
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+  transition: background var(--dur-micro) var(--ease-snap),
+              border-color var(--dur-micro) var(--ease-snap),
               box-shadow var(--dur-micro) var(--ease-snap),
-              filter var(--dur-micro) var(--ease-snap),
-              border-color var(--dur-micro) var(--ease-snap);
+              transform var(--dur-micro) var(--ease-snap),
+              color var(--dur-micro) var(--ease-snap),
+              filter var(--dur-micro) var(--ease-snap);
 }
 
 .btn-primary:hover {
-  color: var(--accent-ink);
-  filter: brightness(1.06);
-  box-shadow: 0 6px 24px var(--accent-glow);
+  color: var(--accent-text);
+  background: var(--accent-soft-strong);
+  border-color: var(--accent-border);
+  box-shadow: 0 4px 16px var(--accent-glow);
   transform: translateY(-1px);
+  filter: none;
 }
 
 .btn-primary:active {

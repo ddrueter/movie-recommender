@@ -763,6 +763,9 @@ function App() {
   const browseRef = useRef(null);
   const browseMenuItemsRef = useRef([]);
   const browseCloseTimer = useRef(null);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef(null);
+  const accountMenuItemsRef = useRef([]);
   const searchTimer = useRef(null);
   const searchSequence = useRef(0);
   const recommendationsSequence = useRef(0);
@@ -877,17 +880,61 @@ function App() {
     }
   }, [browseOpen]);
 
-  // On opening via keyboard, focus the first menu item so arrow keys work
-  // immediately (mouse users still click the item they want).
+  // Account / profile dropdown: close on outside click or Escape.
   useEffect(() => {
-    if (!browseOpen) return;
-    const wasKeyboard = browseRef.current?.matches(':focus-within');
-    const first = browseMenuItemsRef.current[0];
-    if (wasKeyboard && first) {
-      const handle = requestAnimationFrame(() => first.focus());
+    if (!accountOpen) {
+      accountMenuItemsRef.current = [];
+      return undefined;
+    }
+    const onDoc = (event) => {
+      if (accountRef.current && !accountRef.current.contains(event.target)) {
+        setAccountOpen(false);
+      }
+    };
+    const onKey = (event) => {
+      if (event.key === 'Escape') setAccountOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [accountOpen]);
+
+  // Account menu keyboard nav: arrow keys cycle, Home/End jump. Only auto-focus
+  // the first item when opened via keyboard so pointer users keep their focus;
+  // the container onKeyDown is shared by the trigger and the items.
+  useEffect(() => {
+    if (!accountOpen) return;
+    const wasKeyboard = accountRef.current?.matches(':focus-within');
+    if (wasKeyboard) {
+      const handle = requestAnimationFrame(() => {
+        accountMenuItemsRef.current[0]?.focus();
+      });
       return () => cancelAnimationFrame(handle);
     }
-  }, [browseOpen]);
+  }, [accountOpen]);
+
+  const handleAccountKeyDown = (event) => {
+    const items = accountMenuItemsRef.current;
+    if (items.length === 0) return;
+    const currentIndex = items.indexOf(document.activeElement);
+    let nextIndex = -1;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+      nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+      nextIndex = currentIndex < 0 ? items.length - 1 : (currentIndex - 1 + items.length) % items.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = items.length - 1;
+    }
+    if (nextIndex >= 0) {
+      event.preventDefault();
+      items[nextIndex].focus();
+    }
+  };
 
   // On tab navigation, move keyboard focus to the content area and announce
   // the destination so screen-reader users aren't left where they were.
@@ -1682,7 +1729,7 @@ function App() {
             </button>
             {recsTotalAvailable > 1 ? (
               <button type="button" className="btn-soft" onClick={() => setRecsViewMode('browse')}>
-                Browse all {recsTotalAvailable} matches
+                View all recommendations
               </button>
             ) : null}
           </div>
@@ -2028,49 +2075,98 @@ function App() {
             )}
           </div>
 
-          <button
-            type="button"
-            className="theme-toggle"
-            onClick={toggleTheme}
-            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          <div
+            className="account-menu"
+            ref={accountRef}
+            onKeyDown={handleAccountKeyDown}
           >
-            {theme === 'dark' ? (
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="4.2" />
-                <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20.4 14.2A8.2 8.2 0 0 1 9.8 3.6 8.5 8.5 0 1 0 20.4 14.2Z" />
-              </svg>
-            )}
-          </button>
+            <button
+              type="button"
+              className={['account-menu__trigger', accountOpen ? 'is-open' : ''].filter(Boolean).join(' ')}
+              onClick={() => setAccountOpen((o) => !o)}
+              aria-haspopup="menu"
+              aria-expanded={accountOpen}
+              aria-label="Account and settings menu"
+            >
+              {authSession ? (
+                <span className="account-menu__label" title={authLabel}>{authLabel}</span>
+              ) : (
+                <span className="account-menu__label">Account</span>
+              )}
+              <svg className="nav-caret" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            {accountOpen ? (
+              <div className="account-menu__dropdown" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="account-menu__item"
+                  ref={(el) => { accountMenuItemsRef.current[0] = el; }}
+                  onClick={() => { toggleTheme(); }}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    {theme === 'dark' ? (
+                      <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" />
+                    ) : (
+                      <path d="M20.4 14.2A8.2 8.2 0 0 1 9.8 3.6 8.5 8.5 0 1 0 20.4 14.2Z" />
+                    )}
+                  </svg>
+                  <span>Theme: {theme === 'dark' ? 'Dark' : 'Light'}</span>
+                </button>
 
-          {authSession ? (
-            <div className="session-chip">
-              <span className="session-chip__label" title={authLabel}>
-                {authLabel}
-              </span>
-              <button
-                type="button"
-                className="subtle-button session-chip__action"
-                onClick={handleSignOut}
-                disabled={authLoading}
-              >
-                Sign out
-              </button>
-            </div>
-          ) : (
-            <div className="auth-actions">
-              <button type="button" onClick={handleFirebaseLogin} disabled={authLoading}>
-                Sign in
-              </button>
-              <button type="button" className="subtle-button" onClick={handleDemoLogin} disabled={authLoading}>
-                Demo
-              </button>
-            </div>
-          )}
+                {authSession ? (
+                  <>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="account-menu__item"
+                      ref={(el) => { accountMenuItemsRef.current[1] = el; }}
+                      onClick={() => { setAccountOpen(false); setActiveTab('history'); }}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4l2.5 2.5" /><circle cx="12" cy="12" r="8.5" /></svg>
+                      <span>Your Ratings</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="account-menu__item account-menu__item--danger"
+                      ref={(el) => { accountMenuItemsRef.current[2] = el; }}
+                      onClick={() => { setAccountOpen(false); void handleSignOut(); }}
+                      disabled={authLoading}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
+                      <span>Sign out</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="account-menu__item"
+                      ref={(el) => { accountMenuItemsRef.current[1] = el; }}
+                      onClick={() => { setAccountOpen(false); void handleFirebaseLogin(); }}
+                      disabled={authLoading}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
+                      <span>Sign in</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="account-menu__item"
+                      ref={(el) => { accountMenuItemsRef.current[2] = el; }}
+                      onClick={() => { setAccountOpen(false); void handleDemoLogin(); }}
+                      disabled={authLoading}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
+                      <span>Try Demo</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
 

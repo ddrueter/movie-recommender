@@ -89,7 +89,6 @@
 | E1 | "Sign in to unlock recommendations" vs "Sign in to view your ratings" gates — copy consistent with feature names ("Target Lock", "Scent Trail"). | ✅ reviewed |
 | E2 | Announcements concatenate raw API errors (`Could not save rating. <raw>`) — possibly long/technical; consider sanitizing for users. | ✅ |
 | E3 | `formatYear` slices first 4 chars of any string — fine for `YYYY-MM-DD`, degrades gracefully elsewhere. | ✅ reviewed |
-
 ---
 
 ## Round log
@@ -145,3 +144,14 @@
 - **Round 9 (R9):** The document `<title>` is now route-aware (updates to
   "Recommendations — CineHound", "Your Ratings — CineHound", etc. on each tab)
   instead of staying static on every route (C9). ESLint clean.
+- **Round 10 (R10, user feedback):** Recommendations page polish — the primary
+  CTA is no longer a loud green→orange gradient; it now uses the site's soft
+  accent-pill language like every other button (Item 1). "Browse all {N}
+  matches" is now simply "View all recommendations" — no awkward count wording
+  (Item 2). Movie cards no longer reserve two full title lines, removing blank
+  space at the bottom of short-titled cards and tightening overall spacing
+  (Items 3–4). Header: the nav pill now shrink-wraps its items instead of
+  spanning the empty middle column (Other 1). The right-side auth/theme controls
+  are consolidated into one Account dropdown (trigger + theme toggle + Your
+  Ratings + Sign in/out/Demo) with full keyboard nav, replacing the old separate
+  theme-toggle and session chip (Other 2). ESLint clean.
