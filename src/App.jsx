@@ -840,6 +840,7 @@ function App() {
   const [homeData, setHomeData] = useState(null);
   const [homeDataLoading, setHomeDataLoading] = useState(false);
   const [homeError, setHomeError] = useState('');
+  const [vignettePosters, setVignettePosters] = useState([]);
   const [userRatingsHistory, setUserRatingsHistory] = useState([]);
   const [userRatingsLoading, setUserRatingsLoading] = useState(false);
   const [userRatingsError, setUserRatingsError] = useState('');
@@ -1179,9 +1180,15 @@ function App() {
     }
 
     setSpotlightLoading(true);
-    // Fire the poster source (home catalogs) in parallel with the engine fetch
-    // and update state the moment IT resolves — so the loading carousel gains
-    // real posters as soon as they arrive, not only after the engine finishes.
+    // Pull a reliable poster set (Trending) directly for the loading carousel,
+    // independent of the home tab's state — so it always has real posters even
+    // on a cold reload. Also warm home data for the home tab.
+    fetchHomeData(authToken, 'trending')
+      .then((data) => {
+        const posters = (data?.results || []).filter((m) => m.poster_url || m.poster_path);
+        if (posters.length) setVignettePosters(posters);
+      })
+      .catch(() => {});
     fetchHomeData(authToken)
       .then((home) => {
         if (home) setHomeData(home);
@@ -1847,11 +1854,14 @@ function App() {
 
     if (recsViewMode === 'spotlight') {
       if (spotlightLoading && !spotlightPick) {
+        // Prefer the dedicated trending poster set fetched directly for the
+        // carousel; fill in with whatever's already in state as extras.
         const vignetteMovies = [
-          ...recommendations,
+          ...vignettePosters,
           ...(homeData?.trending || []),
           ...(homeData?.popular || []),
           ...(homeData?.topRated || []),
+          ...recommendations,
           ...userRatingsHistory,
         ];
         return <RecommendationVignette movies={vignetteMovies} />;
