@@ -87,19 +87,6 @@ function RatingIcon({ kind }) {
           <path d="M9.2 15.2h5.6" />
         </svg>
       );
-    case 'plus':
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
-          <path d="M12 3.8a8.2 8.2 0 1 0 8.2 8.2A8.21 8.21 0 0 0 12 3.8zm0 14.7a6.5 6.5 0 1 1 6.5-6.5 6.51 6.51 0 0 1-6.5 6.5zm-.9-9.5h1.8V12h2.8v1.8h-2.8v2.8h-1.8v-2.8H8.3V12h2.8z" />
-        </svg>
-      );
-    case 'minus':
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon">
-          <path d="M12 21a9 9 0 1 1 9-9 9 9 0 0 1-9 9zm0-16.2A7.2 7.2 0 1 0 19.2 12 7.2 7.2 0 0 0 12 4.8z" />
-          <path d="M6.5 6.5l11 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
     case 'hide':
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="rating-icon" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -2001,11 +1988,13 @@ function App() {
                 </svg>
                 <input
                   ref={searchInputRef}
+                  type="search"
                   value={query}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Search movies…"
                   aria-label="Search movies"
                   autoComplete="off"
+                  enterKeyHint="search"
                 />
                 <button
                   type="button"

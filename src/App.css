@@ -342,6 +342,17 @@
   color: var(--text-muted);
 }
 
+/* We ship our own close button, so suppress the native type=search clear. */
+.header-search__field input::-webkit-search-cancel-button,
+.header-search__field input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.header-search__field input::-ms-clear {
+  display: none;
+}
+
 .header-search__close {
   background: none;
   border: none;

@@ -62,6 +62,8 @@
 | C6 | The `aria-live` region only announced when the text actually changed — setting the same announcement back-to-back was silently skipped by SRs. | ✅ |
 | C7 | Tab navigation left screen-reader focus unchanged; no announcement of the destination section or focus move into content. | ✅ |
 | C8 | Route-change focus-move regression (from R4): typing in search navigates to `/search`, and the focus-move-to-main effect yanked focus out of the search input mid-typing. | ✅ |
+| A11 | Dead `plus`/`minus` rating-icon branches in `RatingIcon` — never referenced (rating options are thumb-up/down, meh, heart, hide). | ✅ |
+| A12 | Search input used `type="text"`; switch to `type="search"` for semantics + mobile `Go`/`Search` keyboard, suppressing the native clear button we duplicate. | ✅ |
 
 ## D. Responsive / device edge cases
 
@@ -116,3 +118,11 @@
   a monotonic sequence key (C6). Tab navigation now announces the destination
   section and moves keyboard focus into the content area (C7). Fixed an impure
   setState-in-updater in `toggleTheme` (StrictMode double-fire). ESLint clean.
+- **Round 5 (R5):** Fixed a regression from R4 (C8) — the route-change focus move
+  to `<main>` stole focus from the search input mid-typing (typing pushes the
+  path to `/search`); the search route now announces but skips the focus move.
+  Hid the nowrap brand tagline on phones (≤560px) to stop header overflow (D3).
+- **Round 6 (R6):** Removed dead `plus`/`minus` rating-icon branches (A11). The
+  search input is now `type="search"` with `enterKeyHint="search"` for a better
+  mobile keyboard and semantics; the native clear button is hidden since we ship
+  our own (A12). ESLint clean.
