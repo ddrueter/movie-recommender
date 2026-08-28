@@ -42,6 +42,7 @@ function loadBackendEnv(mode) {
     'SUPABASE_SECRET_KEY',
     'TMDB_READ_ACCESS_TOKEN',
     'RECS_POPULARITY_WEIGHT',
+    'RECS_RANDOM_DECAY',
   ];
 
   for (const key of backendKeys) {
