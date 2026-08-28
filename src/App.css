@@ -941,11 +941,6 @@
   color: var(--text-muted);
 }
 
-@keyframes score-fade {
-  0% { opacity: 0; transform: scale(0.6); }
-  100% { opacity: 1; transform: scale(1); }
-}
-
 /* ── State cards ── */
 .state-card {
   position: relative;
@@ -1203,7 +1198,7 @@
 .btn-primary {
   border-color: transparent;
   background: linear-gradient(120deg, var(--accent) 0%, var(--accent-secondary) 100%);
-  color: #06120b;
+  color: var(--accent-ink);
   font-weight: 700;
   border-radius: 999px;
   box-shadow: 0 4px 16px var(--accent-glow);
@@ -1214,7 +1209,7 @@
 }
 
 .btn-primary:hover {
-  color: #06120b;
+  color: var(--accent-ink);
   filter: brightness(1.06);
   box-shadow: 0 6px 24px var(--accent-glow);
   transform: translateY(-1px);
@@ -1603,6 +1598,7 @@
 
   .spotlight-card__poster {
     max-width: 220px;
+    margin-inline: auto;
   }
 }
 

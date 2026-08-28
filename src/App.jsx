@@ -24,6 +24,31 @@ import {
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
 const SEARCH_INITIAL_RESULT_COUNT = 24;
 
+// User-facing fallbacks for common API failures. Raw server error text can be
+// long and technical; announcements should stay short and actionable.
+const ERROR_HINTS = {
+  'too many requests': 'The server is busy right now. Please try again in a moment.',
+  timeout: 'The request timed out. Please check your connection and try again.',
+  'failed to fetch': 'Network error — please check your connection.',
+  network: 'Network error — please check your connection and try again.',
+  'not signed in': 'Please sign in to continue.',
+  unauthorized: 'Your session expired. Please sign back in.',
+  401: 'Your session expired. Please sign back in.',
+  403: "You don't have permission to do that.",
+  404: "That wasn't found — it may have moved.",
+  429: 'Too many requests. Please wait a moment and try again.',
+  500: 'The server hit an error. Please try again shortly.',
+};
+
+function friendlyError(raw) {
+  const text = String(raw ?? '').trim();
+  if (!text) return 'Something went wrong. Please try again.';
+  const lower = text.toLowerCase();
+  const numbered = lower.match(/\b(4\d\d|5\d\d)\b/)?.[1];
+  const key = numbered || Object.keys(ERROR_HINTS).find((k) => lower.includes(k));
+  return ERROR_HINTS[key] || text;
+}
+
 // Touch/tablet pointers have no hover to reveal the poster rating controls —
 // the first tap on the poster must reveal them instead of navigating away.
 const COARSE_POINTER =
@@ -300,7 +325,7 @@ function MovieCard({
         .join(' ')}
       role="link"
       tabIndex={0}
-      aria-label={`View ${movie.title} on TMDB`}
+      aria-label={`View ${movie.title} on TMDB (opens in a new tab)`}
       onClick={handleCardClick}
       onFocus={() => setPanelFocused(true)}
       onBlur={(event) => {
@@ -503,7 +528,7 @@ function SpotlightCard({ movie, ratingValue, authEnabled, savingRating, onRate }
         href={tmdbUrl || undefined}
         target={tmdbUrl ? '_blank' : undefined}
         rel={tmdbUrl ? 'noopener noreferrer' : undefined}
-        aria-label={'View ' + movie.title + ' on TMDB'}
+        aria-label={'View ' + movie.title + ' on TMDB (opens in a new tab)'}
       >
         {posterUrl ? (
           <img src={posterUrl} alt={movie.title + ' poster'} loading="lazy" decoding="async" />
@@ -742,6 +767,7 @@ function App() {
   });
   const [browseOpen, setBrowseOpen] = useState(false);
   const browseRef = useRef(null);
+  const browseMenuItemsRef = useRef([]);
   const browseCloseTimer = useRef(null);
   const searchTimer = useRef(null);
   const searchSequence = useRef(0);
@@ -825,7 +851,10 @@ function App() {
 
   // Close the Browse menu on outside click or Escape
   useEffect(() => {
-    if (!browseOpen) return undefined;
+    if (!browseOpen) {
+      browseMenuItemsRef.current = [];
+      return undefined;
+    }
     const onDoc = (event) => {
       if (browseRef.current && !browseRef.current.contains(event.target)) {
         if (browseCloseTimer.current) clearTimeout(browseCloseTimer.current);
@@ -840,6 +869,30 @@ function App() {
       document.removeEventListener('keydown', onKey);
       if (browseCloseTimer.current) clearTimeout(browseCloseTimer.current);
     };
+  }, [browseOpen]);
+
+  // When opened via keyboard, focus the first menu item so arrow keys work
+  // immediately (pointer users can just click the item they want).
+  useEffect(() => {
+    if (!browseOpen) return;
+    const wasKeyboard = browseRef.current?.matches(':focus-within');
+    const first = browseMenuItemsRef.current[0];
+    if (wasKeyboard && first) {
+      const handle = requestAnimationFrame(() => first.focus());
+      return () => cancelAnimationFrame(handle);
+    }
+  }, [browseOpen]);
+
+  // On opening via keyboard, focus the first menu item so arrow keys work
+  // immediately (mouse users still click the item they want).
+  useEffect(() => {
+    if (!browseOpen) return;
+    const wasKeyboard = browseRef.current?.matches(':focus-within');
+    const first = browseMenuItemsRef.current[0];
+    if (wasKeyboard && first) {
+      const handle = requestAnimationFrame(() => first.focus());
+      return () => cancelAnimationFrame(handle);
+    }
   }, [browseOpen]);
 
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
@@ -857,7 +910,7 @@ function App() {
     } catch (error) {
       if (homeSequence.current === requestId) {
         setHomeError(error.message);
-        setAnnouncement(`Home data failed. ${error.message}`);
+        setAnnouncement(`Home data failed. ${friendlyError(error.message)}`);
       }
     } finally {
       if (homeSequence.current === requestId) {
@@ -921,7 +974,7 @@ function App() {
       if (!append) {
         setRecommendations([]);
         setRecommendationState({ status: 'error', message: '', error: error.message, debug: null });
-        setAnnouncement(`Recommendations failed. ${error.message}`);
+        setAnnouncement(`Recommendations failed. ${friendlyError(error.message)}`);
       }
     } finally {
       if (recommendationsSequence.current === requestId) {
@@ -966,7 +1019,7 @@ function App() {
       setUserRatingsHistory(data.results ?? []);
     } catch (error) {
       setUserRatingsError(error.message);
-      setAnnouncement(`Could not load ratings history. ${error.message}`);
+      setAnnouncement(`Could not load ratings history. ${friendlyError(error.message)}`);
     } finally {
       setUserRatingsLoading(false);
     }
@@ -1053,7 +1106,7 @@ function App() {
       } catch (error) {
         if (searchSequence.current === requestId) {
           setSearchError(error.message);
-          setAnnouncement(`Search failed. ${error.message}`);
+          setAnnouncement(`Search failed. ${friendlyError(error.message)}`);
         }
       } finally {
         if (searchSequence.current === requestId) {
@@ -1088,7 +1141,7 @@ function App() {
     } catch (error) {
       if (searchSequence.current === requestId) {
         setSearchError(error.message);
-        setAnnouncement(`Search failed. ${error.message}`);
+        setAnnouncement(`Search failed. ${friendlyError(error.message)}`);
       }
     } finally {
       if (searchSequence.current === requestId) {
@@ -1136,7 +1189,7 @@ function App() {
         setUserRatingsHistory((current) => current.filter((r) => getMovieKey(r) !== movieKey));
         setAnnouncement(`Removed rating for ${movie.title}.`);
       } catch (error) {
-        setAnnouncement(`Could not remove rating. ${error.message}`);
+        setAnnouncement(`Could not remove rating. ${friendlyError(error.message)}`);
       } finally {
         setSavingRatingMovieId(null);
       }
@@ -1187,7 +1240,7 @@ function App() {
         }
       }
     } catch (error) {
-      setAnnouncement(`Could not save rating. ${error.message}`);
+      setAnnouncement(`Could not save rating. ${friendlyError(error.message)}`);
     } finally {
       setSavingRatingMovieId(null);
     }
@@ -1200,7 +1253,7 @@ function App() {
       setAuthSession(session);
       setAnnouncement(`Signed in as ${session.label}.`);
     } catch (error) {
-      setAnnouncement(`Demo auth failed. ${error.message}`);
+      setAnnouncement(`Demo auth failed. ${friendlyError(error.message)}`);
     } finally {
       setAuthLoading(false);
     }
@@ -1213,7 +1266,7 @@ function App() {
       setAuthSession(session);
       setAnnouncement(`Signed in as ${session.label}.`);
     } catch (error) {
-      setAnnouncement(`Firebase login failed. ${error.message}`);
+      setAnnouncement(`Firebase login failed. ${friendlyError(error.message)}`);
     } finally {
       setAuthLoading(false);
     }
@@ -1224,7 +1277,7 @@ function App() {
       setAuthLoading(true);
       await signOutFirebase();
     } catch (error) {
-      setAnnouncement(`Sign out failed. ${error.message}`);
+      setAnnouncement(`Sign out failed. ${friendlyError(error.message)}`);
       return;
     } finally {
       setAuthLoading(false);
@@ -1817,6 +1870,38 @@ function App() {
               if (browseCloseTimer.current) clearTimeout(browseCloseTimer.current);
               browseCloseTimer.current = setTimeout(() => setBrowseOpen(false), 160);
             }}
+            onKeyDown={(event) => {
+              // If the menu isn't open yet and we're on the trigger, ArrowDown
+              // opens it and drops focus onto the first item.
+              if (!browseOpen && (event.key === 'ArrowDown' || event.key === 'ArrowRight')) {
+                event.preventDefault();
+                setBrowseOpen(true);
+                return;
+              }
+              const items = browseMenuItemsRef.current;
+              if (items.length === 0) return;
+              const currentIndex = items.indexOf(document.activeElement);
+
+              let nextIndex = -1;
+              if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+                nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+              } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+                nextIndex = currentIndex < 0 ? items.length - 1 : (currentIndex - 1 + items.length) % items.length;
+              } else if (event.key === 'Home') {
+                nextIndex = 0;
+              } else if (event.key === 'End') {
+                nextIndex = items.length - 1;
+              } else if (event.key === 'Escape') {
+                setBrowseOpen(false);
+                browseRef.current?.querySelector('.nav-tab')?.focus();
+                return;
+              }
+
+              if (nextIndex >= 0) {
+                event.preventDefault();
+                items[nextIndex].focus();
+              }
+            }}
           >
             <button
               type="button"
@@ -1830,15 +1915,22 @@ function App() {
             </button>
             {browseOpen ? (
               <div className="nav-browse__menu" role="menu">
-                <button type="button" role="menuitem" className="nav-browse__item" onClick={() => { setBrowseOpen(false); setActiveTab('trending-full'); }}>
-                  Trending Now
-                </button>
-                <button type="button" role="menuitem" className="nav-browse__item" onClick={() => { setBrowseOpen(false); setActiveTab('popular-full'); }}>
-                  Popular
-                </button>
-                <button type="button" role="menuitem" className="nav-browse__item" onClick={() => { setBrowseOpen(false); setActiveTab('topRated-full'); }}>
-                  Most Acclaimed
-                </button>
+                {[
+                  { label: 'Trending Now', go: () => setActiveTab('trending-full') },
+                  { label: 'Popular', go: () => setActiveTab('popular-full') },
+                  { label: 'Most Acclaimed', go: () => setActiveTab('topRated-full') },
+                ].map((item, index) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    role="menuitem"
+                    className="nav-browse__item"
+                    ref={(el) => { browseMenuItemsRef.current[index] = el; }}
+                    onClick={() => { setBrowseOpen(false); item.go(); }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
             ) : null}
           </div>

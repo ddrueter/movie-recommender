@@ -36,15 +36,15 @@
 | A7 | Header "Search" toggle is text-only while every other header control carries an icon; the field's ✕ close uses a raw text glyph instead of the SVG icon family. | ✅ |
 | A8 | Mid-width header (≈700–1080px) with search open risks overflow/wrap jitter: search input is a fixed 280px. Needs a mid-breakpoint cap. | ✅ |
 | A9 | Double-fetch on Discover and refetch-on-resize: data effects keyed on loader callbacks whose identity changes with the measured column count (page size). | ✅ |
-| A10 | Browse dropdown uses `role="menu"` with buttons but no arrow-key navigation; focus is not moved into the menu when opened. (Polish.) | 🎯 |
+| A10 | Browse dropdown uses `role="menu"` with buttons but no arrow-key navigation; focus is not moved into the menu when opened. (Polish.) | ✅ |
 
 ## B. Theming / tokens / consistency
 
 | # | Issue | Status |
 |---|-------|--------|
 | B1 | `.section-header__radar` declares `background` twice (first value dead — replaced by the gradient). Cosmetic cleanup. | ✅ |
-| B2 | Scan theme-dependent hardcoded colors: `.btn-primary` text `#06120b` (verify both themes), brand SVG `#0c0f16` chip (intentional app-icon). | ⬜ |
-| B3 | `@keyframes score-fade` defined but unused (`.score-pill` uses `score-count-up`). Dead keyframe. | ⬜ |
+| B2 | Scan theme-dependent hardcoded colors: `.btn-primary` text `#06120b` (verify both themes), brand SVG `#0c0f16` chip (intentional app-icon). | ✅ |
+| B3 | `@keyframes score-fade` defined but unused (`.score-pill` uses `score-count-up`). Dead keyframe. | ✅ |
 | B4 | OG/Twitter image is an SVG — many scrapers ignore SVG `og:image`. Should export a PNG when branding warms up. | 🎯 |
 | B5 | `--color-active/--color-negative/--color-muted` legacy aliases and `--ch-*` raw palette: verify they are all still referenced before pruning. | 🎯 |
 | B6 | `.home-hero__inner` max-width 720px while lede uses `max-width: 58ch` — intentional; verify hero doesn't stray from grid alignment at ≥1600px. | 🎯 |
@@ -63,7 +63,7 @@
 | # | Issue | Status |
 |---|-------|--------|
 | D1 | Poster rating buttons on coarse pointers become 17.5%-wide bars with rounded 12px radius while spotlight buttons stay circles — verify visual family coherence; consider same radius family. | 🎯 |
-| D2 | `.spotlight-card` single-column ≤720px: poster is `max-width: 220px` and left-aligned in a full-width track — verify it centers nicely. | 🎯 |
+| D2 | `.spotlight-card` single-column ≤720px: poster is `max-width: 220px` and left-aligned in a full-width track — verify it centers nicely. | ✅ |
 | D3 | Ultra-narrow ≤400px: nav pill flexes; verify caret + padding still breathe. | 🎯 |
 | D4 | Very wide ≥2150px: max-width cap 1760 centers content; hero FX rings pinned near right edge (88%) may look detached on ultrawide. | 🎯 |
 | D5 | Back-to-top threshold fixed at 720px scroll — fine on all pages? Verify on short pages (search with few results). | 🎯 |
@@ -73,7 +73,7 @@
 | # | Issue | Status |
 |---|-------|--------|
 | E1 | "Sign in to unlock recommendations" vs "Sign in to view your ratings" gates — copy consistent with feature names ("Target Lock", "Scent Trail"). | ✅ reviewed |
-| E2 | Announcements concatenate raw API errors (`Could not save rating. <raw>`) — possibly long/technical; consider sanitizing for users. | 🎯 |
+| E2 | Announcements concatenate raw API errors (`Could not save rating. <raw>`) — possibly long/technical; consider sanitizing for users. | ✅ |
 | E3 | `formatYear` slices first 4 chars of any string — fine for `YYYY-MM-DD`, degrades gracefully elsewhere. | ✅ reviewed |
 
 ---
@@ -87,3 +87,11 @@
   parity, A6 search toggle open-focus + Escape close, A7 search icon + SVG close
   icon, A8 mid-width input cap, A9 loader latest-ref (no more resize refetch),
   B1 duplicate background. Audit tracker created at docs/UI-AUDIT.md.
+- **Round 2 (R2):** Keyboard navigation for the Browse dropdown (A10): Arrow
+  up/down/left/right, Home/End, Escape-to-close + refocus trigger; ArrowDown on the
+  trigger opens and focuses the first item. Extracted `--accent-ink` token for the
+  CTA gradient text in both themes (B2). Removed dead `@keyframes score-fade`
+  (B3). Centered the highlight poster on single-column ≤720px (D2). Added
+  `friendlyError()` to humanize announcement error text across home/recs/history/
+  search/rating/auth paths (E2). IM card aria-labels now announce "opens in a new
+  tab" for both MovieCard and SpotlightCard (C1). ESLint clean throughout.
