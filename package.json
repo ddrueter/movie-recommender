@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "test": "node scripts/verify-scoring.js && node scripts/verify-metadata.js",
     "preview": "vite preview",
-    "build-matrix": "node scripts/rebuild-similarity-matrix.js",
+    "build-matrix": "node --max-old-space-size=8192 scripts/rebuild-similarity-matrix.js",
     "seed": "node scripts/seed-movie-metadata.js",
     "refresh-metadata": "node scripts/cache-movie-metadata.js",
     "refresh-hot": "node scripts/refresh-hot-metadata.js",
