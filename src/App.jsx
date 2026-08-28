@@ -1620,7 +1620,11 @@ function App() {
             viewMoreLabel="← Back"
           />
           {expandedSectionLoading && movies.length === 0 ? (
-            <StateCard title="Loading…" tone="loading" />
+            <div className="results-grid results-grid--home" aria-hidden="true">
+              {Array.from({ length: Math.max(1, Math.round(homeColumns)) * 2 }).map((_, i) => (
+                <div key={i} className="home-skeleton__card" />
+              ))}
+            </div>
           ) : (
             <>
               <div className="results-grid results-grid--home" aria-label={activeSection.title}>
