@@ -799,9 +799,11 @@ function App() {
   const searchTimer = useRef(null);
   const searchSequence = useRef(0);
   const recommendationsSequence = useRef(0);
+  const recsInflightRef = useRef(false);
   const homeSequence = useRef(0);
   const searchInputRef = useRef(null);
   const recsOffsetRef = useRef(0);
+  const recsSentinelRef = useRef(null);
   const mainElRef = useRef(null);
 
   // Measured grid column counts. Declared before the callbacks that use them.
@@ -1043,6 +1045,7 @@ function App() {
     const requestId = ++recommendationsSequence.current;
     const offset = append ? recsOffsetRef.current : 0;
 
+    recsInflightRef.current = true;
     setRecommendationsLoading(true);
     if (!append) {
       setRecommendationState({ status: 'loading', message: '', error: '', debug: null });
@@ -1087,6 +1090,7 @@ function App() {
         setAnnouncement(`Recommendations failed. ${friendlyError(error.message)}`);
       }
     } finally {
+      recsInflightRef.current = false;
       if (recommendationsSequence.current === requestId) {
         setRecommendationsLoading(false);
       }
@@ -1165,6 +1169,30 @@ function App() {
       void loadUserRatings();
     }
   }, [activeTab, loadUserRatings]);
+
+  // Infinite scroll for the recommendations browse grid: when the sentinel
+  // comes into view (and there is more to load and we aren't already loading),
+  // fetch the next page instead of requiring a click.
+  useEffect(() => {
+    if (!(activeTab === 'discover' && recsViewMode === 'browse' && recsHasMore)) {
+      return undefined;
+    }
+    const loadNext = () => {
+      if (!recommendationsLoading && !recsInflightRef.current) {
+        void loadRecommendations(true);
+      }
+    };
+    const el = recsSentinelRef.current;
+    if (!el || !('IntersectionObserver' in window)) return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) loadNext();
+      },
+      { rootMargin: '400px 0px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [activeTab, recsViewMode, recsHasMore, recommendationsLoading, loadRecommendations]);
 
   const handleSearchChange = (value) => {
     setQuery(value);
@@ -1402,10 +1430,6 @@ function App() {
     setRecommendationState({ status: 'idle', message: '', error: '', debug: null });
     setExpandedRatingMovieId(null);
     setAnnouncement('Signed out.');
-  };
-
-  const handleLoadMoreRecs = () => {
-    void loadRecommendations(true);
   };
 
   const toggleHeaderSearch = () => {
@@ -1755,7 +1779,6 @@ function App() {
 
       return (
         <>
-          <SectionHeader title="Your Next Pick" />
           <SpotlightCard
             movie={spotlightPick}
             ratingValue={pickRating}
@@ -1824,14 +1847,14 @@ function App() {
           })}
         </div>
 
-        <div className="results-footer">
-          {recsHasMore ? (
-            <button type="button" className="btn-soft" onClick={handleLoadMoreRecs} disabled={recommendationsLoading}>
-              {recommendationsLoading ? 'Loading…' : 'Load more recommendations'}
-            </button>
-          ) : null}
+        <div
+          ref={recsSentinelRef}
+          className="results-footer results-footer--sentinel"
+          aria-hidden="true"
+        >
+          {recommendationsLoading ? <span className="results-footer__loading">Loading…</span> : <span className="results-footer__spacer" />}
         </div>
-        {recommendationState.debug ? renderRecommendationDiagnostics() : null}
+        {recommendationState.status === 'error' ? renderRecommendationDiagnostics() : null}
       </>
     );
   };
@@ -1921,7 +1944,7 @@ function App() {
     ];
 
     return (
-      <details className="debug-panel" open={recommendationState.status === 'error'}>
+      <details className="debug-panel" open>
         <summary>Recommendation diagnostics</summary>
         <dl className="debug-panel__grid">
           {rows.map(([label, value]) => (
@@ -1945,7 +1968,7 @@ function App() {
         </dl>
       </details>
     );
-  }, [recommendationState.debug, recommendationState.status, authSession?.uid]);
+  }, [recommendationState.debug, authSession?.uid]);
 
   return (
     <div className="app-shell">

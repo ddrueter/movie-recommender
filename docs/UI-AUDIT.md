@@ -38,6 +38,9 @@
 | A9 | Double-fetch on Discover and refetch-on- resize: the fetcher callbacks change identity with the measured column count (page size), re-running the data effect. | ✅ |
 | A17 | Home page prefetched recommendations even though home never renders the recs grid — a wasted network call plus a spurious "Loaded N recommendations." announcement on a page that shows none. | ✅ — home/trending/popular/topRated only load home data; recommendations are fetched only when the Discover tab (browse or spotlight) is shown |
 | A18 | Landing directly on `/search` with an empty query rendered a blank content area (`renderSearchBody` returned null). | ✅ — empty-query shows a friendly "Search the whole catalog" prompt instead of a blank page |
+| A19 | Recommendations browse used a "Load more" button adding a full page each click; wanted column-aware loading + auto-load as you reach the end. | ✅ — browse grid now uses infinite scroll via an IntersectionObserver sentinel that appends the next column-aware page (columns × 4) as you scroll |
+| A20 | Spotlight ("Your Next Pick") had a redundant section header above the single featured card, where the card itself is the focus. | ✅ — header removed; the card sits alone as the focal point |
+| A21 | Recommendation diagnostics rendered prominently on the discover page during normal (non-error) use. | ✅ — diagnostics now render only when the recommendation engine errors |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
@@ -191,3 +194,10 @@
 - **Round 17 (R17):** Landing directly on `/search` with an empty query was a
   blank content area. It now shows a friendly "Search the whole catalog" prompt
   instead (A18). ESLint clean.
+- **Round 18 (R18, user feedback):** Recommendations browse now loads via
+  **infinite scroll** — an IntersectionObserver sentinel appends the next
+  column-aware page (columns × 4 rows) as you reach the bottom, instead of
+  requiring a "Load more" click (A19). Removed the redundant "Your Next Pick"
+  header above the spotlight card (A20). Recommendation diagnostics are now
+  hidden in normal use and appear only when the engine errors (A21). ESLint
+  clean.
