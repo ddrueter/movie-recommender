@@ -1483,6 +1483,9 @@
   padding: 1.25rem;
   max-width: 720px;
   margin-inline: auto;
+  /* Each cell keeps its own natural size (poster keeps its 2:3 aspect; the
+     body column stretches to match the row). The body's rating row uses
+     margin-top:auto to sit at the bottom of its column. */
   align-items: stretch;
   position: relative;
   overflow: hidden;
@@ -1518,6 +1521,10 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   aspect-ratio: 2 / 3;
+  /* Don't stretch to the row height — keep the natural 2:3 aspect. The grid
+     cell is column 1 (160–220px), and align-self:start pins it to the top so
+     it never gets oversized/distorted. */
+  align-self: start;
   background: var(--surface-solid);
   box-shadow: var(--shadow-lg);
   transition: transform var(--dur-fast) var(--ease-snap), box-shadow var(--dur-fast) var(--ease-snap);
@@ -1540,9 +1547,8 @@
   flex-direction: column;
   gap: 0.85rem;
   min-width: 0;
-  /* Fill the full card height so the rating row (margin-top:auto) pins to the
-     bottom — no dead empty band between content and the card's bottom edge. */
-  height: 100%;
+  /* The grid's align-items:stretch already fills the row height; the rating
+     row's margin-top:auto pins it to the bottom. No explicit height needed. */
 }
 
 .spotlight-card__header {
@@ -1718,6 +1724,15 @@
   flex-wrap: wrap;
   justify-content: center;
   margin-top: 0.25rem;
+}
+
+/* Keep the two action buttons identical in height irrespective of label
+   length, so the row never looks lopsided. */
+.spotlight__actions .btn-soft {
+  min-height: 2.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── Recommendation loading vignette ── */

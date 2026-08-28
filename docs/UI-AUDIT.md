@@ -51,6 +51,8 @@
 | A29 | History had no way to sort or filter, making a long scent trail painful to navigate. | ✅ — added a sort control (recent / rating high-low / low-high / title) and rating filter chips (All / Love / Like / Meh / Dislike), with an empty state when nothing matches |
 | A30 | Error state-cards (home, search, recommendations, history) showed raw server error text, while the live-region announcements used friendly messages — inconsistent. | ✅ — all four error cards now render the friendly, humanized message too |
 | A31 | The solid `.btn-primary` button used the accent-colored global focus outline, which is nearly invisible against its accent fill. | ✅ — `.btn-primary:focus-visible` now uses the high-contrast `--accent-ink` outline |
+| A32 | Spotlight card broken by an aggressive stretch: forcing the body `height:100%` + stretching the grid distorted the poster (broke its 2:3 aspect) and the card looked clearly wrong. | ✅ — poster is `align-self:start` (keeps its aspect); body relies on grid stretch + `margin-top:auto` for the bottom-pinned rating; no explicit height |
+| A33 | The spotlight action buttons were inconsistent (one filled `btn-primary`, one outline `btn-soft`, with mismatched heights). | ✅ — both now use the same soft pill style with equal `min-height` so the row is even and on-brand |
 | A10 | Browse dropdown uses `role="menu"` with buttons but no arrow/nav key support; focus is not moved into the menu when opened. | ✅ |
 | A11 | Dead unused `plus`/`minus` branches in `RatingIcon` (rating options are thumb/down, meh, heart, hide). | ✅ |
 | A12 | Search input used `type="text"`; switch to `type="search"` + `enterKeyHint="search"` for mobile, hiding the native clear button we duplicate. | ✅ |
@@ -234,6 +236,11 @@
   recommendations, history) now render the friendly humanized message like the
   live-region announcements already did, instead of raw server text (A30).
   ESLint clean.
-- **Round 23b (R23):** Accessibility — the solid `.btn-primary` button's focus
-  outline was accent-colored so it vanished against the accent fill; it now
-  uses the high-contrast `--accent-ink` ring (A31). ESLint clean.
+- **Round 24b (R24, user feedback):** Fixed a regression that broke the
+  spotlight recommendation card — the previous round's aggressive
+  `align-items:stretch` + body `height:100%` distorted the poster (broke its
+  2:3 aspect). The poster is now `align-self:start` (keeps its natural aspect),
+  and the body fills via grid stretch with the rating `margin-top:auto` pinned
+  to the bottom (A32). The two action buttons were inconsistent (filled
+  `btn-primary` vs outline `btn-soft`, unequal height) — both now use the same
+  soft pill style with equal `min-height` (A33). ESLint clean.
